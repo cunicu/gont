@@ -34,8 +34,7 @@ func TestPing(t *testing.T) {
 		t.Fail()
 	}
 
-	err = h1.Ping(h2, "-c", "1")
-	if err != nil {
+	if err := gont.TestConnectivity(h1, h2); err != nil {
 		t.Fail()
 	}
 }
@@ -75,8 +74,7 @@ func TestPingMultiHop(t *testing.T) {
 		t.Fail()
 	}
 
-	err = h1.Ping(h2, "-c", "1")
-	if err != nil {
+	if err := gont.TestConnectivity(h1, h2); err != nil {
 		t.Fail()
 	}
 }

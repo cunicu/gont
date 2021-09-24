@@ -28,15 +28,18 @@ func (i *Interface) Network() *net.IPNet {
 	}
 }
 
-func TestConnectivity(n1, n2 *Host) error {
-	err := n1.Ping(n2)
-	if err != nil {
-		return err
-	}
+func TestConnectivity(hosts ...*Host) error {
+	for _, a := range hosts {
+		for _, b := range hosts {
+			if a == b {
+				continue
+			}
 
-	err = n2.Ping(n1)
-	if err != nil {
-		return err
+			err := a.Ping(b)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
