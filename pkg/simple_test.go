@@ -16,7 +16,7 @@ func mask() net.IPMask {
 //
 //  h1 <-> sw <-> h2
 func TestPing(t *testing.T) {
-	n := gont.NewNetwork("test")
+	n := gont.NewNetwork("")
 	defer n.Close()
 
 	sw, err := n.AddSwitch("sw")
@@ -44,7 +44,7 @@ func TestPing(t *testing.T) {
 //
 //  h1 <-> sw1 <-> r1 <-> sw2 <-> h2
 func TestPingMultiHop(t *testing.T) {
-	n := gont.NewNetwork("test")
+	n := gont.NewNetwork("")
 	defer n.Close()
 
 	sw1, err := n.AddSwitch("sw1")

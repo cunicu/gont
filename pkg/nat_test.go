@@ -12,7 +12,7 @@ import (
 //
 //  h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
 func TestPingNAT(t *testing.T) {
-	n := gont.NewNetwork("test")
+	n := gont.NewNetwork("")
 	defer n.Close()
 
 	sw1, err := n.AddSwitch("sw1")
@@ -58,7 +58,7 @@ func TestPingNAT(t *testing.T) {
 //
 //  h1 <-> sw1 <-> nat1 <-> sw2 <-> nat2 <-> sw3 <-> h2
 func TestPingDoubleNAT(t *testing.T) {
-	n := gont.NewNetwork("test")
+	n := gont.NewNetwork("")
 	defer n.Close()
 
 	sw1, err := n.AddSwitch("sw1")
@@ -116,7 +116,7 @@ func TestPingDoubleNAT(t *testing.T) {
 //
 //  h1 <-> sw <-> nat1 <-> external
 // func TestPingHostNAT(t *testing.T) {
-// 	n := gont.NewNetwork("test")
+// 	n := gont.NewNetwork("")
 // 	defer n.Close()
 
 // 	sw, err := n.AddSwitch("sw")
