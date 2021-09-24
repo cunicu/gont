@@ -7,7 +7,7 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	n := gont.NewNetwork("test")
+	n := gont.NewNetwork("")
 
 	_, _, err := n.Run("true")
 	if err != nil {
