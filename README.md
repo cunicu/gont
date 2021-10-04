@@ -1,6 +1,11 @@
 # Gont - A Go network testing toolkit
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
+![](https://img.shields.io/snyk/vulnerabilities/github/stv0g/gont)
+[![](https://img.shields.io/github/checks-status/stv0g/gont/master)](https://github.com/stv0g/gont/actions)
+[![](https://img.shields.io/librariesio/release/stv0g/gont)](https://libraries.io/github/stv0g/gont)
+[![GitHub](https://img.shields.io/github/license/stv0g/gont)](https://github.com/stv0g/gont/blob/master/LICENSE)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
 
 Gont is a package to creat realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native).
 
