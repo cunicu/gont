@@ -81,3 +81,5 @@ func TestPing(t *testing.T) {
 ### Funding acknowledment
 
 ![](https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg) The development of [Gont] has been supported by the [ERIGrid 2.0] project of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.eu/project/id/870620)
+
+[Gont]: https://github.com/stv0g/gont
