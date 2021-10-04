@@ -1,10 +1,23 @@
 # Gont - A Go network testing toolkit
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
+
 Gont is a package to creat realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native).
 
 Gont is heavily inspired by [Mininet](https://mininet.org).
 It allows the user to build virtual network topologies using Go code.
 Under to hood the network is then constructed using Linux virtual bridges and network namespaces.
+
+## Features
+
+- L3 Routers
+- L2 Switches
+- L3 NAT Routers
+- L3 Host NAT (to external networks)
+- Host name resolution (using /etc/hosts)
+- Support for multiple simultaneous networks
+- Ideal for golang unit tests
+- Can run in GitHub powered runners / workflows
 
 ## Prerequisites
 
@@ -12,6 +25,16 @@ Under to hood the network is then constructed using Linux virtual bridges and ne
 - `iptables` (for NAT)
 - `ping` (for testing)
 - `traceroute` (for testing)
+
+## Roadmap
+
+- Use netfilter-nft kernel API instead of iptables
+- Use functional options pattern
+- Integrate go versions of ping and traceroute
+- More tests
+- Fix host NAT
+- Add support for netem and tbf qdiscs on Links
+- Add separate examples directory
 
 ## Example
 
@@ -49,3 +72,7 @@ func TestPing(t *testing.T) {
 ## Credits
 
 - Steffen Vogel (@stv0g)
+
+### Funding acknowledment
+
+![](https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg) The development of [Gont] has been supported by the [ERIGrid 2.0] project of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.eu/project/id/870620)
