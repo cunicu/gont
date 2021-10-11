@@ -211,6 +211,11 @@ func (n *Network) Close() error {
 	return nil
 }
 
+// UpdateHostsFile writes the addresses and hostnames of all nodes
+// into a file located at /run/gont/<network>/files/etc/hosts
+//
+// Processes started via BaseNode.Run or BaseNode.Start, will see
+// this file bind mounted at /etc/hosts
 func (n *Network) UpdateHostsFile() error {
 	fn := filepath.Join(n.BasePath, "files", "etc", "hosts")
 	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {

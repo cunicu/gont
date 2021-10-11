@@ -24,12 +24,12 @@ func maybeScriptExecute(argv0 string, argv []string, envp []string) error {
 }
 
 func Execvpe(argv0 string, argv []string, envp []string) error {
-	/* We check the simple case first. */
+	// We check the simple case first.
 	if argv0 == "" {
 		return syscall.ENOENT
 	}
 
-	/* Don't search when it contains a slash.  */
+	// Don't search when it contains a slash.
 	if strings.Contains(argv0, "/") {
 		err := syscall.Exec(argv0, argv, envp)
 
@@ -86,7 +86,7 @@ func Execvpe(argv0 string, argv []string, envp []string) error {
 		}
 	}
 
-	/* We tried every element and none of them worked.  */
+	// We tried every element and none of them worked.
 	if gotEacces {
 		return syscall.EACCES
 	}
