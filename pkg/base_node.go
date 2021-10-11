@@ -11,6 +11,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	nl "github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 )
 
 type BaseNode struct {
@@ -21,8 +22,8 @@ type BaseNode struct {
 
 	name string
 
-	ExistingNamespace string
-	DockerContainer   string
+	ExistingNamespace       string
+	ExistingDockerContainer string
 
 	BasePath string
 }
@@ -52,16 +53,49 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
-	nsName := fmt.Sprintf("%s%s-%s", n.NSPrefix, n.Name, name)
-	node.Namespace, err = NewNamespace(nsName)
-	if err != nil {
-		return nil, err
-	}
+	if node.ExistingNamespace != "" {
+		// Use an existing namespace created by "ip netns add"
+		if nsh, err := netns.GetFromName(node.ExistingNamespace); err != nil {
+			return nil, fmt.Errorf("failed to found existing namespace %s: %w", node.ExistingNamespace, err)
+		} else {
+			node.Namespace = &Namespace{
+				Name:     node.ExistingNamespace,
+				NsHandle: nsh,
+			}
+		}
 
-	nsMount := filepath.Join(netnsDir, nsName)
-	nsSymlink := filepath.Join(basePath, "ns", "net")
-	if err := os.Symlink(nsMount, nsSymlink); err != nil {
-		return nil, err
+		// TODO: may better do a bind mount here?
+		nsMount := filepath.Join(netnsDir, node.ExistingNamespace)
+		nsSymlink := filepath.Join(basePath, "ns", "net")
+		if err := os.Symlink(nsMount, nsSymlink); err != nil {
+			return nil, err
+		}
+	} else if node.ExistingDockerContainer != "" {
+		// Use an existing net namespace from a Docker container
+		if nsh, err := netns.GetFromDocker(node.ExistingDockerContainer); err != nil {
+			return nil, fmt.Errorf("failed to found existing docker container %s: %w", node.ExistingNamespace, err)
+		} else {
+			node.Namespace = &Namespace{
+				Name:     node.ExistingDockerContainer,
+				NsHandle: nsh,
+			}
+		}
+
+		// TODO: add symlink to /run/gont/<network>/nodes/<node>/ns/net
+
+	} else {
+		// Create a new network namespace
+		nsName := fmt.Sprintf("%s%s-%s", n.NSPrefix, n.Name, name)
+		if node.Namespace, err = NewNamespace(nsName); err != nil {
+			return nil, err
+		}
+
+		// TODO: may better do a bind mount here?
+		nsMount := filepath.Join(netnsDir, nsName)
+		nsSymlink := filepath.Join(basePath, "ns", "net")
+		if err := os.Symlink(nsMount, nsSymlink); err != nil {
+			return nil, err
+		}
 	}
 
 	n.Nodes[name] = node
