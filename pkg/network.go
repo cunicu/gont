@@ -237,7 +237,16 @@ func (n *Network) UpdateHostsFile() error {
 			hosts[addr] = []string{}
 		}
 
-		hosts[addr] = append(hosts[addr], name)
+		found := false
+		for _, n := range hosts[addr] {
+			if n == name {
+				found = true
+			}
+		}
+
+		if !found {
+			hosts[addr] = append(hosts[addr], name)
+		}
 	}
 
 	for _, node := range n.Nodes {
