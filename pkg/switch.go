@@ -37,6 +37,8 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		BaseNode: *node,
 	}
 
+	n.Nodes[name] = sw // TODO: quirk to get n.UpdateHostsFile() working
+
 	// Apply switch options
 	for _, opt := range opts {
 		if swopt, ok := opt.(SwitchOption); ok {

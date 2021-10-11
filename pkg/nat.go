@@ -23,6 +23,8 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 		Router: *rtr,
 	}
 
+	n.Nodes[name] = nat // TODO: quirk to get n.UpdateHostsFile() working
+
 	// Apply NAT options
 	for _, opt := range opts {
 		if nopt, ok := opt.(NATOption); ok {
