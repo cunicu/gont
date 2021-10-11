@@ -1,10 +1,10 @@
 package gont_test
 
 import (
-	"net"
 	"testing"
 
-	gont "github.com/stv0g/gont/pkg"
+	g "github.com/stv0g/gont/pkg"
+	o "github.com/stv0g/gont/pkg/options"
 )
 
 // TestPingNAT performs and end-to-end ping test
@@ -12,43 +12,58 @@ import (
 //
 //  h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
 func TestPingNAT(t *testing.T) {
-	n := gont.NewNetwork("")
+	var (
+		err      error
+		n        *g.Network
+		sw1, sw2 *g.Switch
+		h1, h2   *g.Host
+	)
+
+	if n, err = g.NewNetwork(nname, opts...); err != nil {
+		t.Errorf("Failed to create network: %s", err)
+		t.FailNow()
+	}
 	defer n.Close()
 
-	sw1, err := n.AddSwitch("sw1")
-	if err != nil {
+	if sw1, err = n.AddSwitch("sw1"); err != nil {
+		t.FailNow()
+	}
+
+	if sw2, err = n.AddSwitch("sw2"); err != nil {
+		t.FailNow()
+	}
+
+	if h1, err = n.AddHost("h1",
+		o.GatewayIPv4(10, 0, 1, 1),
+		o.Interface("veth0", sw1,
+			o.AddressIPv4(10, 0, 1, 2, 24)),
+	); err != nil {
+		t.FailNow()
+	}
+
+	if h2, err = n.AddHost("h2",
+		o.GatewayIPv4(10, 0, 2, 1),
+		o.Interface("veth0", sw2,
+			o.AddressIPv4(10, 0, 2, 2, 24)),
+	); err != nil {
+		t.FailNow()
+	}
+
+	if _, err = n.AddNAT("n1",
+		o.Interface("veth0", sw1, o.SouthBound,
+			o.AddressIPv4(10, 0, 1, 1, 24)),
+		o.Interface("veth1", sw2, o.NorthBound,
+			o.AddressIPv4(10, 0, 2, 1, 24)),
+	); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	if err = h1.Ping(h2); err != nil {
 		t.Fail()
 	}
 
-	sw2, err := n.AddSwitch("sw2")
-	if err != nil {
-		t.Fail()
-	}
-
-	h1, err := n.AddHost("h1", net.IPv4(10, 0, 1, 1), &gont.Interface{"eth0", net.IPv4(10, 0, 1, 2), mask(), sw1})
-	if err != nil {
-		t.Fail()
-	}
-
-	h2, err := n.AddHost("h2", net.IPv4(10, 0, 2, 1), &gont.Interface{"eth0", net.IPv4(10, 0, 2, 2), mask(), sw2})
-	if err != nil {
-		t.Fail()
-	}
-
-	_, err = n.AddNAT("n1", nil,
-		&gont.Interface{"eth0", net.IPv4(10, 0, 1, 1), mask(), sw1},
-		&gont.Interface{"eth1", net.IPv4(10, 0, 2, 1), mask(), sw2})
-	if err != nil {
-		t.Fail()
-	}
-
-	err = h1.Ping(h2, "-c", "1")
-	if err != nil {
-		t.Fail()
-	}
-
-	err = h1.Traceroute(h2)
-	if err != nil {
+	if err = h1.Traceroute(h2); err != nil {
 		t.Fail()
 	}
 }
@@ -58,55 +73,80 @@ func TestPingNAT(t *testing.T) {
 //
 //  h1 <-> sw1 <-> nat1 <-> sw2 <-> nat2 <-> sw3 <-> h2
 func TestPingDoubleNAT(t *testing.T) {
-	n := gont.NewNetwork("")
+	var (
+		err           error
+		n             *g.Network
+		h1, h2        *g.Host
+		sw1, sw2, sw3 *g.Switch
+	)
+
+	if n, err = g.NewNetwork(nname, opts...); err != nil {
+		t.Errorf("Failed to create network: %s", err)
+		t.FailNow()
+	}
 	defer n.Close()
 
-	sw1, err := n.AddSwitch("sw1")
-	if err != nil {
-		t.Fail()
+	if sw1, err = n.AddSwitch("sw1"); err != nil {
+		t.Errorf("Failed to create switch: %s", err)
+		t.FailNow()
 	}
 
-	sw2, err := n.AddSwitch("sw2")
-	if err != nil {
-		t.Fail()
+	if sw2, err = n.AddSwitch("sw2"); err != nil {
+		t.Errorf("Failed to create switch: %s", err)
+		t.FailNow()
 	}
 
-	sw3, err := n.AddSwitch("sw3")
-	if err != nil {
-		t.Fail()
+	if sw3, err = n.AddSwitch("sw3"); err != nil {
+		t.Errorf("Failed to create switch: %s", err)
+		t.FailNow()
 	}
 
-	h1, err := n.AddHost("h1", net.IPv4(10, 0, 1, 1), &gont.Interface{"eth0", net.IPv4(10, 0, 1, 2), mask(), sw1})
-	if err != nil {
-		t.Fail()
+	if h1, err = n.AddHost("h1",
+		o.GatewayIPv4(10, 0, 1, 1),
+		o.Interface("veth0", sw1,
+			o.AddressIPv4(10, 0, 1, 2, 24)),
+	); err != nil {
+		t.Errorf("Failed to create host: %s", err)
+		t.FailNow()
 	}
 
-	h2, err := n.AddHost("h2", net.IPv4(10, 0, 2, 1), &gont.Interface{"eth0", net.IPv4(10, 0, 2, 2), mask(), sw3})
-	if err != nil {
-		t.Fail()
+	if h2, err = n.AddHost("h2",
+		o.GatewayIPv4(10, 0, 2, 1),
+		o.Interface("veth0", sw3,
+			o.AddressIPv4(10, 0, 2, 2, 24)),
+	); err != nil {
+		t.Errorf("Failed to create host: %s", err)
+		t.FailNow()
 	}
 
-	_, err = n.AddNAT("n1", net.IPv4(10, 0, 3, 1),
-		&gont.Interface{"eth0", net.IPv4(10, 0, 3, 2), mask(), sw2},
-		&gont.Interface{"eth1", net.IPv4(10, 0, 1, 1), mask(), sw1})
-	if err != nil {
-		t.Fail()
+	if _, err = n.AddNAT("n1",
+		o.GatewayIPv4(10, 0, 3, 1),
+		o.Interface("veth1", sw1, o.SouthBound,
+			o.AddressIPv4(10, 0, 1, 1, 24)),
+		o.Interface("veth0", sw2, o.NorthBound,
+			o.AddressIPv4(10, 0, 3, 2, 24)),
+	); err != nil {
+		t.Errorf("Failed to create NAT router: %s", err)
+		t.FailNow()
 	}
 
-	_, err = n.AddNAT("n2", nil,
-		&gont.Interface{"eth0", net.IPv4(10, 0, 2, 1), mask(), sw3},
-		&gont.Interface{"eth1", net.IPv4(10, 0, 3, 1), mask(), sw2})
-	if err != nil {
-		t.Fail()
+	if _, err = n.AddNAT("n2",
+		o.Interface("veth1", sw2, o.SouthBound,
+			o.AddressIPv4(10, 0, 3, 1, 24)),
+		o.Interface("veth0", sw3, o.NorthBound,
+			o.AddressIPv4(10, 0, 2, 1, 24)),
+	); err != nil {
+		t.Errorf("Failed to create NAT router: %s", err)
+		t.FailNow()
 	}
 
-	err = h1.Ping(h2, "-c", "1")
-	if err != nil {
-		t.Fail()
+	if err = h1.Ping(h2); err != nil {
+		t.Errorf("Failed to ping h1 <-> h2: %s", err)
+		t.FailNow()
 	}
 
-	err = h1.Traceroute(h2)
-	if err != nil {
+	if err = h1.Traceroute(h2); err != nil {
+		t.Errorf("Failed to traceroute h1 -> h2: %s", err)
 		t.Fail()
 	}
 }
@@ -115,22 +155,48 @@ func TestPingDoubleNAT(t *testing.T) {
 // between a virtual host and the outside host network
 //
 //  h1 <-> sw <-> nat1 <-> external
-// func TestPingHostNAT(t *testing.T) {
-// 	n := gont.NewNetwork("")
-// 	defer n.Close()
+func TestPingHostNAT(t *testing.T) {
+	var (
+		err error
+		n   *g.Network
+		sw1 *g.Switch
+		h1  *g.Host
+	)
 
-// 	sw, err := n.AddSwitch("sw")
-// 	if err != nil {
-// 		t.Fail()
-// 	}
+	if n, err = g.NewNetwork(nname, opts...); err != nil {
+		t.Errorf("Failed to create network: %s", err)
+		t.FailNow()
+	}
+	defer n.Close()
 
-// 	h, err := n.AddHost("h", nil, &gont.Interface{"eth0", net.IPv4(10, 0, 0, 1), mask(), sw})
-// 	if err != nil {
-// 		t.Fail()
-// 	}
+	if sw1, err = n.AddSwitch("sw1"); err != nil {
+		t.Errorf("Failed to create switch: %s", err)
+		t.FailNow()
+	}
 
-// 	_, err = h.Run("ping", "-c", "1", "1.1.1.1")
-// 	if err != nil {
-// 		t.Fail()
-// 	}
-// }
+	if h1, err = n.AddHost("h1",
+		o.GatewayIPv4(10, 0, 0, 1),
+		o.Interface("veth0", sw1,
+			o.AddressIPv4(10, 0, 0, 2, 24)),
+	); err != nil {
+		t.Errorf("Failed to create host: %s", err)
+		t.FailNow()
+	}
+
+	if _, err := n.AddHostNAT("n1",
+		o.Interface("veth0", sw1, o.SouthBound,
+			o.AddressIPv4(10, 0, 0, 1, 24)),
+	); err != nil {
+		t.Errorf("Failed to create host NAT: %s", err)
+		t.FailNow()
+	}
+
+	if _, _, err = h1.Run("ping", "-c", "1", "1.1.1.1"); err != nil {
+		t.Errorf("Failed to ping: %s", err)
+		t.FailNow()
+	}
+
+	if _, _, err = h1.Run("ping", "-c", "1", "www.rwth-aachen.de"); err != nil {
+		t.Fail()
+	}
+}

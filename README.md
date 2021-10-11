@@ -1,9 +1,9 @@
 # Gont - A Go network testing toolkit
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
-![](https://img.shields.io/snyk/vulnerabilities/github/stv0g/gont)
-[![](https://img.shields.io/github/checks-status/stv0g/gont/master)](https://github.com/stv0g/gont/actions)
-[![](https://img.shields.io/librariesio/release/stv0g/gont)](https://libraries.io/github/stv0g/gont)
+![Snyk.io](https://img.shields.io/snyk/vulnerabilities/github/stv0g/gont)
+[![Build](https://img.shields.io/github/checks-status/stv0g/gont/master)](https://github.com/stv0g/gont/actions)
+[![libraries.io](https://img.shields.io/librariesio/release/stv0g/gont)](https://libraries.io/github/stv0g/gont)
 [![GitHub](https://img.shields.io/github/license/stv0g/gont)](https://github.com/stv0g/gont/blob/master/LICENSE)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
 
@@ -18,60 +18,115 @@ Under to hood the network is then constructed using Linux virtual bridges and ne
 - L3 Routers
 - L2 Switches
 - L3 NAT Routers
-- L3 Host NAT (to external networks)
-- Host name resolution (using /etc/hosts)
-- Support for multiple simultaneous networks
+- L3 Host NAT (to host network)
+- Hostname resolution (using /etc/hosts)
+- Support for multiple simultaneous and isolated networks
 - Ideal for golang unit tests
-- Can run in GitHub powered runners / workflows
+- Can run in workflows powered by GitHub's runners
+- Lean code thanks to [functional options](https://sagikazarmark.hu/blog/functional-options-on-steroids/)
+
+## Examples
+
+Have a look at the unit tests for usage examples:
+
+- [Simple](pkg/simple_test.go)
+- [Run](pkg/node_test.go)
+- [NAT](pkg/nat_test.go)
+- [Switch](pkg/switch_test.go)
+- [Links](pkg/link_test.go)
 
 ## Prerequisites
 
-- `iproute2`
 - `iptables` (for NAT)
 - `ping` (for testing)
 - `traceroute` (for testing)
 
 ## Roadmap
 
-- Use netfilter-nft kernel API instead of iptables
-- Use functional options pattern
-- Integrate go versions of ping and traceroute
+- NAT
+  - Use netlink socket instead of `iptables` tool for configuring NAT
+  - Use netlink socket instead of `ipset` tool for configuring NAT
+- Integrate go imlementations of `ping` and `traceroute` tools
 - More tests
 - Fix host NAT
 - Add support for netem and tbf qdiscs on Links
 - Add separate examples directory
+- Topology factories
+- Full IPv6 support
 
-## Example
+## Architecture
 
-```go
-// TestPing performs and end-to-end ping test
-// between two hosts on a switched topology
-//
-//  h1 <-> sw <-> h2
-func TestPing(t *testing.T) {
-	n := gont.NewNetwork("ping")
-	defer n.Close()
+```mermaid
+classDiagram
+    direction RL
 
-	sw, err := n.AddSwitch("sw")
-	if err != nil {
-		t.Fail()
-	}
+    class Network {
+        Nodes []Node
+        Links []Link
+    }
 
-	h1, err := n.AddHost("h1", nil, &gont.Interface{"eth0", net.IPv4(10, 0, 0, 1), mask(), sw})
-	if err != nil {
-		t.Fail()
-	}
+    class Link {
+        Left Endpoint
+        Right Endpoint
+    }
 
-	h2, err := n.AddHost("h2", nil, &gont.Interface{"eth0", net.IPv4(10, 0, 0, 2), mask(), sw})
-	if err != nil {
-		t.Fail()
-	}
+    class Endpoint {
+    }
 
-	err = h1.Ping(h2, "-c", "1")
-	if err != nil {
-		t.Fail()
-	}
-}
+    class Port {
+        Name string
+        Node Node
+    }
+
+    class Interface {
+        Addresses []net.IPNet
+    }
+
+    class Namespace {
+        NsFd int
+        Run()
+    }
+
+    class Node {
+        Name string
+    }
+
+    class Host {
+        Interfaces []Interface
+        AddInterface()
+    }
+
+    class Switch {
+        Ports []Port
+        AddPort()
+    }
+
+    class Router {
+        AddRoute()
+    }
+
+    class NAT {
+
+    }
+            
+    Node *-- Namespace
+    Host *-- Node
+    Router *-- Host
+    NAT *-- Router
+    Switch *-- Node
+
+    Port *-- Endpoint
+    Interface *-- Port
+
+    Port "1" o-- "1" Node
+
+    Host "1" o-- "*" Interface
+    Switch "1" o-- "*" Port
+
+    Link "1" o-- "2" Endpoint
+
+    Network "1" o-- "*" Link
+    Network "1" o-- "*" Node
 ```
 
 ## Credits
@@ -80,6 +135,6 @@ func TestPing(t *testing.T) {
 
 ### Funding acknowledment
 
-![](https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg) The development of [Gont] has been supported by the [ERIGrid 2.0] project of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.eu/project/id/870620)
+![European Flag](https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg) The development of [Gont] has been supported by the [ERIGrid 2.0] project of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.eu/project/id/870620)
 
 [Gont]: https://github.com/stv0g/gont

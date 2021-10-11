@@ -1,0 +1,52 @@
+package topo
+
+import "net"
+
+const (
+	v6ULAPfx = "ff00:9074::"
+)
+
+type subnet struct {
+	Network  net.IP
+	Mask     net.IPMask
+	HostMask net.IPMask
+}
+
+// Subnet represents both an IPv4 and an IPv6 network
+type Subnet struct {
+	v4 subnet
+	v6 subnet
+}
+
+func (s *Subnet) GetSubnet(sz int) (Subnet, error) {
+	return subnet{
+		s.v4.GetSubnet(sz),
+		s.v6.GetSubnet(sz),
+	}
+}
+
+// GetAddress allocates a free pair of IPv4 and IPv6 addresses
+// in the subnet and returns them
+func (s *Subnet) GetAddress() (net.IP, net.IP) {
+	return s.v4.GetAddress(),
+		s.v6.GetAddress()
+}
+
+func NewSubnet(diff int) Subnet {
+	return Subnet{
+		v4: subnet{
+			Network:  net.IPv4(10, 0, 0, 0),
+			Mask:     net.CIDRMask(8, net.IPv4len),
+			HostMask: net.CIDRMask(24, net.IPv4len),
+		},
+		v6: subnet{
+			Network:  net.ParseIP(v6ULAPfx), //
+			Mask:     net.CIDRMask(32, net.IPv6len),
+			HostMask: net.CIDRMask(64, net.IPv6len),
+		},
+	}
+}
+
+func DefaultSubnet() Subnet {
+	return NewSubnet(0)
+}

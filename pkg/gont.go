@@ -1,46 +1,91 @@
 package gont
 
 import (
-	"net"
+	crand "crypto/rand"
+	"encoding/binary"
+	"errors"
+	"math/rand"
+	"os"
+	"path"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/vishvananda/netns"
+	"kernel.org/pub/linux/libs/security/libcap/cap"
 )
 
 const (
 	hostsFile = "/etc/hosts"
+	netnsDir  = "/var/run/netns/"
+	varDir    = "/var/run/gont"
+
+	loopbackInterfaceName = "lo"
+	bridgeInterfaceName   = "br"
 )
-
-var loopbackDevice Interface = Interface{
-	Name:    "lo",
-	Address: net.IPv4(127, 0, 0, 1),
-	Mask:    net.IPv4Mask(255, 0, 0, 0),
-}
-
-type Interface struct {
-	Name    string
-	Address net.IP
-	Mask    net.IPMask
-	Switch  *Switch
-}
-
-func (i *Interface) Network() *net.IPNet {
-	return &net.IPNet{
-		IP:   i.Address.Mask(i.Mask),
-		Mask: i.Mask,
-	}
-}
 
 func TestConnectivity(hosts ...*Host) error {
 	for _, a := range hosts {
 		for _, b := range hosts {
-			if a == b {
-				continue
-			}
-
-			err := a.Ping(b)
-			if err != nil {
-				return err
+			if a != b {
+				if err := a.Ping(b); err != nil {
+					return err
+				}
 			}
 		}
 	}
 
 	return nil
+}
+
+func SetupRand() error {
+	var seed int64
+
+	if err := binary.Read(crand.Reader, binary.LittleEndian, &seed); err != nil {
+		return err
+	}
+
+	rand.Seed(seed)
+
+	return nil
+}
+
+func SetupLogging() {
+	log.SetFormatter(&log.TextFormatter{
+		ForceColors:  true,
+		DisableQuote: true,
+	})
+	log.SetLevel(log.DebugLevel)
+}
+
+func CheckCaps() error {
+	c := cap.GetProc()
+	if v, err := c.GetFlag(cap.Effective, cap.NET_ADMIN); err != nil || !v {
+		return errors.New("missing NET_ADMIN capabilities")
+	}
+	return nil
+}
+
+// Identify returns the network and node name
+// if the current process is running in a network netspace created by Gont
+func Identify() (string, string, error) {
+	curHandle, err := netns.Get()
+	if err != nil {
+		return "", "", err
+	}
+
+	for _, network := range GetNetworkNames() {
+		for _, node := range GetNodeNames(network) {
+			f := path.Join("/var/run/gont", network, "nodes", node, "ns", "net")
+
+			handle, err := netns.GetFromPath(f)
+			if err != nil {
+				return "", "", err
+			}
+
+			if curHandle.Equal(handle) {
+				return network, node, nil
+			}
+		}
+	}
+
+	return "", "", os.ErrNotExist
 }

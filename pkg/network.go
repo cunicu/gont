@@ -1,179 +1,261 @@
 package gont
 
 import (
+	"errors"
 	"fmt"
-	"io"
-
-	log "github.com/sirupsen/logrus"
+	"io/ioutil"
+	"path"
+	"sort"
+	"strings"
+	"syscall"
 
 	"math/rand"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
-	"syscall"
+
+	"github.com/vishvananda/netns"
 )
 
 type Network struct {
-	Prefix string
+	Name     string
+	Nodes    map[string]Node
+	HostNode *Host
+	BasePath string
 
-	Nodes   []*Node
-	TempDir string
+	Persistent bool
+
+	DefaultOptions Options
 }
 
-func NewNetwork(name string) *Network {
-	if name == "" {
-		name = fmt.Sprintf("gont-%d", rand.Intn(1<<16))
-	}
-
-	n := &Network{
-		Prefix:  name + "-",
-		TempDir: filepath.Join(os.TempDir(), name),
-	}
-
-	n.Reset()
-
-	return n
-}
-
-func (n *Network) Reset() error {
-	out, _, err := n.Run("ip", "netns", "list")
+func HostNode(n *Network) *Host {
+	baseNs, err := netns.Get()
 	if err != nil {
-		return err
+		return nil
 	}
 
-	for _, ns := range strings.Split(string(out), "\n") {
-		if len(ns) == 0 || !strings.HasPrefix(ns, n.Prefix) {
-			continue
+	return &Host{
+		BaseNode: BaseNode{
+			name: "host",
+			Namespace: &Namespace{
+				Name:     "base",
+				NsHandle: baseNs,
+			},
+			Network: n,
+		},
+	}
+}
+
+func GetNetworkNames() []string {
+	names := []string{}
+
+	nets, err := ioutil.ReadDir(varDir)
+	if err != nil {
+		return names
+	}
+
+	for _, net := range nets {
+		if net.IsDir() {
+			names = append(names, net.Name())
 		}
+	}
 
-		log.WithField("ns", ns).Warn("Removing stale namespace")
+	sort.Strings(names)
 
-		if _, _, err := n.Run("ip", "netns", "delete", ns); err != nil {
+	return names
+}
+
+func GetNodeNames(network string) []string {
+	names := []string{}
+
+	nodesDir := path.Join(varDir, network, "nodes")
+
+	nets, err := ioutil.ReadDir(nodesDir)
+	if err != nil {
+		return names
+	}
+
+	for _, net := range nets {
+		if net.IsDir() {
+			names = append(names, net.Name())
+		}
+	}
+
+	sort.Strings(names)
+
+	return names
+}
+
+func GenerateNetworkName() string {
+	existing := GetNetworkNames()
+
+	for i := 0; i < 32; i++ {
+		random := GetRandomName()
+
+		index := sort.SearchStrings(existing, random)
+		if index >= len(existing) || existing[index] != random {
+			return random
+		}
+	}
+
+	index := rand.Intn(len(Names))
+	random := Names[index]
+
+	return fmt.Sprintf("%s%d", random, rand.Intn(128)+1)
+}
+
+func CleanupAllNetworks() error {
+	for _, name := range GetNetworkNames() {
+		if err := CleanupNetwork(name); err != nil {
 			return err
 		}
 	}
 
-	_, _, err = n.Run("sed", "-i", "/# gont:"+n.Prefix+"ns$/d", hostsFile)
+	return nil
+}
 
-	return err
+func CleanupNetwork(name string) error {
+	baseDir := filepath.Join(varDir, name)
+	nodesDir := filepath.Join(baseDir, "nodes")
+
+	fis, err := ioutil.ReadDir(nodesDir)
+	if err != nil {
+		return err
+	}
+
+	for _, fi := range fis {
+		if !fi.IsDir() {
+			continue
+		}
+
+		nodeName := fi.Name()
+		netNsName := fmt.Sprintf("gont-%s-%s", name, nodeName)
+
+		netns.DeleteNamed(netNsName)
+	}
+
+	if err := os.RemoveAll(baseDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NewNetwork(name string, opts ...Option) (*Network, error) {
+	if name == "" {
+		name = GenerateNetworkName()
+	}
+
+	basePath := filepath.Join(varDir, name)
+
+	n := &Network{
+		Name:           name,
+		BasePath:       basePath,
+		Nodes:          map[string]Node{},
+		DefaultOptions: Options{},
+	}
+
+	// Apply network specific options
+	for _, opt := range opts {
+		if nopt, ok := opt.(NetworkOption); ok {
+			nopt.Apply(n)
+		}
+	}
+
+	if stat, err := os.Stat(basePath); err == nil && stat.IsDir() {
+		return nil, syscall.EEXIST
+	}
+
+	for _, path := range []string{"files", "nodes"} {
+		path = filepath.Join(basePath, path)
+		if err := os.MkdirAll(path, 0644); err != nil {
+			return nil, err
+		}
+	}
+
+	n.HostNode = HostNode(n)
+	if n.HostNode == nil {
+		return nil, errors.New("failed to create host node")
+	}
+
+	if err := n.UpdateHostsFile(); err != nil {
+		return nil, fmt.Errorf("failed to update hosts file: %w", err)
+	}
+
+	return n, nil
+}
+
+func (n *Network) Teardown() error {
+	for _, node := range n.Nodes {
+		if err := node.Teardown(); err != nil {
+			return err
+		}
+	}
+
+	if n.BasePath != "" {
+		os.RemoveAll(n.BasePath)
+	}
+
+	return nil
 }
 
 func (n *Network) Close() error {
-	for _, node := range n.Nodes {
-		node.NS.Close()
-	}
-
-	if n.TempDir != "" {
-		os.RemoveAll(n.TempDir)
-	}
-
-	return n.Reset()
-}
-
-func (n *Network) Run(cmd ...string) ([]byte, *exec.Cmd, error) {
-	var err error
-	var out []byte
-
-	c := exec.Command(cmd[0], cmd[1:]...)
-
-	if out, err = c.CombinedOutput(); err != nil {
-		log.WithField("cmd", cmd).WithError(err).Error("Failed to execute")
-		if len(out) > 0 && string(out) != "\n" {
-			os.Stdout.Write(out)
+	if !n.Persistent {
+		if err := n.Teardown(); err != nil {
+			return err
 		}
-		return out, c, err
 	}
 
-	log.WithField("cmd", cmd).Info("Run command")
-
-	if len(out) > 0 {
-		os.Stdout.Write(out)
-	}
-
-	return out, c, nil
+	return nil
 }
 
-func (n *Network) RunAsync(cmd ...string) (*exec.Cmd, *io.ReadCloser, *io.ReadCloser, error) {
-	c := exec.Command(cmd[0], cmd[1:]...)
+func (n *Network) UpdateHostsFile() error {
+	fn := filepath.Join(n.BasePath, "files", "etc", "hosts")
+	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
+		return err
+	}
 
-	c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-
-	stdout, err := c.StdoutPipe()
+	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		return nil, nil, nil, err
+		return err
 	}
 
-	stderr, err := c.StderrPipe()
-	if err != nil {
-		return nil, nil, nil, err
+	fmt.Fprintln(f, "# Autogenerated hosts file by Gont")
+
+	hosts := map[string][]string{}
+
+	IPv4loopback := net.IPv4(127, 0, 0, 1)
+
+	hosts[IPv4loopback.String()] = []string{"localhost", "localhost.localdomain", "localhost4", "localhost4.localdomain4"}
+	hosts[net.IPv6loopback.String()] = []string{"localhost", "localhost.localdomain", "localhost6", "localhost6.localdomain6"}
+
+	add := func(name string, ip net.IP) {
+		addr := ip.String()
+		if hosts[addr] == nil {
+			hosts[addr] = []string{}
+		}
+
+		hosts[addr] = append(hosts[addr], name)
 	}
 
-	log.WithField("cmd", cmd).Info("Run async command")
-
-	err = c.Start()
-	if err != nil {
-		return nil, nil, nil, err
+	for _, node := range n.Nodes {
+		if host, ok := node.(*Host); ok {
+			for _, i := range host.Interfaces {
+				for _, a := range i.Addresses {
+					add(host.name, a.IP)
+					add(host.name+"-"+i.Name, a.IP)
+				}
+			}
+		}
 	}
 
-	return c, &stdout, &stderr, nil
-}
-
-func (n *Network) RunNS(ns Namespace, cmd ...string) ([]byte, *exec.Cmd, error) {
-	cmd = append([]string{"ip", "netns", "exec", ns.String()}, cmd...)
-	return n.Run(cmd...)
-}
-
-func (n *Network) RunNSAsync(ns Namespace, cmd ...string) (*exec.Cmd, *io.ReadCloser, *io.ReadCloser, error) {
-	cmd = append([]string{"ip", "netns", "exec", ns.String()}, cmd...)
-	return n.RunAsync(cmd...)
-}
-
-func (n *Network) GoRunNSAsync(ns Namespace, cmd ...string) (*exec.Cmd, *io.ReadCloser, *io.ReadCloser, error) {
-	tmp := filepath.Join(n.TempDir, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
-	_, _, err := n.Run("go", "build", "-o", tmp, cmd[0])
-	if err != nil {
-		return nil, nil, nil, err
+	for addr, names := range hosts {
+		fmt.Fprintf(f, "%s %s\n", addr, strings.Join(names, " "))
 	}
 
-	cmd = append([]string{"ip", "netns", "exec", ns.String(), tmp}, cmd[1:]...)
-	return n.RunAsync(cmd...)
-}
-
-func (n *Network) GoRunAsync(cmd ...string) (*exec.Cmd, *io.ReadCloser, *io.ReadCloser, error) {
-	tmp := filepath.Join(n.TempDir, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
-	_, _, err := n.Run("go", "build", "-o", tmp, cmd[0])
-	if err != nil {
-		return nil, nil, nil, err
+	if err := f.Sync(); err != nil {
+		return err
 	}
 
-	cmd[0] = tmp
-	return n.RunAsync(cmd...)
-}
-
-func (n *Network) CreateNamespace(name string) (Namespace, error) {
-	if _, _, err := n.Run("ip", "netns", "add", n.Prefix+name); err != nil {
-		return Namespace{}, err
-	}
-
-	return Namespace{
-		Name:    n.Prefix + name,
-		Network: n,
-	}, nil
-}
-
-func (n *Network) AddToHostsFile(addr net.IP, name string) error {
-	_, _, err := n.Run("sed", "-i", "$ a "+addr.String()+" "+name+" # gont:"+n.Prefix+"ns", hostsFile)
-	return err
-}
-
-func (n *Network) RemoveFromHostsFile(addr net.IP) error {
-	_, _, err := n.Run("sed", "-i", "/^"+addr.String()+"/d", hostsFile)
-	return err
-}
-
-func (n *Network) RemoveAllFromHostsFile() error {
-	_, _, err := n.Run("sed", "-i", "/ # gont:"+n.Prefix+"ns$/d", hostsFile)
-	return err
+	return nil
 }
