@@ -24,6 +24,7 @@ type Network struct {
 	BasePath string
 
 	Persistent bool
+	NSPrefix   string
 
 	DefaultOptions Options
 }
@@ -153,6 +154,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		BasePath:       basePath,
 		Nodes:          map[string]Node{},
 		DefaultOptions: Options{},
+		NSPrefix:       "gont-",
 	}
 
 	// Apply network specific options

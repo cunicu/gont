@@ -52,7 +52,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
-	nsName := fmt.Sprintf("gont-%s-%s", n.Name, name)
+	nsName := fmt.Sprintf("%s%s-%s", n.NSPrefix, n.Name, name)
 	node.Namespace, err = NewNamespace(nsName)
 	if err != nil {
 		return nil, err
