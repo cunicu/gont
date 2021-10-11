@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="134pt" height="116pt" viewBox="0.00 0.00 134.00 116.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 112)">
+<title>D</title>
+<polygon fill="transparent" stroke="transparent" points="-4,4 -4,-112 130,-112 130,4 -4,4"/>
+<!-- h1 -->
+<g id="node1" class="node">
+<title>h1</title>
+<ellipse fill="none" stroke="#000000" cx="27" cy="-90" rx="27" ry="18"/>
+<text text-anchor="middle" x="27" y="-85.8" font-family="Times,serif" font-size="14.00" fill="#000000">h1</text>
+</g>
+<!-- r1 -->
+<g id="node3" class="node">
+<title>r1</title>
+<ellipse fill="none" stroke="#000000" cx="63" cy="-18" rx="27" ry="18"/>
+<text text-anchor="middle" x="63" y="-13.8" font-family="Times,serif" font-size="14.00" fill="#000000">r1</text>
+</g>
+<!-- h1&#45;&#45;r1 -->
+<g id="edge1" class="edge">
+<title>h1--r1</title>
+<path fill="none" stroke="#000000" d="M35.7146,-72.5708C41.3747,-61.2506 48.7216,-46.5568 54.3657,-35.2687"/>
+</g>
+<!-- h2 -->
+<g id="node2" class="node">
+<title>h2</title>
+<ellipse fill="none" stroke="#000000" cx="99" cy="-90" rx="27" ry="18"/>
+<text text-anchor="middle" x="99" y="-85.8" font-family="Times,serif" font-size="14.00" fill="#000000">h2</text>
+</g>
+<!-- h2&#45;&#45;r1 -->
+<g id="edge2" class="edge">
+<title>h2--r1</title>
+<path fill="none" stroke="#000000" d="M90.2854,-72.5708C84.6253,-61.2506 77.2784,-46.5568 71.6343,-35.2687"/>
+</g>
+</g>
+</svg>

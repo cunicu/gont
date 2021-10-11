@@ -1,0 +1,656 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Gont - A Go network testing toolkit</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.2/reset.min.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.2/reveal.min.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.2/theme/solarized.min.css" />
+
+		<!-- Theme used for syntax highlighted code -->
+		<!-- <link rel="stylesheet" href="plugin/highlight/monokai.css"> -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.2/plugin/highlight/monokai.min.css" integrity="sha512-z8wQkuDRFwCBfoj7KOiu1MECaRVoXx6rZQWL21x0BsVVH7JkqCp1Otf39qve6CrCycOOL5o9vgfII5Smds23rg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+		<style>
+			em {
+				font-weight: bold;
+			}
+
+			code {
+				line-height: 1em;
+			}
+
+			li { font-size: 100% }
+			li li { font-size: 90% }
+			li li li { font-size: 80% }
+			li li li li { font-size: 70% }
+			li li li li li { font-size: 60% }
+
+			.container{
+				display: flex;
+			}
+			.col{
+				flex: 1;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h1>Gont</h1>
+					<h3>A Go network testing tookkit</h3>
+				</section>
+				<section>
+					<section>
+						<h2>Introduction</h2>
+					</section>
+					<section>
+						<h3>What does Gont do?</h3>
+						<ul>
+							<li>Software-defined virtual networking for testing</li>
+							<li>Define hosts, switches, routers in a single host</li>
+							<li>Reentrancy</li>
+							<li>Reproducibility</li>
+							<li>Inspired by <a href="http://mininet.org/">Mininet</a></li>
+						</ul>
+					</section>
+					<section>
+						<h3>Mininet</h3>
+						<div>
+							<q>
+								Mininet creates a realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native)
+							</q>
+							<p>-- <a href="http://mininet.org/">mininet.org</a></p>
+						</div>
+					</section>
+					<section>
+						<h3>Mininet</h3>
+						<ul>
+							<li>Written in Python 2</li>
+							<li>Lacking active maintainer</li>
+							<li>Focus on SDN: OpenFlow controllers</li>
+							<li>No SSL cert on homepage?!</li>
+						</ul>
+						<div style="margin-top: 2em;"><b>→</b> We need something better</div>
+					</section>
+					<section>
+						<h3>Why?</h3>
+						<ul>
+							<li>Describe network toplogies quickly in code</li>
+							<li>Automate contruction of complex topolgies</li>
+							<li>Unit / CI testing
+							<li>Parallel test execution</li>
+							<li>Example use-cases
+								<ul>
+									<li>VPN / network tools development</li>
+									<li>SDN Openflow controller development</li>
+									<li>Wireguard Interactive Connectivity Establishment (<a href="https://github.com/stv0g/wice">WICE</a>)</li>
+								</ul>
+							</li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<p>A little detour:</p>
+						<h2>Namespaces</h2>
+					</section>
+					<section>
+						<h3>What are Linux namespaces?</h3>
+					</section>
+					<section>
+						<h3>They..</h3>
+						<ul>
+							<li>partition kernel resources<br />from <b>a process-perspective.</b></li>
+							<li>power most of Linux containerization tools.</li>
+							<li>appear in many Linux subsystems.</li>
+							<li>are used by many sandboxing solutions in browsers.</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Available Linux namespaces</h3>
+						<ul>
+							<li><b>mnt:</b> Mounts</li>
+							<li><b>pid:</b> Process IDs</li>
+							<li><b>net:</b> Networking</li>
+							<li><b>ipc:</b> Interproces Communication</li>
+							<li><b>uts:</b> Unix Timesharing (hostname)</li>
+							<li><b>user:</b> User identification & privileges</li>
+							<li><b>cgroup:</b> Process Control Groups</li>
+							<li><b>time:</b> System time</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Buts what exactly is a namespace?</h3>
+						<ul>
+							<li>Can be identified by a file descriptor</li>
+							<li>A namespace can have multiple processes assigned to it</li>
+							<li>It lives as long as there is still at least one remaining process</li>
+							<li>Child processes inherit parent namespaces</li>
+						</ul>
+					</section>
+					<section>
+						<h3>How do I create a namespace?</h3>
+						<ul>
+							<li><a href="https://man7.org/linux/man-pages/man2/unshare.2.html">unshare(2)</a></li>
+							<li><a href="https://man7.org/linux/man-pages/man2/clone.2.html">clone(2)</a></li>
+						</ul>
+					</section>
+					<section>
+						<h3>unshare(2)</h3>
+						<pre><code class="language-go" data-trim >
+							func main() {
+								err := syscall.Unshare(syscall.CLONE_NEWNS);
+							}
+						</code></pre>
+					</section>
+					<section>
+						<h3>How do I create a namespace?</h3>
+						<pre><code class="language-c" data-trim style="font-size: 10pt;">
+							static int child(void *arg) {
+								struct utsname uts;
+
+								sethostname(arg, "ernie")
+
+								uname(&uts)
+								printf("nodename in child:  %s\n", uts.nodename);
+
+								return 0;
+							}
+
+							int main() {
+								struct utsname uts;
+
+								/* Allocate stack for child */
+								char *stack = malloc(STACK_SIZE);
+								if (stack == NULL)
+									return -1;
+
+								/* Start new kernel task in new UTS namespace */
+								pid_t child_pid = clone(child, stack + STACK_SIZE, CLONE_NEWUTS | SIGCHLD, NULL);
+
+								/* Output hostname */
+								uname(&uts)
+								printf("nodename in parent:  %s\n", uts.nodename);
+							}
+						</code></pre>
+					</section>
+					<section>
+						<h3>How can I share a namespace with other processes?</h3>
+						<ul>
+							<li>By forking with <a href="https://man7.org/linux/man-pages/man2/clone.2.html">clone(2)</a></li>
+							<li>By passing file descriptor and <a href="https://man7.org/linux/man-pages/man2/setns.2.html">setns(2)</a></li>
+						</ul>
+					</section>
+					<section>
+						<h3>Joining namespace of another process by <a href="https://man7.org/linux/man-pages/man5/proc.5.html">/proc/{pid}/ns/*</a></h3>
+						<pre><code class="language-go" data-trim>
+							fd := syscall.Open("/proc/1234/ns/uts", syscall.O_RDONLY);
+							
+							err := unix.Setns(fd, syscall.CLONE_NEWUTS);
+						</code></pre>
+						<b>Note:</b> Can only set a single namespace per <code>netns(2)</code> invocation.
+					</section>
+					<section>
+						<h3>Joining namespace of another process by <a href="https://man7.org/linux/man-pages/man2/pidfd_open.2.html">pidfd_open(2)</a></h3>
+						<pre><code class="language-c" data-trim>
+							pid_t pid = 1234;
+							int fd = pidfd_open(pid, 0);
+							
+							setns(fd, CLONE_NEWUTS | CLONE_NEWNET);
+						</code></pre>
+						<b>Note:</b> Can only set a multiple namespaces per <code>netns(2)</code> invocation.
+					</section>
+					<section>
+						<h3>Persisting namespaces</h3>
+						<pre><code class="language-go" data-trim>
+							err := syscall.Mount("/proc/self/ns/uts",
+							                     "/home/acs/my_uts_namespace", "", syscall.MS_BIND, nil);
+						</code></pre>
+						<h6>In other processs</h6>
+						<pre><code data-trim>
+							fd := syscall.Open("/home/acs/my_uts_namespace", syscall.O_RDONLY);
+							
+							err := unix.Setns(fd, syscall.CLONE_NEWUTS);
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Back to Gont...</h2>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>First some definitions</h2>
+					</section>
+					<section>
+						<dl>
+							<dt>network</dt>
+							<dd>A set of <em>nodes</em> and <em>links</em> between them</dd>
+						</dl>
+
+					</section>
+					<section>
+						<dl>
+							<dt>node</dt>
+							<dd>A network namespace which represents any device in the <em>network</em></dd>
+						</dl>
+					</section>
+
+					<section>
+						<dl>
+							<dt>link</dt>
+							<dd>A pair of <code>veth</code> network interfaces which are associated to separate <em>nodes</em></dd>
+						</dl>
+					</section>
+
+					<section>
+						<dl>
+							<dt>port</dt>
+							<dd>Represents one side of a <em>link</em> (layer 2)</dd>
+						</dl>
+					</section>
+
+					<section>
+						<dl>
+							<dt>interface</dt>
+							<dd>a <em>port</em> with assigned one or more assigned IP addresses (layer 3)</dd>
+						</dl>
+					</section>
+
+					<section>
+						<dl>
+							<dt>switch</dt>
+							<dd>A <em>node</em> containing a Linux layer 2 bridge and attached <em>ports</em></dd>
+						</dl>
+					</section>
+
+					<section>
+						<dl>
+							<dt>host</dt>
+							<dd>A <em>node</em> with several configured <em>interfaces</em></dd>
+						</dl>
+					</section>
+
+					<section>
+						<dl>
+							<dt>router</dt>
+							<dd>A <em>host</em> with IP forwarding enabled</dd>
+						</dl>
+					</section>
+
+					<section>
+						<dl>
+							<dt>nat</dt>
+							<dd>A special type of <em>router</em> which implements network address translation between a set of south- and north-bound <em>interfaces</em></dd>
+						</dl>
+					</section>
+
+					<section>
+						<h3>Relationships</h3>
+						<img src="architecture.svg" />
+					</section>
+
+					<section>
+						<h3>Gont and Namespaces</h3>
+						<ul>
+							<li>for each <em>node</em>:
+								<ul>
+									<li>a separate network namespace</em></li>
+									<li>a separate uts namespace
+										<ul>
+											<li>for a unique hostname within each <em>node</em></li>
+										</ul>
+									</li>
+									
+								</ul>
+							</li>
+							<li>for each <em>network</em>:
+								<ul>
+									<li>a separate mount namespace</li>
+										<ul>
+											<li>for a unique <code>/etc/hosts</code> files between <em>networks</em></li>
+										</ul>
+									</ul>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Examples: show my some code!</h2>
+					</section>
+					<section>
+						<h3>Two directly connected hosts</h3>
+						<pre><code class="language-go" data-trim>
+							n, _ := g.NewNetwork("mynet")
+
+							h1, _ := n.AddHost("h1")
+							h2, _ := n.AddHost("h2")
+
+							n.AddLink(
+								o.Interface("eth0", h1, o.Address(10, 0, 0, 1, 24)),
+								o.Interface("eth0", h2, o.Address(10, 0, 0, 2, 24)),
+							)
+
+							h1.Ping(h2)
+						</code></pre>
+					</section>
+
+					<section>
+						<h3>Running things inside a node</h3>
+						<pre><code class="language-go" data-trim>
+							// Run a simple process synchronously
+							h1.Run("ping", "h2")
+
+							// And asynchronously
+							_, _, e, _ := h1.Start("ping", "h2")
+							
+							time.Sleep(5 * time.Second)
+
+							e.Process.Kill()
+							e.Wait()
+
+							// Call a function inside a network namespace
+							h1.RunFunc(func() {
+								r := http.Get("http://h2:8080")
+								io.Copy(os.Stdout, r.Body)
+							})
+						</code></pre>
+					</section>
+
+					<section>
+						<h3>Lets add a switch</h3>
+						<pre><code class="language-go" data-trim>
+							sw, _ := n.AddSwitch("sw")
+
+							h1, _ := n.AddHost("h1", o.Interface("eth0", sw,
+							                    o.Address(10, 0, 0, 1, 24)))
+							h2, _ := n.AddHost("h2", o.Interface("eth0", sw,
+							                    o.Address(10, 0, 0, 2, 24)))
+
+							h1.Ping(h2)
+						</code></pre>
+					</section>
+
+					<section>
+						<h3>How about a router?</h3>
+						<pre><code class="language-go" data-trim>
+							sw1, _ := n.AddSwitch("sw1")
+							sw2, _ := n.AddSwitch("sw2")
+
+							h1, _ := n.AddHost("h1", o.Interface("eth0", sw1,
+							                    o.Address(10, 0, 0, 2, 24)))
+							h2, _ := n.AddHost("h2", o.Interface("eth0", sw2,
+							                    o.Address(10, 0, 1, 2, 24)))
+
+							n.AddRouter("r1",
+								o.Interface("eth0", sw, o.Address(10, 0, 0, 1, 24)),
+								o.Interface("eth1", sw, o.Address(10, 0, 1, 1, 24))
+							)
+
+							h1.Ping(h2)
+						</code></pre>
+					</section>
+
+					<section>
+						<h3>Lets do some evil NATing</h3>
+						<pre><code class="language-go" data-trim>
+							sw1, _ := n.AddSwitch("sw1")
+							sw2, _ := n.AddSwitch("sw2")
+
+							h1, _ := n.AddHost("h1", o.Interface("eth0", sw1,
+							                    o.Address(10, 0, 0, 2, 24)))
+							h2, _ := n.AddHost("h2", o.Interface("eth0", sw2,
+							                    o.Address(10, 0, 1, 2, 24)))
+
+							n.AddNAT("n1",
+								o.Interface("eth0", sw, o.SouthBound,
+								             o.Address(10, 0, 0, 1, 24)),
+								o.Interface("eth1", sw, o.NorthBound,
+								             o.Address(10, 0, 1, 1, 24))
+							)
+
+							h1.Ping(h2)
+						</code></pre>
+					</section>
+
+					<section>
+						<h3>How about a whole chain of routers?</h3>
+						<pre><code class="language-go" data-trim>
+							var firstSwitch *g.Switch = n.AddSwitch("sw0")
+							var lastSwitch  *g.Switch = nil
+
+							for i := 1; i < 100; i++ {
+								swName := fmt.Printf("sw%d", i)
+								rtrName := fmt.Printf("r%d", i)
+
+								newSwitch, _ := n.AddSwitch(swName)
+
+								n.AddRouter(rtrName,
+									o.Interface("eth0", lastSwitch,
+									             o.Address(10, 0, 0, 1, 24)),
+									o.Interface("eth1", newSwitch,
+									             o.Address(10, 0, 1, 1, 24))
+								)
+
+								lastSwitch = newSwitch
+							}
+
+							h1, _ := n.AddHost("h1", o.Interface("eth0", firstSwitch,
+							                    o.Address(10, 0, 0, 2, 24)))
+							h2, _ := n.AddHost("h2", o.Interface("eth0", lastSwitch, 
+							                    o.Address(10, 0, 1, 2, 24)))
+							
+							h1.Ping(h2)
+						</code></pre>
+					</section>
+
+					<section>
+						<h3>A topology factory (WIP)</h3>
+						<pre><code class="language-go" data-trim>
+							createHost := func(pos int) (*g.Host. error) {
+								return n.AddHost(fmt.Sprintf("h%d", pos))
+							}
+
+							linkHosts := func(a, b *g.Node) error {
+								_, err := n.AddRouter(fmt.Sprintf("r%d", pos),
+									o.Interface("eth0", a, o.AddressIPv4(10, 0, 0, a.Position, 24),
+									o.Interface("eth1", b, o.AddressIPv4(10, 0, 0, b.Position, 24)
+								)
+								return err
+							}
+
+							topo.Linear(n, 100, createHost, linkHosts)
+
+							n.Nodes["h0"].Traceroute(n.Nodes["h99"])
+						</code></pre>							
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>CLI utility</h2>
+					</section>
+					<section>
+						<h3>CLI Example</h3>
+						<p>Make network persistent</p>
+						<pre><code class="language-go" data-trim>
+							n, _ := g.NewNetwork("mynet", o.Persistent(true))
+
+							/* ... */
+						</code></pre>
+
+						<p>Introspect network after creation with <code>gontc</code></p>
+						<pre><code class="language-bash" data-trim>
+							$ gontc list
+							mynet
+
+							$ gontc list mynet
+							mynet/h1
+							mynet/h2
+
+							$ gontc exec mynet/h1 hostname
+							h1.mynet.gont
+
+							$ gontc shell mynet/h1
+							$ mynet/h1: ip address show
+						</code></pre>
+					</section>	
+					<section>
+						<h3>CLI Usage</h3>
+						<pre><code class="language-text" data-trim style="font-size: 12pt; line-height: 1em;">
+							Usage: gontc [flags] &lt;command&gt;
+
+								Supported &lt;commands&gt; are:
+							   
+								  identify                                   return the network and node name if gontc
+								                                             is executed within a network namespace
+								  shell [&lt;network&gt;/]&lt;node&gt;       get an interactive shell inside &lt;node&gt;
+								  exec [&lt;network&gt;/]&lt;node&gt; &lt;command&gt; [args]   executes a &lt;command&gt; in the
+								                                             namespace of &lt;node&gt; with optional [args]
+								  list [&lt;network&gt;]                           list all active Gont networks or nodes
+								                                             of a given network
+								  clean [&lt;network&gt;]                          removes the all or just the
+								                                             specified Gont network
+								  help                                       show this usage information
+								  version                                    shows the version of Gont
+							   
+							   Example:
+							   
+								  gontc exec zorn/h1 ping h2
+							   
+							   Gont - The Go network tester
+								  Author Steffen Vogel &lt;post@steffenvogel&gt;
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>How do I use it?</h2>
+					</section>
+					<section>
+						<h3>Gont ...</h3>
+						<ul>
+							<li>can be used in Go unit-tests
+								<ul>
+									<li>on Github-powered CI runners</li>
+								</ul>
+							</li>
+							<li>is licensed under Apache-2.0</li>
+							<li>is available at <a href="https://github.com/stv0g/gont">github.com/stv0g/gont</a></li>
+							<li>documented at <a href="https://pkg.go.dev/github.com/stv0g/gont">pkg.go.dev/github.com/stv0g/gont</a></li>
+						</ul>
+					</section>
+					<section>
+						<h3>Requirements</h3>
+						<ul>
+							<li>Go 1.17</li>
+							<li>A moderate recent Linux kernel (>= 4.9)
+								<ul>
+									<li>mnt and net namespace support</li>
+								</ul>
+							</li>
+							<li>root access / <code>NET_ADMIN</code> caps</li>
+							<li>some userspace tools*
+								<ul>
+									<li>iproute2, iptables, ipsets, ping, traceroute</li>
+								</ul>
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Roadmap</h3>
+						<ul>
+							<li>Remove requirement of external userspace tools</li>
+							<li>Add support for link qdiscs: netem and tbf</li>
+							<li>Add support for attaching to existing namespaces &amp; containers</li>
+							<li>More topology factories</li>
+							<li>Better IPv6 support</li>
+							<li>Design a nice logo</li>
+							<li>A Graphviz output for topology visalization</li>
+							<li>Automatic address assignment</li>
+							<li>Parser for network topologys from <a href="https://graphviz.org/doc/info/lang.html">Dot</a>, <a href="https://yaml.org/">YAML</a> or <a href="https://www.json.org/">JSON</a> description.</li>
+						</ul>
+					</section>
+					<section>
+						<h4>Dot example</h4>
+						<div class="container">
+							<div class="col">
+								<pre><code style="font-size: 90%" data-trim >
+									digraph D {
+										/* network options */
+										persistent = true
+
+										/* nodes */
+										h1 [type=host, exec="ping h2"]
+										h2 [type=host]
+										r1 [type=router]
+									  
+										/* links */
+										h1 -> r1 [address="10.0.0.1/24",
+										          mtu=9000]
+										h2 -> r1 [address="10.0.0.2/24",
+										          mtu=9000]
+									}
+								</code></pre>
+							</div>
+							<div class="col">
+								<img src="graphviz.svg" />
+							</div>
+						</div>						
+					</section>
+				</section>
+				<section>
+					<h3>Thanks for your attention</h3>
+					<p>Steffen Vogel</p>
+					<div style="font-size: 70%;">
+						<p>
+							<a href="https://github.com/stv0g/gont">@stv0g</a>,
+							<a href="mailto:stv0g@0l.de">stv0g@0l.de</a>
+						</p>
+					</div>
+					<div style="margin: 4em auto 0; width: 50%;">
+						<a href="https://www.acs.eonerc.rwth-aachen.de">
+							<img alt="EONERC Logo" src="https://fein-aachen.org/img/logos/eonerc.png" />
+						</a>
+					</div>
+					<div style="margin: 0 auto; width: 50%;">
+						<img alt="European Flag"
+							src="https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg"
+							style="float: left; margin: 0" />
+						<p style="font-size: 12pt;">
+							The development of Gont has been supported by the <a href="https://erigrid2.eu">ERIGrid 2.0</a> project of the H2020 Programme under <a href="https://cordis.europa.eu/project/id/870620">Grant Agreement No. 870620</a>.
+						</p>
+					</div>
+				</div>
+				</section>
+			</div>
+		</div>
+
+		<script src="plugin/highlight/highlight.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.2/reveal.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.1.2/plugin/highlight/highlight.min.js"></script>
+
+		<!-- Extra languages for highlight.js -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/languages/go.min.js" integrity="sha512-EWROca+bote+7Oaaar1F6y74iZj1r1F9rm/ly7o+/FwJopbBaWtsFDmaKoZDd3QiGU2pGacBirHJNivmGLYrow==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				// plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+				plugins: [ RevealHighlight ]
+			});
+		</script>
+	</body>
+</html>
