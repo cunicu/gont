@@ -23,12 +23,13 @@ func usage() {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, " Supported <commands> are:")
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, "   identify                                return the network and node name if gontc is executed within a network namespace")
-	fmt.Fprintln(w, "   exec <network/node> <command> [args]    executes a <command> in the namespace of <host> with optional [args]")
-	fmt.Fprintln(w, "   list [network]                          list all active Gont networks or nodes of a given network")
-	fmt.Fprintln(w, "   clean [network]                         removes the all or just the specified Gont network")
-	fmt.Fprintln(w, "   help                                    show this usage information")
-	fmt.Fprintln(w, "   version                                 shows the version of Gont")
+	fmt.Fprintln(w, "   identify                                     return the network and node name if gontc is executed within a network namespace")
+	fmt.Fprintln(w, "   shell [<network>]/<node>                     get an interactive shell inside <node>")
+	fmt.Fprintln(w, "   exec  [<network>]/<node> <command> [args]    executes a <command> in the namespace of <node> with optional [args]")
+	fmt.Fprintln(w, "   list  [<network>]                            list all active Gont networks or nodes of a given network")
+	fmt.Fprintln(w, "   clean [<network>]                            removes the all or just the specified Gont network")
+	fmt.Fprintln(w, "   help                                         show this usage information")
+	fmt.Fprintln(w, "   version                                      shows the version of Gont")
 	// fmt.Fprintln(w)
 	// fmt.Fprintln(w, " Supported [flags] are:")
 	// flag.PrintDefaults()
@@ -65,22 +66,25 @@ func main() {
 	subcmd := args[0]
 
 	switch subcmd {
-	case "exec":
-		c := strings.SplitN(args[1], "/", 2)
-		if len(c) == 1 { // no network in name
-			if networks := g.GetNetworkNames(); len(networks) > 0 {
-				network = networks[0]
-			} else {
-				err = errors.New("no Gont network")
+	case "shell":
+		network, node, err = getNetworkNode(args)
+		if err == nil {
+			shell := os.Getenv("SHELL")
+			if shell == "" {
+				shell = "/bin/bash"
 			}
 
-			node = c[0]
-		} else {
-			network = c[0]
-			node = c[1]
+			ps1 := fmt.Sprintf("%s/%s: ", network, node)
+			os.Setenv("PS1", ps1)
+
+			cmd := []string{shell, "--norc"}
+			err = execCommand(network, node, cmd)
 		}
+
+	case "exec":
+		network, node, err = getNetworkNode(args)
 		if err == nil {
-			err = exec(network, node, args[2:])
+			err = execCommand(network, node, args[2:])
 		}
 
 	case "clean":
@@ -126,7 +130,7 @@ func main() {
 	}
 }
 
-func exec(network, node string, args []string) error {
+func execCommand(network, node string, args []string) error {
 	if len(flag.Args()) <= 1 {
 		return fmt.Errorf("not enough arguments")
 	}
@@ -143,4 +147,24 @@ func exec(network, node string, args []string) error {
 	}
 
 	return g.Exec(network, node, args)
+}
+
+func getNetworkNode(args []string) (string, string, error) {
+	var node, network string
+
+	c := strings.SplitN(args[1], "/", 2)
+	if len(c) == 1 { // no network in name
+		if networks := g.GetNetworkNames(); len(networks) > 0 {
+			network = networks[0]
+		} else {
+			return "", "", errors.New("no Gont network")
+		}
+
+		node = c[0]
+	} else {
+		network = c[0]
+		node = c[1]
+	}
+
+	return network, node, nil
 }
