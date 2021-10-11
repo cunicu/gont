@@ -51,11 +51,11 @@ func TestRunSimple(t *testing.T) {
 	}
 }
 
-func TestRunAsync(t *testing.T) {
+func TestStart(t *testing.T) {
 	n, n1 := prepare(t)
 	defer n.Close()
 
-	stdout, _, cmd, err := n1.RunAsync("ip", "netns", "identify")
+	stdout, _, cmd, err := n1.Start("ip", "netns", "identify")
 	if err != nil {
 		t.Errorf("Failed to run identify: %s", err)
 	}

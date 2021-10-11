@@ -122,14 +122,14 @@ func (n *BaseNode) GoRun(script string, arg ...string) ([]byte, *exec.Cmd, error
 	return n.Run(tmp, arg...)
 }
 
-func (n *BaseNode) GoRunAsync(script string, arg ...string) (io.Reader, io.Reader, *exec.Cmd, error) {
+func (n *BaseNode) GoStart(script string, arg ...string) (io.Reader, io.Reader, *exec.Cmd, error) {
 	tmp := filepath.Join(n.Network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
 	_, _, err := n.Network.HostNode.Run("go", "build", "-o", tmp, script)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	return n.RunAsync(tmp, arg...)
+	return n.Start(tmp, arg...)
 }
 
 func (n *BaseNode) WriteProcFS(path, value string) error {
@@ -199,7 +199,7 @@ func (n *BaseNode) Command(name string, arg ...string) *exec.Cmd {
 }
 
 func (n *BaseNode) Run(cmd string, arg ...string) ([]byte, *exec.Cmd, error) {
-	stdout, stderr, c, err := n.RunAsync(cmd, arg...)
+	stdout, stderr, c, err := n.Start(cmd, arg...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -234,7 +234,7 @@ func (n *BaseNode) Run(cmd string, arg ...string) ([]byte, *exec.Cmd, error) {
 	return buf, c, err
 }
 
-func (n *BaseNode) RunAsync(cmd string, arg ...string) (io.Reader, io.Reader, *exec.Cmd, error) {
+func (n *BaseNode) Start(cmd string, arg ...string) (io.Reader, io.Reader, *exec.Cmd, error) {
 	var err error
 	var stdout, stderr io.Reader
 
