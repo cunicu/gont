@@ -11,6 +11,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+const (
+	gontNetworkSuffix = ".gont"
+)
+
 func init() {
 	unshare := os.Getenv("GONT_UNSHARE")
 	node := os.Getenv("GONT_NODE")
@@ -34,7 +38,7 @@ func Exec(network, node string, args []string) error {
 		panic(err)
 	}
 
-	hostname := fmt.Sprintf("%s.%s", node, network)
+	hostname := fmt.Sprintf("%s.%s%s", node, network, gontNetworkSuffix)
 	if err := syscall.Sethostname([]byte(hostname)); err != nil {
 		panic(err)
 	}
