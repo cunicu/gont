@@ -7,11 +7,61 @@ import (
 	o "github.com/stv0g/gont/pkg/options"
 )
 
-// TestPing performs and end-to-end ping test
+// TestPingDualStack performs and end-to-end ping test
 // between two hosts on a switched topology
+// using both IPv4 and IPv6 addresses
 //
 //  h1 <-> sw <-> h2
-func TestPing(t *testing.T) {
+func TestPingDualStack(t *testing.T) {
+	var (
+		err    error
+		n      *g.Network
+		sw     *g.Switch
+		h1, h2 *g.Host
+	)
+
+	if n, err = g.NewNetwork(nname, opts...); err != nil {
+		t.Errorf("Failed to create network: %s", err)
+		t.FailNow()
+	}
+	defer n.Close()
+
+	if sw, err = n.AddSwitch("sw"); err != nil {
+		t.Errorf("Failed to create switch: %s", err)
+		t.FailNow()
+	}
+
+	if h1, err = n.AddHost("h1",
+		o.Interface("veth0", sw,
+			o.AddressIPv4(10, 0, 0, 1, 24),
+			o.AddressIP("fc::1/64")),
+	); err != nil {
+		t.Errorf("Failed to create host: %s", err)
+		t.FailNow()
+	}
+
+	if h2, err = n.AddHost("h2",
+		o.Interface("veth0", sw,
+			o.AddressIPv4(10, 0, 0, 2, 24),
+			o.AddressIP("fc::2/64")),
+	); err != nil {
+		t.Errorf("Failed to create host: %s", err)
+		t.FailNow()
+	}
+
+	for _, af := range []string{"-4", "-6"} {
+		if err := h1.Ping(h2, af); err != nil {
+			t.Error("Failed to test connectivity")
+		}
+	}
+}
+
+// TestPingIPv4 performs and end-to-end ping test
+// between two hosts on a switched topology
+// using IPv4 addressing
+//
+//  h1 <-> sw <-> h2
+func TestPingIPv4(t *testing.T) {
 	var (
 		err    error
 		n      *g.Network
@@ -47,7 +97,52 @@ func TestPing(t *testing.T) {
 	}
 
 	if err := g.TestConnectivity(h1, h2); err != nil {
-		t.Errorf("Failed to test connectivity")
+		t.Error("Failed to test connectivity between hosts")
+	}
+}
+
+// TestPingIPv6 performs and end-to-end ping test
+// between two hosts on a switched topology
+// using IPv6 addressing
+//
+//  h1 <-> sw <-> h2
+func TestPingIPv6(t *testing.T) {
+	var (
+		err    error
+		n      *g.Network
+		sw     *g.Switch
+		h1, h2 *g.Host
+	)
+
+	if n, err = g.NewNetwork(nname, opts...); err != nil {
+		t.Errorf("Failed to create network: %s", err)
+		t.FailNow()
+	}
+	defer n.Close()
+
+	if sw, err = n.AddSwitch("sw"); err != nil {
+		t.Errorf("Failed to create switch: %s", err)
+		t.FailNow()
+	}
+
+	if h1, err = n.AddHost("h1",
+		o.Interface("veth0", sw,
+			o.AddressIP("fc::1/64")),
+	); err != nil {
+		t.Errorf("Failed to create host: %s", err)
+		t.FailNow()
+	}
+
+	if h2, err = n.AddHost("h2",
+		o.Interface("veth0", sw,
+			o.AddressIP("fc::2/64")),
+	); err != nil {
+		t.Errorf("Failed to create host: %s", err)
+		t.FailNow()
+	}
+
+	if err := g.TestConnectivity(h1, h2); err != nil {
+		t.Error("Failed to test connectivity between hosts")
 	}
 }
 

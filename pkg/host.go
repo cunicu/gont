@@ -3,6 +3,7 @@ package gont
 import (
 	"fmt"
 	"net"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -105,6 +106,15 @@ func (h *Host) AddInterface(i Interface) error {
 }
 
 func (h *Host) ConfigureInterface(i Interface) error {
+	// Disable duplicate address detection (DAD) before adding addresses
+	// so we dont end up with tentative addresses and slow test executions
+	if !i.EnableDAD {
+		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
+		if err := h.WriteProcFS(fn, "0"); err != nil {
+			return err
+		}
+	}
+
 	for _, addr := range i.Addresses {
 		if err := h.LinkAddAddr(i.Name, addr); err != nil {
 			return err
@@ -116,7 +126,7 @@ func (h *Host) ConfigureInterface(i Interface) error {
 		return err
 	}
 
-	h.Interfaces = append(h.Interfaces, i)
+	h.Interfaces = append(h.Interfaces, i) // TODO: arent the interface already in there for some cases?
 
 	if err := h.Network.UpdateHostsFile(); err != nil {
 		return err

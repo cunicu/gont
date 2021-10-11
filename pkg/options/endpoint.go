@@ -24,6 +24,15 @@ func AddressIPv4(a, b, c, d byte, m int) Address {
 	}
 }
 
+func AddressIP(str string) Address {
+	ip, n, _ := net.ParseCIDR(str)
+
+	return Address{
+		IP:   ip,
+		Mask: n.Mask,
+	}
+}
+
 func Port(name string, opts ...g.Option) g.Port {
 	p := g.Port{
 		Name: name,

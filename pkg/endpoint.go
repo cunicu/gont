@@ -40,6 +40,8 @@ type Port struct {
 type Interface struct {
 	Port
 	Addresses []net.IPNet
+
+	EnableDAD bool
 }
 
 // Getter

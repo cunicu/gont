@@ -28,7 +28,7 @@ func GatewayIPv4(a, b, c, d byte) gateway {
 	)
 }
 
-func Gateway(str string) gateway {
+func GatewayIP(str string) gateway {
 	return gateway(
 		net.ParseIP(str),
 	)

@@ -83,9 +83,12 @@ func (n *NAT) setup() error {
 
 	// Setup ipset of all south-bound networks
 	// TODO: use netlink interface for configuring ipsets
-	if out, _, err := n.Run("ipset", "create", sbSet, "hash:net"); err != nil {
-		if !bytes.Contains(out, []byte("already exists")) {
-			return err
+	for _, family := range []string{"inet", "inet6"} {
+		sbSetName := fmt.Sprintf("%s-%s", sbSet, family)
+		if out, _, err := n.Run("ipset", "create", sbSetName, "hash:net", "family", family); err != nil {
+			if !bytes.Contains(out, []byte("already exists")) {
+				return err
+			}
 		}
 	}
 
@@ -94,17 +97,26 @@ func (n *NAT) setup() error {
 	}
 
 	// Setup NAT rules in iptables
-	if _, _, err = n.Run("iptables", "--insert", "FORWARD", "-m", "devgroup", "--src-group", sbGroup, "--match", "set", "--match-set", sbSet, "dst", "--jump", "DROP"); err != nil {
-		return err
-	}
-	if _, _, err = n.Run("iptables", "--append", "FORWARD", "-m", "devgroup", "--src-group", sbGroup, "--match", "set", "--match-set", sbSet, "src", "--jump", "ACCEPT"); err != nil {
-		return err
-	}
-	if _, _, err = n.Run("iptables", "--append", "FORWARD", "-m", "devgroup", "--dst-group", sbGroup, "--match", "set", "--match-set", sbSet, "dst", "--jump", "ACCEPT"); err != nil {
-		return err
-	}
-	if _, _, err = n.Run("iptables", "--table", "nat", "--append", "POSTROUTING", "--match", "set", "--match-set", sbSet, "src", "--match", "set", "!", "--match-set", sbSet, "dst", "--jump", "MASQUERADE"); err != nil {
-		return err
+
+	for _, family := range []string{"inet", "inet6"} {
+		sbSetName := fmt.Sprintf("%s-%s", sbSet, family)
+		ipt := "iptables"
+		if family == "inet6" {
+			ipt = "ip6tables"
+		}
+
+		if _, _, err = n.Run(ipt, "--insert", "FORWARD", "-m", "devgroup", "--src-group", sbGroup, "--match", "set", "--match-set", sbSetName, "dst", "--jump", "DROP"); err != nil {
+			return err
+		}
+		if _, _, err = n.Run(ipt, "--append", "FORWARD", "-m", "devgroup", "--src-group", sbGroup, "--match", "set", "--match-set", sbSetName, "src", "--jump", "ACCEPT"); err != nil {
+			return err
+		}
+		if _, _, err = n.Run(ipt, "--append", "FORWARD", "-m", "devgroup", "--dst-group", sbGroup, "--match", "set", "--match-set", sbSetName, "dst", "--jump", "ACCEPT"); err != nil {
+			return err
+		}
+		if _, _, err = n.Run(ipt, "--table", "nat", "--append", "POSTROUTING", "--match", "set", "--match-set", sbSetName, "src", "--match", "set", "!", "--match-set", sbSetName, "dst", "--jump", "MASQUERADE"); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -113,9 +125,15 @@ func (n *NAT) setup() error {
 func (n *NAT) updateIPSetInterface(i Interface) error {
 	if i.Group == NATSouthBound {
 		for _, a := range i.Addresses {
+			family := "inet"
+			if a.IP.To4() == nil {
+				family = "inet6"
+			}
+
+			sbSetName := fmt.Sprintf("%s-%s", sbSet, family)
 
 			// TODO: use netlink interface for configuring ipsets
-			if out, _, err := n.Run("ipset", "add", sbSet, a.String()); err != nil {
+			if out, _, err := n.Run("ipset", "add", sbSetName, a.String()); err != nil {
 				if !bytes.Contains(out, []byte("already exists")) {
 					return err
 				}
