@@ -1,64 +1,137 @@
 package gont
 
 import (
+	"fmt"
 	"net"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Host struct {
-	Node
+	BaseNode
 
-	Interface *Interface
+	// Options
+	GatewayIPv4 net.IP
+	GatewayIPv6 net.IP
+	Forwarding  bool
+
+	Interfaces []Interface
 }
 
-func (n *Network) AddHost(name string, gw net.IP, intf *Interface) (*Host, error) {
-	node, err := n.AddNode(name)
+// Getter
+func (h *Host) Base() *BaseNode {
+	return &h.BaseNode
+}
+
+// Options
+func (h *Host) Apply(i *Interface) {
+	i.Node = h
+}
+
+func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
+	node, err := n.AddNode(name, opts...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create node: %s", err)
 	}
 
 	host := &Host{
-		Node:      *node,
-		Interface: intf,
+		BaseNode:   *node,
+		Interfaces: []Interface{},
 	}
 
-	err = n.AddToHostsFile(intf.Address, name)
-	if err != nil {
-		return nil, err
+	n.Nodes[name] = host // TODO: quirk to get n.UpdateHostsFile() working
+
+	// Apply host options
+	for _, opt := range opts {
+		if hopt, ok := opt.(HostOption); ok {
+			hopt.Apply(host)
+		}
 	}
 
-	if _, _, err = host.Run("ip", "link", "add", "name", host.Interface.Name, "type", "veth", "peer", "br0-"+host.Name+"-"+intf.Name, "netns", intf.Switch.NS.String()); err != nil {
-		return nil, err
-	}
-	if _, _, err = intf.Switch.Run("ip", "link", "set", "dev", "br0-"+host.Name+"-"+host.Interface.Name, "master", "br0"); err != nil {
-		return nil, err
-	}
-	if _, _, err = intf.Switch.Run("ip", "link", "set", "dev", "br0-"+host.Name+"-"+host.Interface.Name, "up"); err != nil {
-		return nil, err
+	// Add interfaces
+	for _, intf := range host.Interfaces {
+		if err := host.AddInterface(intf); err != nil {
+			return nil, fmt.Errorf("failed to add interface: %w", err)
+		}
 	}
 
-	host.ConfigureInterface(intf)
-	host.ConfigureInterface(&loopbackDevice)
+	// Configure host
+	if host.GatewayIPv4 != nil {
+		host.AddRoute(net.IPNet{
+			IP:   net.IPv4zero,
+			Mask: net.CIDRMask(0, net.IPv4len*8),
+		}, host.GatewayIPv4)
+	}
 
-	if gw != nil {
-		if _, _, err = host.Run("ip", "route", "add", "default", "via", gw.String()); err != nil {
-			return nil, err
+	if host.GatewayIPv6 != nil {
+		host.AddRoute(net.IPNet{
+			IP:   net.IPv6zero,
+			Mask: net.CIDRMask(0, net.IPv6len*8),
+		}, host.GatewayIPv6)
+	}
+
+	if host.Forwarding {
+		if err := host.EnableForwarding(); err != nil {
+			return nil, fmt.Errorf("failed to enable forwarding: %w", err)
 		}
 	}
 
 	return host, nil
 }
 
-func (h *Host) Close(o *Host) error {
-	return h.Network.RemoveFromHostsFile(h.Interface.Address)
+func (h *Host) AddInterface(i Interface) error {
+	peerDev := fmt.Sprintf("veth-%s", h.name)
+
+	l := Interface{
+		Port: Port{
+			Name: i.Name,
+			Node: h,
+		},
+		Addresses: i.Addresses,
+	}
+
+	r := Port{
+		Name: peerDev,
+		Node: i.Node,
+	}
+
+	log.WithFields(log.Fields{
+		"intf":      l,
+		"intf_peer": r,
+		"addresses": l.Addresses,
+	}).Info("Adding interface")
+
+	return h.Network.AddLink(l, r)
+}
+
+func (h *Host) ConfigureInterface(i Interface) error {
+	for _, addr := range i.Addresses {
+		if err := h.LinkAddAddr(i.Name, addr); err != nil {
+			return err
+		}
+	}
+
+	// Bring interface up
+	if err := h.BaseNode.ConfigurePort(i.Port); err != nil {
+		return err
+	}
+
+	h.Interfaces = append(h.Interfaces, i)
+
+	if err := h.Network.UpdateHostsFile(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (h *Host) Ping(o *Host, opts ...string) error {
-	cmd := append([]string{"ping", o.Name}, opts...)
-	_, _, err := h.Run(cmd...)
+	arg := append([]string{"-c", "1", o.name}, opts...)
+	_, _, err := h.Run("ping", arg...)
 	return err
 }
 
 func (h *Host) Traceroute(o *Host) error {
-	_, _, err := h.Run("traceroute", o.Name)
+	_, _, err := h.Run("traceroute", o.name)
 	return err
 }

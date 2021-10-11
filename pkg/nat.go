@@ -1,59 +1,133 @@
 package gont
 
-import "net"
+import (
+	"bytes"
+	"fmt"
+)
+
+const (
+	sbSet = "sb"
+)
 
 type NAT struct {
 	Router
 }
 
-func (n *Network) AddNAT(name string, gw net.IP, nb, sb *Interface) (*NAT, error) {
-	r, err := n.AddRouter(name, gw, nb, sb)
+func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
+	rtr, err := n.AddRouter(name, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	nat := &NAT{
-		Router: *r,
+		Router: *rtr,
 	}
 
-	if _, _, err = nat.Run("iptables", "-I", "FORWARD", "-i", sb.Name, "-d", sb.Network().String(), "-j", "DROP"); err != nil {
+	// Apply NAT options
+	for _, opt := range opts {
+		if nopt, ok := opt.(NATOption); ok {
+			nopt.Apply(nat)
+		}
+	}
+
+	return nat, nat.setup()
+}
+
+func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
+	host := n.HostNode
+
+	if err := host.EnableForwarding(); err != nil {
 		return nil, err
 	}
-	if _, _, err = nat.Run("iptables", "-A", "FORWARD", "-i", sb.Name, "-s", sb.Network().String(), "-j", "ACCEPT"); err != nil {
+
+	rtr := &Router{
+		Host: *host,
+	}
+
+	nat := &NAT{
+		Router: *rtr,
+	}
+
+	// Apply NAT options
+	for _, opt := range opts {
+		if nopt, ok := opt.(NATOption); ok {
+			nopt.Apply(nat)
+		}
+	}
+
+	if err := nat.setup(); err != nil {
 		return nil, err
 	}
-	if _, _, err = nat.Run("iptables", "-A", "FORWARD", "-o", sb.Name, "-d", sb.Network().String(), "-j", "ACCEPT"); err != nil {
-		return nil, err
+
+	// Dummy host for getting interfaces
+	h := &Host{}
+	for _, opt := range opts {
+		if nopt, ok := opt.(HostOption); ok {
+			nopt.Apply(h)
+		}
 	}
-	if _, _, err = nat.Run("iptables", "-t", "nat", "-A", "POSTROUTING", "-s", sb.Network().String(), "!", "-d", sb.Network().String(), "-j", "MASQUERADE"); err != nil {
-		return nil, err
+
+	for _, i := range h.Interfaces {
+		nat.AddInterface(i)
 	}
 
 	return nat, nil
 }
 
-func (n *Network) AddHostNAT(name string, sb *Interface) (*NAT, error) {
-	r, err := n.AddRouter(name, nil, sb)
-	if err != nil {
-		return nil, err
+func (n *NAT) setup() error {
+	var err error
+
+	sbGroup := fmt.Sprintf("%d", NATSouthBound)
+
+	// Setup ipset of all south-bound networks
+	// TODO: use netlink interface for configuring ipsets
+	if out, _, err := n.Run("ipset", "create", sbSet, "hash:net"); err != nil {
+		if !bytes.Contains(out, []byte("already exists")) {
+			return err
+		}
 	}
 
-	nat := &NAT{
-		Router: *r,
+	for _, i := range n.Interfaces {
+		n.updateIPSetInterface(i)
 	}
 
-	if _, _, err = nat.Run("iptables", "-I", "FORWARD", "-i", sb.Name, "-d", sb.Network().String(), "-j", "DROP"); err != nil {
-		return nil, err
+	// Setup NAT rules in iptables
+	if _, _, err = n.Run("iptables", "--insert", "FORWARD", "-m", "devgroup", "--src-group", sbGroup, "--match", "set", "--match-set", sbSet, "dst", "--jump", "DROP"); err != nil {
+		return err
 	}
-	if _, _, err = nat.Run("iptables", "-A", "FORWARD", "-i", sb.Name, "-s", sb.Network().String(), "-j", "ACCEPT"); err != nil {
-		return nil, err
+	if _, _, err = n.Run("iptables", "--append", "FORWARD", "-m", "devgroup", "--src-group", sbGroup, "--match", "set", "--match-set", sbSet, "src", "--jump", "ACCEPT"); err != nil {
+		return err
 	}
-	if _, _, err = nat.Run("iptables", "-A", "FORWARD", "-o", sb.Name, "-d", sb.Network().String(), "-j", "ACCEPT"); err != nil {
-		return nil, err
+	if _, _, err = n.Run("iptables", "--append", "FORWARD", "-m", "devgroup", "--dst-group", sbGroup, "--match", "set", "--match-set", sbSet, "dst", "--jump", "ACCEPT"); err != nil {
+		return err
 	}
-	if _, _, err = nat.Run("iptables", "-t", "nat", "-A", "POSTROUTING", "-s", sb.Network().String(), "!", "-d", sb.Network().String(), "-j", "MASQUERADE"); err != nil {
-		return nil, err
+	if _, _, err = n.Run("iptables", "--table", "nat", "--append", "POSTROUTING", "--match", "set", "--match-set", sbSet, "src", "--match", "set", "!", "--match-set", sbSet, "dst", "--jump", "MASQUERADE"); err != nil {
+		return err
 	}
 
-	return nat, nil
+	return nil
+}
+
+func (n *NAT) updateIPSetInterface(i Interface) error {
+	if i.Group == NATSouthBound {
+		for _, a := range i.Addresses {
+
+			// TODO: use netlink interface for configuring ipsets
+			if out, _, err := n.Run("ipset", "add", sbSet, a.String()); err != nil {
+				if !bytes.Contains(out, []byte("already exists")) {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (n *NAT) AddInterface(i Interface) error {
+	if err := n.Host.AddInterface(i); err != nil {
+		return err
+	}
+
+	return n.updateIPSetInterface(i)
 }

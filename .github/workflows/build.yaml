@@ -8,7 +8,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: sudo apt-get install traceroute
+      run: sudo apt-get install traceroute make
 
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -27,5 +27,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
+    - name: Build
+      run: make
+      
     - name: Test
       run: sudo go test -v ./...
