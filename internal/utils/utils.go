@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 // FindFiles returns a slice of all files contained in the root directory
@@ -27,4 +28,12 @@ func FindFiles(root string) ([]string, error) {
 	}
 
 	return files, nil
+}
+
+func Touch(path string) error {
+	f, err := os.OpenFile(path, syscall.O_CREAT|syscall.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	return f.Close()
 }

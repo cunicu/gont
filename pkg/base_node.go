@@ -56,46 +56,38 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 	if node.ExistingNamespace != "" {
 		// Use an existing namespace created by "ip netns add"
 		if nsh, err := netns.GetFromName(node.ExistingNamespace); err != nil {
-			return nil, fmt.Errorf("failed to found existing namespace %s: %w", node.ExistingNamespace, err)
+			return nil, fmt.Errorf("failed to find existing network namespace %s: %w", node.ExistingNamespace, err)
 		} else {
 			node.Namespace = &Namespace{
 				Name:     node.ExistingNamespace,
 				NsHandle: nsh,
 			}
 		}
-
-		// TODO: may better do a bind mount here?
-		nsMount := filepath.Join(netnsDir, node.ExistingNamespace)
-		nsSymlink := filepath.Join(basePath, "ns", "net")
-		if err := os.Symlink(nsMount, nsSymlink); err != nil {
-			return nil, err
-		}
 	} else if node.ExistingDockerContainer != "" {
 		// Use an existing net namespace from a Docker container
 		if nsh, err := netns.GetFromDocker(node.ExistingDockerContainer); err != nil {
-			return nil, fmt.Errorf("failed to found existing docker container %s: %w", node.ExistingNamespace, err)
+			return nil, fmt.Errorf("failed to find existing docker container %s: %w", node.ExistingNamespace, err)
 		} else {
 			node.Namespace = &Namespace{
 				Name:     node.ExistingDockerContainer,
 				NsHandle: nsh,
 			}
 		}
-
-		// TODO: add symlink to /run/gont/<network>/nodes/<node>/ns/net
-
 	} else {
 		// Create a new network namespace
 		nsName := fmt.Sprintf("%s%s-%s", n.NSPrefix, n.Name, name)
 		if node.Namespace, err = NewNamespace(nsName); err != nil {
 			return nil, err
 		}
+	}
 
-		// TODO: may better do a bind mount here?
-		nsMount := filepath.Join(netnsDir, nsName)
-		nsSymlink := filepath.Join(basePath, "ns", "net")
-		if err := os.Symlink(nsMount, nsSymlink); err != nil {
-			return nil, err
-		}
+	src := fmt.Sprintf("/proc/self/fd/%d", int(node.NsHandle))
+	dst := filepath.Join(basePath, "ns", "net")
+	if err := utils.Touch(dst); err != nil {
+		return nil, err
+	}
+	if err := unix.Mount(src, dst, "", syscall.MS_BIND, ""); err != nil {
+		return nil, fmt.Errorf("failed to bind mount netns fd: %s", err)
 	}
 
 	n.Nodes[name] = node
@@ -136,6 +128,11 @@ func (n *BaseNode) ConfigurePort(p Port) error {
 
 func (n *BaseNode) Teardown() error {
 	if err := n.Namespace.Close(); err != nil {
+		return err
+	}
+
+	nsMount := filepath.Join(n.BasePath, "ns", "net")
+	if err := unix.Unmount(nsMount, 0); err != nil {
 		return err
 	}
 
@@ -183,7 +180,7 @@ func (n *BaseNode) EnableForwarding() error {
 	return nil
 }
 
-func (n *BaseNode) LinkAddAddr(name string, addr net.IPNet) error {
+func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 	return n.Namespace.RunFunc(func() error {
 		link, err := nl.LinkByName(name)
 		if err != nil {

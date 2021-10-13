@@ -116,8 +116,7 @@ func (h *Host) ConfigureInterface(i Interface) error {
 	}
 
 	for _, addr := range i.Addresses {
-		if err := h.LinkAddAddr(i.Name, addr); err != nil {
-			return err
+		if err := h.LinkAddAddress(i.Name, addr); err != nil {
 		}
 	}
 
