@@ -111,12 +111,13 @@ func (h *Host) ConfigureInterface(i Interface) error {
 	if !i.EnableDAD {
 		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
 		if err := h.WriteProcFS(fn, "0"); err != nil {
-			return err
+			return fmt.Errorf("failed to enabled IPv6 forwardning: %s", err)
 		}
 	}
 
 	for _, addr := range i.Addresses {
 		if err := h.LinkAddAddress(i.Name, addr); err != nil {
+			return fmt.Errorf("failed to add link address: %s", err)
 		}
 	}
 
@@ -128,7 +129,7 @@ func (h *Host) ConfigureInterface(i Interface) error {
 	h.Interfaces = append(h.Interfaces, i) // TODO: arent the interface already in there for some cases?
 
 	if err := h.Network.UpdateHostsFile(); err != nil {
-		return err
+		return fmt.Errorf("failed to update hosts file")
 	}
 
 	return nil
