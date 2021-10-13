@@ -1,8 +1,11 @@
 package gont
 
 import (
-	"bytes"
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
+	nl "github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -82,13 +85,22 @@ func (n *NAT) setup() error {
 	sbGroup := fmt.Sprintf("%d", NATSouthBound)
 
 	// Setup ipset of all south-bound networks
-	// TODO: use netlink interface for configuring ipsets
-	for _, family := range []string{"inet", "inet6"} {
-		sbSetName := fmt.Sprintf("%s-%s", sbSet, family)
-		if out, _, err := n.Run("ipset", "create", sbSetName, "hash:net", "family", family); err != nil {
-			if !bytes.Contains(out, []byte("already exists")) {
-				return err
-			}
+	for _, family := range []uint8{unix.AF_INET, unix.AF_INET6} {
+		sbSetName := sbSet
+		if family == unix.AF_INET {
+			sbSetName += "-inet"
+		} else {
+			sbSetName += "-inet6"
+		}
+
+		log.WithField("set", sbSetName).Info("Creating ipset")
+		if err := n.RunFunc(func() error {
+			return nl.IpsetCreate(sbSetName, "hash:net", nl.IpsetCreateOptions{
+				Replace: true,
+				Family:  family,
+			})
+		}); err != nil {
+			return err
 		}
 	}
 
@@ -125,18 +137,32 @@ func (n *NAT) setup() error {
 func (n *NAT) updateIPSetInterface(i Interface) error {
 	if i.Group == NATSouthBound {
 		for _, a := range i.Addresses {
-			family := "inet"
+			family := unix.AF_INET
 			if a.IP.To4() == nil {
-				family = "inet6"
+				family = unix.AF_INET6
 			}
 
-			sbSetName := fmt.Sprintf("%s-%s", sbSet, family)
+			sbSetName := sbSet
+			if family == unix.AF_INET {
+				sbSetName += "-inet"
+			} else {
+				sbSetName += "-inet6"
+			}
 
-			// TODO: use netlink interface for configuring ipsets
-			if out, _, err := n.Run("ipset", "add", sbSetName, a.String()); err != nil {
-				if !bytes.Contains(out, []byte("already exists")) {
-					return err
-				}
+			log.WithFields(log.Fields{
+				"set":  sbSetName,
+				"addr": a.String(),
+			}).Info("Adding address to ipset")
+
+			cidr, _ := a.Mask.Size()
+			if err := n.RunFunc(func() error {
+				return nl.IpsetAdd(sbSetName, &nl.IPSetEntry{
+					IP:      a.IP.Mask(a.Mask),
+					CIDR:    uint8(cidr),
+					Comment: fmt.Sprintf("gont:%s/%s", n.name, i.Name),
+				})
+			}); err != nil {
+				return err
 			}
 		}
 	}
