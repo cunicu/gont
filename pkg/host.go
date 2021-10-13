@@ -136,12 +136,13 @@ func (h *Host) ConfigureInterface(i Interface) error {
 }
 
 func (h *Host) Ping(o *Host, opts ...string) error {
-	arg := append([]string{"-c", "1", o.name}, opts...)
-	_, _, err := h.Run("ping", arg...)
+	args := append([]string{"-c", "1", o.name}, opts...)
+	_, _, err := h.Run("ping", args...)
 	return err
 }
 
-func (h *Host) Traceroute(o *Host) error {
-	_, _, err := h.Run("traceroute", o.name)
+func (h *Host) Traceroute(o *Host, opts ...string) error {
+	args := append([]string{o.name}, opts...)
+	_, _, err := h.Run("traceroute", args...)
 	return err
 }
