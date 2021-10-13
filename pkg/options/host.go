@@ -6,14 +6,14 @@ import (
 	g "github.com/stv0g/gont/pkg"
 )
 
-type forwarding bool
-type gateway net.IP
+type Forwarding bool
+type Gateway net.IP
 
-func (b forwarding) Apply(h *g.Host) {
+func (b Forwarding) Apply(h *g.Host) {
 	h.Forwarding = bool(b)
 }
 
-func (g gateway) Apply(h *g.Host) {
+func (g Gateway) Apply(h *g.Host) {
 	ip := net.IP(g)
 	if ipv4 := ip.To4(); ipv4 != nil {
 		h.GatewayIPv4 = ipv4
@@ -22,14 +22,14 @@ func (g gateway) Apply(h *g.Host) {
 	}
 }
 
-func GatewayIPv4(a, b, c, d byte) gateway {
-	return gateway(
+func GatewayIPv4(a, b, c, d byte) Gateway {
+	return Gateway(
 		net.IPv4(a, b, c, d),
 	)
 }
 
-func GatewayIP(str string) gateway {
-	return gateway(
+func GatewayIP(str string) Gateway {
+	return Gateway(
 		net.ParseIP(str),
 	)
 }

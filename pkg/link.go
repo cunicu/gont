@@ -8,10 +8,11 @@ import (
 )
 
 type Link struct {
-}
 
-type Netem *nl.Netem
-type Tbf *nl.Tbf
+	// Qdisc parameters
+	Netem *nl.Netem
+	Tbf   *nl.Tbf
+}
 
 func (n *Network) AddLink(l, r Endpoint, opts ...Option) error {
 	lPort := l.port()
