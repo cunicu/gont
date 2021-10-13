@@ -28,6 +28,8 @@ Have a look at our **[slide set](docs/index.html)** to get you started.
 - Ideal for golang unit tests
 - Can run in workflows powered by GitHub's runners
 - Lean code thanks to [functional options](https://sagikazarmark.hu/blog/functional-options-on-steroids/)
+- Full IPv6 support
+- Use of existing network namespaces as nodes
 
 ## Examples
 
@@ -49,14 +51,13 @@ Have a look at the unit tests for usage examples:
 
 - NAT
   - Use netlink socket instead of `iptables` tool for configuring NAT
-  - Use netlink socket instead of `ipset` tool for configuring NAT
 - Integrate go imlementations of `ping` and `traceroute` tools
 - More tests
-- Fix host NAT
+    - Especially for host NAT and multiple networks
 - Add support for netem and tbf qdiscs on Links
 - Add separate examples directory
 - Topology factories
-- Full IPv6 support
+- Add support for using existing Docker containers as nodes
 
 ## Architecture
 
