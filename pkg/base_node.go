@@ -219,11 +219,16 @@ func (n *BaseNode) Command(name string, arg ...string) *exec.Cmd {
 	c := exec.Command(name, arg...)
 
 	if !n.NsHandle.Equal(n.Network.HostNode.NsHandle) {
-		c.Path = "/proc/self/exe"
-		c.Env = append(os.Environ(),
-			"GONT_UNSHARE=exec",
-			"GONT_NODE="+n.name,
-			"GONT_NETWORK="+n.Network.Name)
+		if n.ExistingDockerContainer == "" {
+			c.Path = "/proc/self/exe"
+			c.Env = append(os.Environ(),
+				"GONT_UNSHARE=exec",
+				"GONT_NODE="+n.name,
+				"GONT_NETWORK="+n.Network.Name)
+		} else {
+			c.Path = "/usr/bin/docker"
+			c.Args = append([]string{"docker", "exec", n.ExistingDockerContainer, name}, arg...)
+		}
 	}
 
 	return c
