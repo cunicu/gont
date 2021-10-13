@@ -90,9 +90,9 @@ func main() {
 	case "clean":
 		if len(args) > 1 {
 			network := args[1]
-			err = g.CleanupNetwork(network)
+			err = g.TeardownNetwork(network)
 		} else {
-			err = g.CleanupAllNetworks()
+			err = g.TeardownAllNetworks()
 		}
 
 	case "list":

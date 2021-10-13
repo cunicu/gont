@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"github.com/vishvananda/netns"
+	"golang.org/x/sys/unix"
 )
 
 func GetNetworkNames() []string {
@@ -70,9 +71,9 @@ func GenerateNetworkName() string {
 	return fmt.Sprintf("%s%d", random, rand.Intn(128)+1)
 }
 
-func CleanupAllNetworks() error {
+func TeardownAllNetworks() error {
 	for _, name := range GetNetworkNames() {
-		if err := CleanupNetwork(name); err != nil {
+		if err := TeardownNetwork(name); err != nil {
 			return err
 		}
 	}
@@ -80,7 +81,7 @@ func CleanupAllNetworks() error {
 	return nil
 }
 
-func CleanupNetwork(name string) error {
+func TeardownNetwork(name string) error {
 	baseDir := filepath.Join(varDir, name)
 	nodesDir := filepath.Join(baseDir, "nodes")
 
@@ -96,6 +97,11 @@ func CleanupNetwork(name string) error {
 
 		nodeName := fi.Name()
 		netNsName := fmt.Sprintf("gont-%s-%s", name, nodeName)
+
+		nsMount := filepath.Join(nodesDir, nodeName, "ns", "net")
+		if err := unix.Unmount(nsMount, 0); err != nil {
+			return err
+		}
 
 		netns.DeleteNamed(netNsName)
 	}
