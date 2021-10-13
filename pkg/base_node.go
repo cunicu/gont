@@ -8,10 +8,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/stv0g/gont/internal/utils"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"golang.org/x/sys/unix"
 )
 
 type BaseNode struct {
