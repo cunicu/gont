@@ -61,9 +61,7 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		"intf": link.LinkAttrs.Name,
 	}).Infof("Adding new Linux bridge")
 
-	if err := sw.RunFunc(func() error {
-		return nl.LinkSetUp(link)
-	}); err != nil {
+	if err := sw.Handle.LinkSetUp(link); err != nil {
 		return nil, fmt.Errorf("failed to bring bridge up: %w", err)
 	}
 
@@ -73,24 +71,18 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 // ConfigurePort attaches an existing interface to a bridge port
 func (sw *Switch) ConfigurePort(p Port) error {
 	log.WithField("intf", p).Info("Connecting port to bridge master")
-	if err := sw.RunFunc(func() error {
-		br, err := nl.LinkByName(bridgeInterfaceName)
-		if err != nil {
-			return fmt.Errorf("failed to find bridge intf: %s", err)
-		}
+	br, err := sw.Handle.LinkByName(bridgeInterfaceName)
+	if err != nil {
+		return fmt.Errorf("failed to find bridge intf: %s", err)
+	}
 
-		l, err := nl.LinkByName(p.Name)
-		if err != nil {
-			return fmt.Errorf("failed to find new bridge port intf: %s", err)
-		}
+	l, err := sw.Handle.LinkByName(p.Name)
+	if err != nil {
+		return fmt.Errorf("failed to find new bridge port intf: %s", err)
+	}
 
-		// Attach port to bridge
-		if err := nl.LinkSetMaster(l, br); err != nil {
-			return err
-		}
-
-		return nil
-	}); err != nil {
+	// Attach port to bridge
+	if err := sw.Handle.LinkSetMaster(l, br); err != nil {
 		return err
 	}
 

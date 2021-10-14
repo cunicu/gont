@@ -31,12 +31,18 @@ func HostNode(n *Network) *Host {
 		return nil
 	}
 
+	baseHandle, err := netlink.NewHandle()
+	if err != nil {
+		return nil
+	}
+
 	return &Host{
 		BaseNode: BaseNode{
 			name: "host",
 			Namespace: &Namespace{
 				Name:     "base",
 				NsHandle: baseNs,
+				Handle:   baseHandle,
 			},
 			Network: n,
 		},

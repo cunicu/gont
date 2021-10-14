@@ -109,24 +109,26 @@ func (n *BaseNode) Name() string {
 func (n *BaseNode) ConfigurePort(p Port) error {
 	log.WithField("intf", n.name+"/"+p.Name).Info("Activating interface")
 
-	return n.Namespace.RunFunc(func() error {
-		link, err := nl.LinkByName(p.Name)
-		if err != nil {
+	link, err := n.Handle.LinkByName(p.Name)
+	if err != nil {
+		return err
+	}
+
+	if p.Group != Default {
+		log.WithFields(log.Fields{
+			"intf":  p,
+			"group": p.Group,
+		}).Info("Setting device group")
+		if err := n.Handle.LinkSetGroup(link, int(p.Group)); err != nil {
 			return err
 		}
+	}
 
-		if p.Group != Default {
-			log.WithFields(log.Fields{
-				"intf":  p,
-				"group": p.Group,
-			}).Info("Setting device group")
-			if err := nl.LinkSetGroup(link, int(p.Group)); err != nil {
-				return err
-			}
-		}
+	if err := n.Handle.LinkSetUp(link); err != nil {
+		return err
+	}
 
-		return nl.LinkSetUp(link)
-	})
+	return nil
 }
 
 func (n *BaseNode) Teardown() error {
@@ -184,34 +186,34 @@ func (n *BaseNode) EnableForwarding() error {
 }
 
 func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
-	return n.Namespace.RunFunc(func() error {
-		link, err := nl.LinkByName(name)
-		if err != nil {
-			return err
-		}
-
-		nlAddr := &nl.Addr{
-			IPNet: &addr,
-		}
-
-		log.WithField("intf", n.name+"/"+name).WithField("addr", addr.String()).Info("Adding new address to interface")
-		if err := nl.AddrAdd(link, nlAddr); err != nil {
-			return err
-		}
-
+	link, err := n.Handle.LinkByName(name)
+	if err != nil {
 		return err
-	})
+	}
+
+	nlAddr := &nl.Addr{
+		IPNet: &addr,
+	}
+
+	log.WithField("intf", n.name+"/"+name).WithField("addr", addr.String()).Info("Adding new address to interface")
+	if err := n.Handle.AddrAdd(link, nlAddr); err != nil {
+		return err
+	}
+
+	return err
 }
 
 func (n *BaseNode) AddRoute(dst net.IPNet, gw net.IP) error {
 	log.WithField("node", n.name).WithField("dst", dst.String()).WithField("gw", gw.String()).Info("Add route")
 
-	return n.Namespace.RunFunc(func() error {
-		return nl.RouteAdd(&nl.Route{
-			Dst: &dst,
-			Gw:  gw,
-		})
-	})
+	if err := n.Handle.RouteAdd(&nl.Route{
+		Dst: &dst,
+		Gw:  gw,
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (n *BaseNode) Command(name string, arg ...string) *exec.Cmd {

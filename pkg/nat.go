@@ -94,11 +94,9 @@ func (n *NAT) setup() error {
 		}
 
 		log.WithField("set", sbSetName).Info("Creating ipset")
-		if err := n.RunFunc(func() error {
-			return nl.IpsetCreate(sbSetName, "hash:net", nl.IpsetCreateOptions{
-				Replace: true,
-				Family:  family,
-			})
+		if err := n.Handle.IpsetCreate(sbSetName, "hash:net", nl.IpsetCreateOptions{
+			Replace: true,
+			Family:  family,
 		}); err != nil {
 			return err
 		}
@@ -155,12 +153,10 @@ func (n *NAT) updateIPSetInterface(i Interface) error {
 			}).Info("Adding address to ipset")
 
 			cidr, _ := a.Mask.Size()
-			if err := n.RunFunc(func() error {
-				return nl.IpsetAdd(sbSetName, &nl.IPSetEntry{
-					IP:      a.IP.Mask(a.Mask),
-					CIDR:    uint8(cidr),
-					Comment: fmt.Sprintf("gont:%s/%s", n.name, i.Name),
-				})
+			if err := nl.IpsetAdd(sbSetName, &nl.IPSetEntry{
+				IP:      a.IP.Mask(a.Mask),
+				CIDR:    uint8(cidr),
+				Comment: fmt.Sprintf("gont:%s/%s", n.name, i.Name),
 			}); err != nil {
 				return err
 			}
