@@ -7,13 +7,6 @@ import (
 	nl "github.com/vishvananda/netlink"
 )
 
-type Link struct {
-
-	// Qdisc parameters
-	Netem *nl.Netem
-	Tbf   *nl.Tbf
-}
-
 func (n *Network) AddLink(l, r Endpoint, opts ...Option) error {
 	lPort := l.port()
 	rPort := r.port()

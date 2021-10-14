@@ -19,6 +19,7 @@ type PortOption interface {
 	Option
 	Apply(p *Port)
 }
+
 type InterfaceOption interface {
 	Option
 	Apply(i *Interface)
@@ -32,11 +33,6 @@ type NATOption interface {
 type SwitchOption interface {
 	Option
 	Apply(sw *Switch)
-}
-
-type LinkOption interface {
-	Option
-	Apply(l *Link)
 }
 
 type NetworkOption interface {

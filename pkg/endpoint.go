@@ -4,6 +4,13 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+
+	nl "github.com/vishvananda/netlink"
+)
+
+const (
+	WithNetem = (1 << iota)
+	WithTbf   = (1 << iota)
 )
 
 var loopbackInterface Interface = Interface{
@@ -35,6 +42,12 @@ type Port struct {
 	Node Node
 
 	Group DeviceGroup
+
+	// Egress Qdisc parameters
+	Netem nl.NetemQdiscAttrs
+	Tbf   nl.Tbf
+
+	Flags int
 }
 
 type Interface struct {

@@ -124,6 +124,39 @@ func (n *BaseNode) ConfigurePort(p Port) error {
 		}
 	}
 
+	var pHandle uint32 = nl.HANDLE_ROOT
+	if p.Flags&WithNetem != 0 {
+		attr := nl.QdiscAttrs{
+			LinkIndex: link.Attrs().Index,
+			Handle:    nl.MakeHandle(1, 0),
+			Parent:    pHandle,
+		}
+
+		netem := nl.NewNetem(attr, p.Netem)
+
+		if err := n.Handle.QdiscAdd(netem); err != nil {
+			return err
+		}
+
+		pHandle = netem.Handle
+	}
+	if p.Flags&WithTbf != 0 {
+		p.Tbf.LinkIndex = link.Attrs().Index
+		p.Tbf.Limit = 0x7000
+		p.Tbf.Minburst = 1600
+		p.Tbf.Buffer = 300000
+		p.Tbf.Peakrate = 0x1000000
+		p.Tbf.QdiscAttrs = nl.QdiscAttrs{
+			LinkIndex: link.Attrs().Index,
+			Handle:    nl.MakeHandle(2, 0),
+			Parent:    pHandle,
+		}
+
+		if err := n.Handle.QdiscAdd(&p.Tbf); err != nil {
+			return err
+		}
+	}
+
 	if err := n.Handle.LinkSetUp(link); err != nil {
 		return err
 	}
