@@ -5,6 +5,7 @@ import (
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
+	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 
 	"golang.org/x/sys/unix"
@@ -14,32 +15,49 @@ type Callback func() error
 
 type Namespace struct {
 	netns.NsHandle
+	*nl.Handle
 
 	Name string
 }
 
 func NewNamespace(name string) (*Namespace, error) {
 	ns := &Namespace{
-		NsHandle: -1,
-		Name:     name,
+		Name: name,
 	}
 
 	log.WithField("ns", name).Info("Creating new namespace")
 
-	if err := ns.Ensure(); err != nil {
-		return nil, err
-	}
-
-	return ns, nil
+	return ns, ns.createNamespaceAndNetlinkHandles()
 }
 
-// Ensure ensures that the namespace exists in the kernel
-func (ns *Namespace) Ensure() error {
-	if ns.NsHandle < 0 {
-		return ns.RunFunc(func() error { return nil })
-	} else {
-		return nil
+func (ns *Namespace) createNamespaceAndNetlinkHandles() error {
+	var err error
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	// Save fd to current network namespace
+	curNetNs, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0777)
+	if err != nil {
+		return err
 	}
+
+	// Create new named namespace
+	if ns.NsHandle, err = netns.NewNamed(ns.Name); err != nil {
+		return err
+	}
+
+	// Create a netlink socket handle while we are in the namespace
+	if ns.Handle, err = nl.NewHandle(); err != nil {
+		return err
+	}
+
+	// Restore original netns namespace
+	if err := unix.Setns(curNetNs, syscall.CLONE_NEWNET); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ns *Namespace) Close() error {
@@ -55,33 +73,38 @@ func (ns *Namespace) Close() error {
 }
 
 func (n *Namespace) RunFunc(cb Callback) error {
+	exit, _ := n.Enter()
+	defer exit()
+
+	errCb := cb()
+
+	return errCb
+}
+
+func (ns *Namespace) Enter() (func(), error) {
 	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	// Save fd to current network namespace
 	curNetNs, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0777)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	if n.NsHandle == -1 {
-		// Lazy create new namespace
-		if n.NsHandle, err = netns.NewNamed(n.Name); err != nil {
+	// Switch to network namespace
+	if err := unix.Setns(int(ns.NsHandle), syscall.CLONE_NEWNET); err != nil {
+		return nil, err
+	}
+
+	log.WithField("ns", ns.Name).Debug("Entered namespace")
+
+	return func() {
+		// Restore original netns namespace
+		if err := unix.Setns(curNetNs, syscall.CLONE_NEWNET); err != nil {
 			panic(err)
 		}
-	} else {
-		// Switch to existing network namespace
-		if err := unix.Setns(int(n.NsHandle), syscall.CLONE_NEWNET); err != nil {
-			panic(err)
-		}
-	}
 
-	errCb := cb()
+		log.WithField("ns", ns.Name).Debug("Left namespace")
 
-	// Restore original netns namespace
-	if err := unix.Setns(curNetNs, syscall.CLONE_NEWNET); err != nil {
-		panic(err)
-	}
-
-	return errCb
+		runtime.UnlockOSThread()
+	}, nil
 }
