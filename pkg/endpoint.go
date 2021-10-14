@@ -8,7 +8,7 @@ import (
 
 var loopbackInterface Interface = Interface{
 	Port: Port{
-		Name: "lo",
+		Name: loopbackInterfaceName,
 	},
 	Addresses: []net.IPNet{
 		{

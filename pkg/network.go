@@ -202,6 +202,10 @@ func (n *Network) UpdateHostsFile() error {
 	for _, node := range n.Nodes {
 		if host, ok := node.(*Host); ok {
 			for _, i := range host.Interfaces {
+				if i.Name == loopbackInterfaceName {
+					continue
+				}
+
 				for _, a := range i.Addresses {
 					add(host.name, a.IP)
 					add(host.name+"-"+i.Name, a.IP)

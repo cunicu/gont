@@ -77,6 +77,10 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		}
 	}
 
+	if err := host.ConfigureInterface(loopbackInterface); err != nil {
+		return nil, fmt.Errorf("failed to configure loopback interface: %w", err)
+	}
+
 	return host, nil
 }
 
