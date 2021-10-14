@@ -115,7 +115,7 @@ func (h *Host) ConfigureInterface(i Interface) error {
 	if !i.EnableDAD {
 		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
 		if err := h.WriteProcFS(fn, "0"); err != nil {
-			return fmt.Errorf("failed to enabled IPv6 forwardning: %s", err)
+			return fmt.Errorf("failed to enabled IPv6 forwarding: %s", err)
 		}
 	}
 
