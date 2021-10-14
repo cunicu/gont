@@ -1,10 +1,10 @@
 package utils
 
 import (
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 )
 
 // FindFiles returns a slice of all files contained in the root directory
@@ -31,9 +31,19 @@ func FindFiles(root string) ([]string, error) {
 }
 
 func Touch(path string) error {
-	f, err := os.OpenFile(path, syscall.O_CREAT|syscall.O_RDWR, 0644)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL, 0444)
 	if err != nil {
 		return err
 	}
 	return f.Close()
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
