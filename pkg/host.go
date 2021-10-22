@@ -1,10 +1,13 @@
 package gont
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"path/filepath"
+	"time"
 
+	"github.com/go-ping/ping"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -100,10 +103,15 @@ func (h *Host) AddInterface(i Interface) error {
 		Node: i.Node,
 	}
 
+	var addrs []string
+	for _, a := range l.Addresses {
+		addrs = append(addrs, a.String())
+	}
+
 	log.WithFields(log.Fields{
 		"intf":      l,
 		"intf_peer": r,
-		"addresses": l.Addresses,
+		"addresses": addrs,
 	}).Info("Adding interface")
 
 	return h.Network.AddLink(l, r)
