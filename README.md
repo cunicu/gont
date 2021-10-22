@@ -29,6 +29,7 @@ Have a look at our **[slide set](docs/index.html)** to get you started.
 - Can run in workflows powered by GitHub's runners
 - Lean code thanks to [functional options](https://sagikazarmark.hu/blog/functional-options-on-steroids/)
 - Full IPv6 support
+- Per link network emulation and bandwidth limiting via for netem and tbf qdiscs
 - Use of existing network namespaces as nodes
 
 ## Examples
@@ -53,7 +54,6 @@ Have a look at the unit tests for usage examples:
 - Integrate go imlementations of `traceroute` tool
 - More tests
     - Especially for host NAT and multiple networks
-- Add support for netem and tbf qdiscs on Links
 - Add separate examples directory
 - Topology factories
 - Add support for using existing Docker containers as nodes
