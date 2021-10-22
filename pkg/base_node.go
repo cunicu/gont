@@ -84,6 +84,13 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
+	if node.Handle == nil {
+		node.Handle, err = nl.NewHandleAt(node.NsHandle)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	src := fmt.Sprintf("/proc/self/fd/%d", int(node.NsHandle))
 	dst := filepath.Join(basePath, "ns", "net")
 	if err := utils.Touch(dst); err != nil {
