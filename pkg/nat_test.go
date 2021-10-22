@@ -63,7 +63,7 @@ func TestPingNAT(t *testing.T) {
 		t.FailNow()
 	}
 
-	if err = h1.Ping(h2); err != nil {
+	if _, err = h1.Ping(h2); err != nil {
 		t.Errorf("Failed to ping h1 -> h2: %s", err)
 		t.FailNow()
 	}
@@ -136,7 +136,7 @@ func TestPingNATIPv6(t *testing.T) {
 		t.FailNow()
 	}
 
-	if err = h1.Ping(h2); err != nil {
+	if _, err = h1.Ping(h2); err != nil {
 		t.Errorf("Failed to ping h1 -> h2: %s", err)
 		t.FailNow()
 	}
@@ -224,7 +224,7 @@ func TestPingDoubleNAT(t *testing.T) {
 		t.FailNow()
 	}
 
-	if err = h1.Ping(h2); err != nil {
+	if _, err = h1.Ping(h2); err != nil {
 		t.Errorf("Failed to ping h1 <-> h2: %s", err)
 		t.FailNow()
 	}

@@ -44,14 +44,13 @@ Have a look at the unit tests for usage examples:
 ## Prerequisites
 
 - `iptables` (for NAT)
-- `ping` (for testing)
 - `traceroute` (for testing)
 
 ## Roadmap
 
 - NAT
   - Use netlink socket instead of `iptables` tool for configuring NAT
-- Integrate go imlementations of `ping` and `traceroute` tools
+- Integrate go imlementations of `traceroute` tool
 - More tests
     - Especially for host NAT and multiple networks
 - Add support for netem and tbf qdiscs on Links

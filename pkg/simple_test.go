@@ -49,9 +49,9 @@ func TestPingDualStack(t *testing.T) {
 		t.FailNow()
 	}
 
-	for _, af := range []string{"-4", "-6"} {
-		if err := h1.Ping(h2, af); err != nil {
-			t.Error("Failed to test connectivity")
+	for _, net := range []string{"ip4", "ip6"} {
+		if _, err := h1.PingWithNetwork(h2, net); err != nil {
+			t.Errorf("Failed to test connectivity: %s", err)
 		}
 	}
 }
@@ -97,7 +97,7 @@ func TestPingIPv4(t *testing.T) {
 	}
 
 	if err := g.TestConnectivity(h1, h2); err != nil {
-		t.Error("Failed to test connectivity between hosts")
+		t.Errorf("Failed to test connectivity between hosts: %s", err)
 	}
 }
 

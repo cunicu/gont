@@ -139,14 +139,112 @@ func (h *Host) ConfigureInterface(i Interface) error {
 	return nil
 }
 
-func (h *Host) Ping(o *Host, opts ...string) error {
-	args := append([]string{"-c", "1", o.name}, opts...)
-	_, _, err := h.Run("ping", args...)
-	return err
+func (h *Host) Ping(o *Host) (*ping.Statistics, error) {
+	return h.PingWithOptions(o, "ip", 1, time.Second, time.Second, true)
+}
+
+func (h *Host) PingWithNetwork(o *Host, net string) (*ping.Statistics, error) {
+	return h.PingWithOptions(o, net, 1, time.Second, time.Second, true)
+}
+
+func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Duration, intv time.Duration, output bool) (*ping.Statistics, error) {
+	var err error
+
+	p := ping.New(o.Name())
+
+	p.Count = count
+	p.RecordRtts = true
+	p.Timeout = timeout
+	p.Interval = intv
+
+	// Find first IP address of first interface
+	ip := o.LookupAddress(net)
+	if ip == nil {
+		return nil, errors.New("failed to find address")
+	}
+
+	p.SetIPAddr(ip)
+	p.SetLogger(log.WithField("logger", "ping"))
+	p.SetPrivileged(true)
+
+	if output {
+		p.OnRecv = func(p *ping.Packet) {
+			fmt.Printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%v\n",
+				p.Nbytes,
+				p.Addr,
+				p.IPAddr.String(),
+				p.Seq,
+				p.Ttl,
+				p.Rtt,
+			)
+		}
+
+		p.OnFinish = func(s *ping.Statistics) {
+			fmt.Printf("-- %s (%s) ping statistics ---\n"+
+				"%d packets transmitted, %d received, %d duplicates, %.2f%% packet loss\n"+
+				"rtt min/avg/max/mdev = %s/%s/%s/%s\n",
+				o.Name(),
+				s.IPAddr,
+				s.PacketsSent,
+				s.PacketsRecv,
+				s.PacketsRecvDuplicates,
+				s.PacketLoss,
+				s.MinRtt,
+				s.AvgRtt,
+				s.MaxRtt,
+				s.StdDevRtt,
+			)
+		}
+	}
+
+	if err = h.RunFunc(func() error {
+		if output {
+			fmt.Printf("PING %s(%s) %d data bytes\n",
+				o.Name(),
+				p.Addr(),
+				p.Size,
+			)
+		}
+
+		return p.Run()
+	}); err != nil {
+		return nil, err
+	}
+
+	return p.Statistics(), err
 }
 
 func (h *Host) Traceroute(o *Host, opts ...string) error {
 	args := append([]string{o.name}, opts...)
 	_, _, err := h.Run("traceroute", args...)
 	return err
+}
+
+func (h *Host) LookupAddress(n string) *net.IPAddr {
+	for _, i := range h.Interfaces {
+		if i.Name == loopbackInterfaceName {
+			continue
+		}
+
+		for _, a := range i.Addresses {
+			ip := &net.IPAddr{
+				IP: a.IP,
+			}
+
+			switch n {
+			case "ip":
+				return ip
+			case "ip4":
+				if a.IP.To4() != nil {
+					return ip
+				}
+			case "ip6":
+				if a.IP.To4() == nil {
+					return ip
+				}
+			}
+		}
+	}
+
+	return nil
 }

@@ -26,7 +26,7 @@ func TestConnectivity(hosts ...*Host) error {
 	for _, a := range hosts {
 		for _, b := range hosts {
 			if a != b {
-				if err := a.Ping(b); err != nil {
+				if _, err := a.Ping(b); err != nil {
 					return err
 				}
 			}
