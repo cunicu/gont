@@ -125,7 +125,7 @@ func (n *BaseNode) ConfigurePort(p Port) error {
 	}
 
 	var pHandle uint32 = nl.HANDLE_ROOT
-	if p.Flags&WithNetem != 0 {
+	if p.Flags&WithQdiscNetem != 0 {
 		attr := nl.QdiscAttrs{
 			LinkIndex: link.Attrs().Index,
 			Handle:    nl.MakeHandle(1, 0),
@@ -140,7 +140,7 @@ func (n *BaseNode) ConfigurePort(p Port) error {
 
 		pHandle = netem.Handle
 	}
-	if p.Flags&WithTbf != 0 {
+	if p.Flags&WithQdiscTbf != 0 {
 		p.Tbf.LinkIndex = link.Attrs().Index
 		p.Tbf.Limit = 0x7000
 		p.Tbf.Minburst = 1600

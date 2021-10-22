@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	WithNetem = (1 << iota)
-	WithTbf   = (1 << iota)
+	WithQdiscNetem = (1 << iota)
+	WithQdiscTbf   = (1 << iota)
 )
 
 var loopbackInterface Interface = Interface{

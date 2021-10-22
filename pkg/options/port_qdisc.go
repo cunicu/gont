@@ -11,17 +11,17 @@ type Netem nl.NetemQdiscAttrs
 type Tbf nl.Tbf
 
 type NetemOption interface {
-	Apply(n *Netem)
+	ApplyNetem(n *Netem)
 }
 
 type TbfOption interface {
-	Apply(t *Tbf)
+	ApplyTbf(t *Tbf)
 }
 
 func WithTbf(opts ...TbfOption) Tbf {
 	tbf := Tbf{}
 	for _, opt := range opts {
-		opt.Apply(&tbf)
+		opt.ApplyTbf(&tbf)
 	}
 	return tbf
 }
@@ -29,7 +29,7 @@ func WithTbf(opts ...TbfOption) Tbf {
 func WithNetem(opts ...NetemOption) Netem {
 	netem := Netem{}
 	for _, opt := range opts {
-		opt.Apply(&netem)
+		opt.ApplyNetem(&netem)
 	}
 	return netem
 }
@@ -41,57 +41,104 @@ type Probability struct {
 	Correlation float32
 }
 
-func (ne Netem) Apply(l *g.Port) {
-	l.Netem = nl.NetemQdiscAttrs(ne)
-	l.Flags |= g.WithNetem
+func (ne Netem) Apply(p *g.Port) {
+	p.Netem = nl.NetemQdiscAttrs(ne)
+	p.Flags |= g.WithQdiscNetem
 }
 
-func (tbf Tbf) Apply(l *g.Port) {
-	l.Tbf = nl.Tbf(tbf)
-	l.Flags |= g.WithTbf
+func (tbf Tbf) Apply(p *g.Port) {
+	p.Tbf = nl.Tbf(tbf)
+	p.Flags |= g.WithQdiscTbf
 }
 
 // Netem options
 
 type Latency time.Duration
 
-func (m Latency) Apply(n *Netem) {
+func (m Latency) ApplyNetem(n *Netem) {
 	d := time.Duration(m)
-	n.Latency = uint32(d / time.Microsecond)
+	n.Latency = uint64(d / time.Microsecond)
 }
 
 type Jitter time.Duration
 
-func (j Jitter) Apply(n *Netem) {
+func (j Jitter) ApplyNetem(n *Netem) {
 	d := time.Duration(j)
-	n.Jitter = uint32(d / time.Microsecond)
+	n.Jitter = uint64(d / time.Microsecond)
+}
+
+type Gap uint32
+
+func (g Gap) ApplyNetem(n *Netem) {
+	n.Gap = uint32(g)
 }
 
 type Loss Probability
 
-func (p Loss) Apply(n *Netem) {
+func (p Loss) ApplyNetem(n *Netem) {
 	n.Loss = p.Probability
 	n.LossCorr = p.Correlation
 }
 
-type Reorder Probability
+type Reordering Probability
 
-func (p Reorder) Apply(n *Netem) {
+func (p Reordering) ApplyNetem(n *Netem) {
 	n.ReorderProb = p.Probability
 	n.ReorderCorr = p.Correlation
 }
 
 type Duplicate Probability
 
-func (p Duplicate) Apply(n *Netem) {
+func (p Duplicate) ApplyNetem(n *Netem) {
 	n.Duplicate = p.Probability
 	n.DuplicateCorr = p.Correlation
 }
 
+type Corruption Probability
+
+func (c Corruption) ApplyNetem(n *Netem) {
+	n.CorruptProb = c.Probability
+	n.CorruptCorr = c.Correlation
+}
+
 // Tbf options
 
-type Rate int
+type Buffer uint32
 
-func (r Rate) Apply(t *Tbf) {
+func (r Buffer) Apply(t *Tbf) {
+	t.Buffer = uint32(r)
+}
+
+type PeakRate uint64
+
+func (r PeakRate) Apply(t *Tbf) {
+	t.Peakrate = uint64(r)
+}
+
+type MinBurst uint32
+
+func (r MinBurst) Apply(t *Tbf) {
+	t.Minburst = uint32(r)
+}
+
+// Common options
+
+type Limit uint32
+
+func (l Limit) ApplyNetem(n *Netem) {
+	n.Limit = uint32(l)
+}
+
+func (l Limit) ApplyTbf(t *Tbf) {
+	t.Limit = uint32(l)
+}
+
+type Rate uint64
+
+func (r Rate) ApplyNetem(n *Netem) {
+	n.Rate = uint64(r)
+}
+
+func (r Rate) ApplyTbf(t *Tbf) {
 	t.Rate = uint64(r)
 }

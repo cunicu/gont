@@ -1,14 +1,16 @@
 package gont_test
 
 import (
+	"math"
 	"testing"
 	"time"
 
+	"github.com/go-ping/ping"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 )
 
-func prepareQdisc(t *testing.T) (*g.Network, *g.Host, *g.Host) {
+func testNetem(t *testing.T, ne o.Netem) *ping.Statistics {
 	var (
 		err    error
 		n      *g.Network
@@ -19,6 +21,7 @@ func prepareQdisc(t *testing.T) (*g.Network, *g.Host, *g.Host) {
 		t.Errorf("Failed to create network: %s", err)
 		t.FailNow()
 	}
+	defer n.Close()
 
 	if h1, err = n.AddHost("h1"); err != nil {
 		t.Errorf("Failed to create host: %s", err)
@@ -30,45 +33,76 @@ func prepareQdisc(t *testing.T) (*g.Network, *g.Host, *g.Host) {
 		t.FailNow()
 	}
 
-	return n, h1, h2
-}
-
-// TestPingNetem performs and end-to-end ping test between two
-// directly connected hosts via a link with a netem qdisc configured
-//
-// h1 <-> h2
-func TestPingNetem(t *testing.T) {
-	n, h1, h2 := prepareQdisc(t)
-	defer n.Close()
-
-	netem := o.WithNetem(
-		o.Latency(10 * time.Millisecond),
-	)
-
-	tbf := o.WithTbf(
-		o.Rate(200000),
-	)
-
 	if err := n.AddLink(
-		o.Interface("veth0", h1, netem, tbf,
+		o.Interface("veth0", h1, ne,
 			o.AddressIPv4(10, 0, 0, 1, 24)),
-		o.Interface("veth0", h2, netem, tbf,
+		o.Interface("veth0", h2,
 			o.AddressIPv4(10, 0, 0, 2, 24)),
 	); err != nil {
 		t.Errorf("Failed to connect hosts: %s", err)
 		t.FailNow()
 	}
 
-	h1.Run("ping", "-c", "1", "h2")
-	_, _, e, err := h1.Start("iperf", "-s")
+	stats, err := h1.PingWithOptions(h2, "ip", 1000, 2000*time.Millisecond, time.Millisecond, false)
 	if err != nil {
-		t.Error(err)
+		t.Errorf("Failed to ping: %s", err)
 	}
 
-	if _, _, err = h2.Run("iperf", "-c", "h1"); err != nil {
-		t.Error(err)
+	return stats
+}
+
+// TestPingNetem performs and end-to-end ping test between two
+// directly connected hosts via a link with a netem qdisc configured
+//
+// h1 <-> h2
+func TestNetemLatency(t *testing.T) {
+	latency := 10 * time.Millisecond
+
+	ne := o.WithNetem(
+		o.Latency(latency),
+	)
+
+	stats := testNetem(t, ne)
+
+	t.Logf("AvgRtt: %s", stats.AvgRtt)
+
+	diff := stats.AvgRtt - latency
+	if diff < 0 {
+		diff *= -1
 	}
 
-	e.Process.Kill()
-	e.Wait()
+	if diff > 2*time.Millisecond {
+		t.Fail()
+	}
+}
+
+func TestNetemLoss(t *testing.T) {
+	ne := o.WithNetem(
+		o.Loss{Probability: 10.0},
+	)
+
+	stats := testNetem(t, ne)
+
+	t.Logf("Loss: %f", stats.PacketLoss)
+
+	if math.Abs(stats.PacketLoss-float64(ne.Loss)) > 1 {
+		t.Fail()
+	}
+}
+
+func TestNetemDuplication(t *testing.T) {
+	ne := o.WithNetem(
+		o.Duplicate{Probability: 10.0},
+	)
+
+	stats := testNetem(t, ne)
+
+	duplicatePercentage := 100.0 * float64(stats.PacketsRecvDuplicates) / float64(stats.PacketsSent)
+
+	t.Logf("Duplicate packets: %d", stats.PacketsRecvDuplicates)
+	t.Logf("Duplicate percentage: %.2f %%", duplicatePercentage)
+
+	if math.Abs(duplicatePercentage-10.0) > 1 {
+		t.Fail()
+	}
 }
