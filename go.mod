@@ -18,8 +18,6 @@ require (
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.59 // indirect
 )
 
-replace github.com/vishvananda/netlink v1.1.1-0.20210924202909-187053b97868 => github.com/stv0g/netlink v1.1.1-gont
-replace github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f => github.com/stv0g/netns v0.0.0-docker-cgroups-v2
+replace github.com/vishvananda/netlink => github.com/stv0g/netlink v1.1.1-gont
 
-replace github.com/vishvananda/netlink => /home/stv0g_local/workspace/netlink
-replace github.com/vishvananda/netns => /home/stv0g_local/workspace/netns
+replace github.com/vishvananda/netns => github.com/stv0g/netns v0.0.0-20211014154538-c4d5d2062cf1
