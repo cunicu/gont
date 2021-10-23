@@ -82,7 +82,7 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 func (n *NAT) setup() error {
 	var err error
 
-	sbGroup := NATSouthBound
+	var sbGroup int = int(NATSouthBound)
 
 	// Setup ipset of all south-bound networks
 	for _, family := range []uint8{unix.AF_INET, unix.AF_INET6} {
@@ -103,7 +103,9 @@ func (n *NAT) setup() error {
 	}
 
 	for _, i := range n.Interfaces {
-		n.updateIPSetInterface(i)
+		if err := n.updateIPSetInterface(i); err != nil {
+			return err
+		}
 	}
 
 	// Setup NAT rules in iptables
@@ -153,12 +155,12 @@ func (n *NAT) updateIPSetInterface(i Interface) error {
 			}).Info("Adding address to ipset")
 
 			cidr, _ := a.Mask.Size()
-			if err := nl.IpsetAdd(sbSetName, &nl.IPSetEntry{
+			if err := n.Handle.IpsetAdd(sbSetName, &nl.IPSetEntry{
 				IP:      a.IP.Mask(a.Mask),
 				CIDR:    uint8(cidr),
 				Comment: fmt.Sprintf("gont:%s/%s", n.name, i.Name),
 			}); err != nil {
-				return err
+				return fmt.Errorf("failed to add address to ipset: %w", err)
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 package gont_test
 
 import (
+	"os"
 	"testing"
 
 	g "github.com/stv0g/gont/pkg"
@@ -11,7 +12,7 @@ import (
 // through a NAT topology
 //
 //  h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
-func TestPingNAT(t *testing.T) {
+func TestPingNATIPv4(t *testing.T) {
 	var (
 		err      error
 		n        *g.Network
@@ -240,6 +241,12 @@ func TestPingDoubleNAT(t *testing.T) {
 //
 //  h1 <-> sw <-> nat1 <-> external
 func TestPingHostNAT(t *testing.T) {
+	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
+		// GitHubs Azure based CI environment does not
+		// allow to ping external targets
+		t.Skip()
+	}
+
 	var (
 		err error
 		n   *g.Network

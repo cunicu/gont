@@ -148,11 +148,11 @@ func (h *Host) ConfigureInterface(i Interface) error {
 }
 
 func (h *Host) Ping(o *Host) (*ping.Statistics, error) {
-	return h.PingWithOptions(o, "ip", 1, time.Second, time.Second, true)
+	return h.PingWithOptions(o, "ip", 1, 2*time.Second, time.Second, true)
 }
 
 func (h *Host) PingWithNetwork(o *Host, net string) (*ping.Statistics, error) {
-	return h.PingWithOptions(o, net, 1, time.Second, time.Second, true)
+	return h.PingWithOptions(o, net, 1, 2*time.Second, time.Second, true)
 }
 
 func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Duration, intv time.Duration, output bool) (*ping.Statistics, error) {
@@ -164,6 +164,10 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 	p.RecordRtts = true
 	p.Timeout = timeout
 	p.Interval = intv
+
+	if h.Network != o.Network {
+		return nil, fmt.Errorf("hosts must be on same network")
+	}
 
 	// Find first IP address of first interface
 	ip := o.LookupAddress(net)
@@ -179,6 +183,7 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 	p.SetIPAddr(ip)
 	p.SetLogger(logger)
 	p.SetPrivileged(true)
+	p.SetNetwork(net)
 
 	if output {
 		p.OnRecv = func(p *ping.Packet) {
@@ -213,10 +218,19 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 		return nil, err
 	}
 
+	lost := p.PacketsSent - p.PacketsRecv
+	if lost > 0 {
+		err = fmt.Errorf("lost %d packets", lost)
+	}
+
 	return p.Statistics(), err
 }
 
 func (h *Host) Traceroute(o *Host, opts ...interface{}) error {
+	if h.Network != o.Network {
+		return fmt.Errorf("hosts must be on same network")
+	}
+
 	opts = append(opts, o)
 	_, _, err := h.Run("traceroute", opts...)
 	return err
@@ -233,15 +247,17 @@ func (h *Host) LookupAddress(n string) *net.IPAddr {
 				IP: a.IP,
 			}
 
+			isV4 := len(a.IP.To4()) == net.IPv4len
+
 			switch n {
 			case "ip":
 				return ip
 			case "ip4":
-				if a.IP.To4() != nil {
+				if isV4 {
 					return ip
 				}
 			case "ip6":
-				if a.IP.To4() == nil {
+				if !isV4 {
 					return ip
 				}
 			}

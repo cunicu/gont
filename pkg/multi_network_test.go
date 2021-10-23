@@ -17,6 +17,10 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 
 	pfx := fmt.Sprintf("net%d-", i)
 
+	address := func(j int) o.Address {
+		return o.AddressIP(fmt.Sprintf("fc::%d:%d/112", i, j))
+	}
+
 	if n, err = g.NewNetwork("", opts...); err != nil {
 		t.Errorf("Failed to create network: %s", err)
 		t.FailNow()
@@ -29,7 +33,7 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 
 	if _, err = n.AddHost(pfx+"h1",
 		o.Interface("veth0", sw,
-			o.AddressIP("fc::1/64")),
+			address(1)),
 	); err != nil {
 		t.Errorf("Failed to create host: %s", err)
 		t.FailNow()
@@ -37,7 +41,7 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 
 	if _, err = n.AddHost(pfx+"h2",
 		o.Interface("veth0", sw,
-			o.AddressIP("fc::2/64")),
+			address(2)),
 	); err != nil {
 		t.Errorf("Failed to create host: %s", err)
 		t.FailNow()
@@ -55,18 +59,18 @@ func TestMultipleNetworks(t *testing.T) {
 
 	// Connectivity within the network must succeed
 	if err := g.TestConnectivity(n1.Hosts()...); err != nil {
-		t.Fail()
+		t.Errorf("Connectivity tests between hosts on same network must succeed")
 	}
 
 	// Connectivity within the network must succeed
 	if err := g.TestConnectivity(n2.Hosts()...); err != nil {
-		t.Fail()
+		t.Errorf("Connectivity tests between hosts on same network must succeed")
 	}
 
 	// Connectivity between the networks must fail
 	all := append(n1.Hosts(), n2.Hosts()...)
 	if err := g.TestConnectivity(all...); err == nil {
-		t.Fail()
+		t.Errorf("Connectivity tests between hosts on different networks must fail")
 	}
 }
 

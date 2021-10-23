@@ -2,6 +2,7 @@ package gont_test
 
 import (
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 	o "github.com/stv0g/gont/pkg/options"
 )
 
-func testNetem(t *testing.T, ne o.Netem) *ping.Statistics {
+func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
 	var (
 		err    error
 		n      *g.Network
@@ -43,12 +44,7 @@ func testNetem(t *testing.T, ne o.Netem) *ping.Statistics {
 		t.FailNow()
 	}
 
-	stats, err := h1.PingWithOptions(h2, "ip", 1000, 2000*time.Millisecond, time.Millisecond, false)
-	if err != nil {
-		t.Errorf("Failed to ping: %s", err)
-	}
-
-	return stats
+	return h1.PingWithOptions(h2, "ip", 1000, 2000*time.Millisecond, time.Millisecond, false)
 }
 
 // TestPingNetem performs and end-to-end ping test between two
@@ -56,13 +52,16 @@ func testNetem(t *testing.T, ne o.Netem) *ping.Statistics {
 //
 // h1 <-> h2
 func TestNetemLatency(t *testing.T) {
-	latency := 10 * time.Millisecond
+	latency := 50 * time.Millisecond
 
 	ne := o.WithNetem(
 		o.Latency(latency),
 	)
 
-	stats := testNetem(t, ne)
+	stats, err := testNetem(t, ne)
+	if err != nil {
+		t.Errorf("Failed to ping: %s", err)
+	}
 
 	t.Logf("AvgRtt: %s", stats.AvgRtt)
 
@@ -71,38 +70,44 @@ func TestNetemLatency(t *testing.T) {
 		diff *= -1
 	}
 
-	if diff > 2*time.Millisecond {
+	if diff > 10*time.Millisecond {
 		t.Fail()
 	}
 }
 
 func TestNetemLoss(t *testing.T) {
 	ne := o.WithNetem(
-		o.Loss{Probability: 10.0},
+		o.Loss{Probability: 20.0},
 	)
 
-	stats := testNetem(t, ne)
+	stats, err := testNetem(t, ne)
+	if err != nil && !strings.Contains(err.Error(), "lost") {
+		t.Errorf("Failed to ping: %s", err)
+	}
 
 	t.Logf("Loss: %f", stats.PacketLoss)
 
-	if math.Abs(stats.PacketLoss-float64(ne.Loss)) > 1 {
+	if math.Abs(stats.PacketLoss-float64(ne.Loss)) > 20 {
 		t.Fail()
 	}
 }
 
 func TestNetemDuplication(t *testing.T) {
 	ne := o.WithNetem(
-		o.Duplicate{Probability: 10.0},
+		o.Duplicate{Probability: 50.0},
 	)
 
-	stats := testNetem(t, ne)
+	stats, err := testNetem(t, ne)
+	if err != nil {
+		t.Errorf("Failed to ping: %s", err)
+	}
 
 	duplicatePercentage := 100.0 * float64(stats.PacketsRecvDuplicates) / float64(stats.PacketsSent)
 
 	t.Logf("Duplicate packets: %d", stats.PacketsRecvDuplicates)
 	t.Logf("Duplicate percentage: %.2f %%", duplicatePercentage)
 
-	if math.Abs(duplicatePercentage-10.0) > 1 {
+	if math.Abs(duplicatePercentage-float64(ne.Duplicate)) > 10 {
 		t.Fail()
 	}
 }
