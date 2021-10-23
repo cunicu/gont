@@ -39,29 +39,35 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 
 	n.Nodes[name] = sw // TODO: quirk to get n.UpdateHostsFile() working
 
-	// Apply switch options
-	for _, opt := range opts {
-		if swopt, ok := opt.(SwitchOption); ok {
-			swopt.Apply(sw)
-		}
-	}
-
-	link := &nl.Bridge{
+	br := &nl.Bridge{
 		LinkAttrs: nl.LinkAttrs{
 			Name:      bridgeInterfaceName,
 			Namespace: nl.NsFd(sw.NsHandle),
 		},
 	}
-	if err := nl.LinkAdd(link); err != nil {
+
+	// Apply options
+	for _, opt := range opts {
+		switch opt := opt.(type) {
+		case SwitchOption:
+			opt.Apply(sw)
+		case BridgeOption:
+			opt.Apply(br)
+		case LinkOption:
+			opt.Apply(&br.LinkAttrs)
+		}
+	}
+
+	if err := nl.LinkAdd(br); err != nil {
 		return nil, fmt.Errorf("failed to add bridge interface: %w", err)
 	}
 
 	log.WithFields(log.Fields{
 		"node": name,
-		"intf": link.LinkAttrs.Name,
+		"intf": br.LinkAttrs.Name,
 	}).Infof("Adding new Linux bridge")
 
-	if err := sw.Handle.LinkSetUp(link); err != nil {
+	if err := sw.Handle.LinkSetUp(br); err != nil {
 		return nil, fmt.Errorf("failed to bring bridge up: %w", err)
 	}
 

@@ -53,6 +53,16 @@ func (n *Network) AddLink(l, r Endpoint, opts ...Option) error {
 		PeerName: rPort.Name,
 	}
 
+	// Apply options
+	for _, opt := range opts {
+		switch opt := opt.(type) {
+		case VethOption:
+			opt.Apply(veth)
+		case LinkOption:
+			opt.Apply(&veth.LinkAttrs)
+		}
+	}
+
 	if err = lNode.Handle.LinkAdd(veth); err != nil {
 		return fmt.Errorf("failed to add link: %w", err)
 	}

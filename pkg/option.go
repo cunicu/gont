@@ -45,7 +45,11 @@ type VethOption interface {
 	Apply(v *nl.Veth)
 }
 
-type LinkAttrOption interface {
+type LinkOption interface {
 	Option
-	apply(la *nl.LinkAttrs)
+	Apply(la *nl.LinkAttrs)
+}
+
+type BridgeOption interface {
+	Apply(b *nl.Bridge)
 }
