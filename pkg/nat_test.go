@@ -275,12 +275,12 @@ func TestPingHostNAT(t *testing.T) {
 		t.FailNow()
 	}
 
-	if _, _, err = h1.Run("ping", "-c", "1", "1.1.1.1"); err != nil {
+	if _, _, err = h1.Run("ping", "-c", 1, "1.1.1.1"); err != nil {
 		t.Errorf("Failed to ping: %s", err)
 		t.FailNow()
 	}
 
-	if _, _, err = h1.Run("ping", "-c", "1", "www.rwth-aachen.de"); err != nil {
+	if _, _, err = h1.Run("ping", "-c", 1, "www.rwth-aachen.de"); err != nil {
 		t.Fail()
 	}
 }

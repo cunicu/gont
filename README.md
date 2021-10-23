@@ -53,7 +53,7 @@ Have a look at the unit tests for usage examples:
   - Use netlink socket instead of `iptables` tool for configuring NAT
 - Integrate go imlementations of `traceroute` tool
 - More tests
-    - Especially for host NAT and multiple networks
+  - Especially for host NAT and multiple networks
 - Add separate examples directory
 - Topology factories
 - Add support for using existing Docker containers as nodes

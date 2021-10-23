@@ -82,7 +82,7 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 func (n *NAT) setup() error {
 	var err error
 
-	sbGroup := fmt.Sprintf("%d", NATSouthBound)
+	sbGroup := NATSouthBound
 
 	// Setup ipset of all south-bound networks
 	for _, family := range []uint8{unix.AF_INET, unix.AF_INET6} {
