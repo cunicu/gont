@@ -171,13 +171,18 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 		return nil, errors.New("failed to find address")
 	}
 
+	logger := log.WithFields(log.Fields{
+		"logger": "ping",
+		"ns":     h.name,
+	})
+
 	p.SetIPAddr(ip)
-	p.SetLogger(log.WithField("logger", "ping"))
+	p.SetLogger(logger)
 	p.SetPrivileged(true)
 
 	if output {
 		p.OnRecv = func(p *ping.Packet) {
-			fmt.Printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%v\n",
+			logger.Printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%v\n",
 				p.Nbytes,
 				p.Addr,
 				p.IPAddr.String(),
@@ -188,26 +193,15 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 		}
 
 		p.OnFinish = func(s *ping.Statistics) {
-			fmt.Printf("-- %s (%s) ping statistics ---\n"+
-				"%d packets transmitted, %d received, %d duplicates, %.2f%% packet loss\n"+
-				"rtt min/avg/max/mdev = %s/%s/%s/%s\n",
-				o.Name(),
-				s.IPAddr,
-				s.PacketsSent,
-				s.PacketsRecv,
-				s.PacketsRecvDuplicates,
-				s.PacketLoss,
-				s.MinRtt,
-				s.AvgRtt,
-				s.MaxRtt,
-				s.StdDevRtt,
-			)
+			logger.Printf("-- %s (%s) ping statistics ---", o.Name(), s.IPAddr)
+			logger.Printf("%d packets transmitted, %d received, %d duplicates, %.2f%% packet loss\n", s.PacketsSent, s.PacketsRecv, s.PacketsRecvDuplicates, s.PacketLoss)
+			logger.Printf("rtt min/avg/max/mdev = %s/%s/%s/%s\n", s.MinRtt, s.AvgRtt, s.MaxRtt, s.StdDevRtt)
 		}
 	}
 
 	if err = h.RunFunc(func() error {
 		if output {
-			fmt.Printf("PING %s(%s) %d data bytes\n",
+			logger.Printf("PING %s(%s) %d data bytes\n",
 				o.Name(),
 				p.Addr(),
 				p.Size,
@@ -222,9 +216,9 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 	return p.Statistics(), err
 }
 
-func (h *Host) Traceroute(o *Host, opts ...string) error {
-	args := append([]string{o.name}, opts...)
-	_, _, err := h.Run("traceroute", args...)
+func (h *Host) Traceroute(o *Host, opts ...interface{}) error {
+	opts = append(opts, o)
+	_, _, err := h.Run("traceroute", opts...)
 	return err
 }
 

@@ -184,11 +184,11 @@ func TestPingDirect(t *testing.T) {
 	}
 
 	if _, _, err = h1.Run("cat", "/etc/hosts"); err != nil {
-		t.Errorf("Failed to show /etc/hosts file")
+		t.Errorf("Failed to show /etc/hosts file: %s", err)
 	}
 
 	if err := g.TestConnectivity(h1, h2); err != nil {
-		t.Errorf("Failed to test connectivity")
+		t.Errorf("Failed to test connectivity: %s", err)
 	}
 }
 
