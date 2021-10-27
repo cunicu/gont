@@ -1,5 +1,6 @@
 # Gont - A Go network testing toolkit
 
+[![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
 [![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
 ![Snyk.io](https://img.shields.io/snyk/vulnerabilities/github/stv0g/gont)
 [![Build](https://img.shields.io/github/checks-status/stv0g/gont/master)](https://github.com/stv0g/gont/actions)
