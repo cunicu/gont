@@ -16,7 +16,7 @@ Under to hood the network is then constructed using Linux virtual bridges and ne
 
 ## Getting started
 
-Have a look at our **[slide set](docs/index.html)** to get you started.
+Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you started.
 
 ## Features
 
