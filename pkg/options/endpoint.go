@@ -6,15 +6,16 @@ import (
 	g "github.com/stv0g/gont/pkg"
 )
 
-type Address net.IPNet
 type Group g.DeviceGroup
-
-func (a Address) Apply(i *g.Interface) {
-	i.Addresses = append(i.Addresses, net.IPNet(a))
-}
 
 func (h Group) Apply(p *g.Port) {
 	p.Group = g.DeviceGroup(h)
+}
+
+type Address net.IPNet
+
+func (a Address) Apply(i *g.Interface) {
+	i.Addresses = append(i.Addresses, net.IPNet(a))
 }
 
 func AddressIPv4(a, b, c, d byte, m int) Address {

@@ -111,14 +111,14 @@ func (n *BaseNode) Name() string {
 }
 
 func (n *BaseNode) ConfigurePort(p Port) error {
-	log.WithField("intf", n.name+"/"+p.Name).Info("Activating interface")
+	log.WithField("intf", n.name+"/"+p.Name).Info("Configuring port")
 
 	link, err := n.Handle.LinkByName(p.Name)
 	if err != nil {
 		return err
 	}
 
-	if p.Group != Default {
+	if p.Group != DeviceGroupDefault {
 		log.WithFields(log.Fields{
 			"intf":  p,
 			"group": p.Group,
