@@ -45,7 +45,6 @@ Have a look at the unit tests for usage examples:
 
 ## Prerequisites
 
-- `iptables` (for NAT)
 - `traceroute` (for testing)
 
 ## Architecture
