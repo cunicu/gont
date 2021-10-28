@@ -61,17 +61,15 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 
 	// Configure host
 	if host.GatewayIPv4 != nil {
-		host.AddRoute(net.IPNet{
-			IP:   net.IPv4zero,
-			Mask: net.CIDRMask(0, net.IPv4len*8),
-		}, host.GatewayIPv4)
+		if err := host.AddDefaultRoute(host.GatewayIPv4); err != nil {
+			return nil, err
+		}
 	}
 
 	if host.GatewayIPv6 != nil {
-		host.AddRoute(net.IPNet{
-			IP:   net.IPv6zero,
-			Mask: net.CIDRMask(0, net.IPv6len*8),
-		}, host.GatewayIPv6)
+		if err := host.AddDefaultRoute(host.GatewayIPv6); err != nil {
+			return nil, err
+		}
 	}
 
 	if host.Forwarding {

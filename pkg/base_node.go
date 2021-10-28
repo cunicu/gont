@@ -240,3 +240,17 @@ func (n *BaseNode) AddRoute(dst net.IPNet, gw net.IP) error {
 
 	return nil
 }
+
+func (n *BaseNode) AddDefaultRoute(gw net.IP) error {
+	if gw.To4() != nil {
+		return n.AddRoute(net.IPNet{
+			IP:   net.IPv4zero,
+			Mask: net.CIDRMask(0, net.IPv6len*8),
+		}, gw)
+	} else {
+		return n.AddRoute(net.IPNet{
+			IP:   net.IPv6zero,
+			Mask: net.CIDRMask(0, net.IPv6len*8),
+		}, gw)
+	}
+}
