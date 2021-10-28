@@ -99,6 +99,10 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		return nil, fmt.Errorf("failed to update hosts file: %w", err)
 	}
 
+	if err := n.GenerateConfigFiles(); err != nil {
+		return nil, fmt.Errorf("failed to generate configuration files: %w", err)
+	}
+
 	return n, nil
 }
 

@@ -76,3 +76,37 @@ func (n *Network) UpdateHostsFile() error {
 
 	return nil
 }
+
+func (n *Network) GenerateConfigFiles() error {
+	return n.GenerateIProute2Files()
+}
+
+func (n *Network) GenerateIProute2Files() error {
+
+	fn := filepath.Join(n.BasePath, "files/etc/iproute2/group")
+	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if contentsOrig, err := os.ReadFile("/etc/iproute2/group"); err == nil {
+		f.Write(contentsOrig)
+		f.WriteString("\n")
+	}
+
+	groups := map[DeviceGroup]string{
+		DeviceGroupNorthBound: "north-bound",
+		DeviceGroupSouthBound: "south-bound",
+	}
+
+	for group, name := range groups {
+		fmt.Fprintf(f, "%d %s\n", group, name)
+	}
+
+	return nil
+}
