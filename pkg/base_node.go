@@ -97,7 +97,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		return nil, fmt.Errorf("failed to bind mount netns fd: %s", err)
 	}
 
-	n.Nodes[name] = node
+	n.Register(node)
 
 	return node, nil
 }

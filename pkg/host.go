@@ -43,7 +43,7 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		Interfaces: []Interface{},
 	}
 
-	n.Nodes[name] = host // TODO: quirk to get n.UpdateHostsFile() working
+	n.Register(host)
 
 	// Apply host options
 	for _, opt := range opts {

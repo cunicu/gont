@@ -167,3 +167,7 @@ func (n *Network) Close() error {
 
 	return nil
 }
+
+func (n *Network) Register(m Node) {
+	n.Nodes[m.Name()] = m
+}

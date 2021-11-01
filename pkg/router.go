@@ -18,7 +18,7 @@ func (n *Network) AddRouter(name string, opts ...Option) (*Router, error) {
 		Host: *host,
 	}
 
-	n.Nodes[name] = rtr // TODO: quirk to get n.UpdateHostsFile() working
+	n.Register(rtr)
 
 	return rtr, nil
 }

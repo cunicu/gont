@@ -37,7 +37,7 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		BaseNode: *node,
 	}
 
-	n.Nodes[name] = sw // TODO: quirk to get n.UpdateHostsFile() working
+	n.Register(sw)
 
 	br := &nl.Bridge{
 		LinkAttrs: nl.LinkAttrs{
