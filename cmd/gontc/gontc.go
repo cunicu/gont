@@ -98,11 +98,11 @@ func main() {
 	case "list":
 		if len(args) > 1 {
 			network = args[1]
-			for _, name := range g.GetNodeNames(network) {
+			for _, name := range g.NodeNames(network) {
 				fmt.Printf("%s/%s\n", network, name)
 			}
 		} else {
-			for _, name := range g.GetNetworkNames() {
+			for _, name := range g.NetworkNames() {
 				fmt.Println(name)
 			}
 
@@ -154,7 +154,7 @@ func getNetworkNode(args []string) (string, string, error) {
 
 	c := strings.SplitN(args[1], "/", 2)
 	if len(c) == 1 { // no network in name
-		if networks := g.GetNetworkNames(); len(networks) > 0 {
+		if networks := g.NetworkNames(); len(networks) > 0 {
 			network = networks[0]
 		} else {
 			return "", "", errors.New("no Gont network")

@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func GetNetworkNames() []string {
+func NetworkNames() []string {
 	names := []string{}
 
 	nets, err := ioutil.ReadDir(varDir)
@@ -32,7 +32,7 @@ func GetNetworkNames() []string {
 	return names
 }
 
-func GetNodeNames(network string) []string {
+func NodeNames(network string) []string {
 	names := []string{}
 
 	nodesDir := path.Join(varDir, network, "nodes")
@@ -54,7 +54,7 @@ func GetNodeNames(network string) []string {
 }
 
 func GenerateNetworkName() string {
-	existing := GetNetworkNames()
+	existing := NetworkNames()
 
 	for i := 0; i < 32; i++ {
 		random := GetRandomName()
@@ -72,7 +72,7 @@ func GenerateNetworkName() string {
 }
 
 func TeardownAllNetworks() error {
-	for _, name := range GetNetworkNames() {
+	for _, name := range NetworkNames() {
 		if err := TeardownNetwork(name); err != nil {
 			return err
 		}
