@@ -2,18 +2,27 @@ package gont
 
 import (
 	"fmt"
+	"net"
 
+	nft "github.com/google/nftables"
 	log "github.com/sirupsen/logrus"
-	nl "github.com/vishvananda/netlink"
-	"golang.org/x/sys/unix"
 )
 
-const (
-	sbSet = "sb"
+var (
+	families = []nft.TableFamily{
+		nft.TableFamilyIPv4,
+		nft.TableFamilyIPv6,
+	}
 )
 
 type NAT struct {
-	Router
+	*Router
+
+	families map[nft.TableFamily]*natFamily
+}
+
+func (h *NAT) Apply(i *Interface) {
+	i.Node = h
 }
 
 func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
@@ -23,10 +32,12 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 	}
 
 	nat := &NAT{
-		Router: *rtr,
+		Router: rtr,
+
+		families: map[nft.TableFamily]*natFamily{},
 	}
 
-	n.Nodes[name] = nat // TODO: quirk to get n.UpdateHostsFile() working
+	n.Register(nat)
 
 	// Apply NAT options
 	for _, opt := range opts {
@@ -46,121 +57,94 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 	}
 
 	rtr := &Router{
-		Host: *host,
+		Host: host,
 	}
 
 	nat := &NAT{
-		Router: *rtr,
+		Router: rtr,
+
+		families: map[nft.TableFamily]*natFamily{},
 	}
 
 	// Apply NAT options
-	for _, opt := range opts {
-		if nopt, ok := opt.(NATOption); ok {
-			nopt.Apply(nat)
+	for _, o := range opts {
+		switch opt := o.(type) {
+		case NATOption:
+			opt.Apply(nat)
+		case NodeOption:
+			opt.Apply(host.BaseNode)
 		}
+	}
+
+	if err := host.ConfigureLinks(); err != nil {
+		return nil, err
 	}
 
 	if err := nat.setup(); err != nil {
 		return nil, err
 	}
 
-	// Dummy host for getting interfaces
-	h := &Host{}
-	for _, opt := range opts {
-		if nopt, ok := opt.(HostOption); ok {
-			nopt.Apply(h)
-		}
-	}
-
-	for _, i := range h.Interfaces {
-		nat.AddInterface(i)
-	}
+	n.Register(host)
 
 	return nat, nil
 }
 
 func (n *NAT) setup() error {
-	var err error
+	var sbGroup uint32 = uint32(DeviceGroupSouthBound)
 
-	var sbGroup int = int(NATSouthBound)
+	c := &nft.Conn{
+		NetNS: int(n.NsHandle),
+	}
 
-	// Setup ipset of all south-bound networks
-	for _, family := range []uint8{unix.AF_INET, unix.AF_INET6} {
-		sbSetName := sbSet
-		if family == unix.AF_INET {
-			sbSetName += "-inet"
-		} else {
-			sbSetName += "-inet6"
-		}
+	for _, g := range families {
+		f := newNATFamily(g)
 
-		log.WithField("set", sbSetName).Info("Creating ipset")
-		if err := n.Handle.IpsetCreate(sbSetName, "hash:net", nl.IpsetCreateOptions{
-			Replace: true,
-			Family:  family,
-		}); err != nil {
+		if err := f.SetupTable(c); err != nil {
 			return err
 		}
+		if err := f.SetupSet(c); err != nil {
+			return err
+		}
+		if err := f.SetupChains(c, sbGroup); err != nil {
+			return err
+		}
+
+		n.families[g] = f
 	}
 
 	for _, i := range n.Interfaces {
-		if err := n.updateIPSetInterface(i); err != nil {
+		if err := n.updateIPSetInterface(c, i); err != nil {
 			return err
 		}
 	}
 
-	// Setup NAT rules in iptables
-
-	for _, family := range []string{"inet", "inet6"} {
-		sbSetName := fmt.Sprintf("%s-%s", sbSet, family)
-		ipt := "iptables"
-		if family == "inet6" {
-			ipt = "ip6tables"
-		}
-
-		if _, _, err = n.Run(ipt, "--insert", "FORWARD", "-m", "devgroup", "--src-group", sbGroup, "--match", "set", "--match-set", sbSetName, "dst", "--jump", "DROP"); err != nil {
-			return err
-		}
-		if _, _, err = n.Run(ipt, "--append", "FORWARD", "-m", "devgroup", "--src-group", sbGroup, "--match", "set", "--match-set", sbSetName, "src", "--jump", "ACCEPT"); err != nil {
-			return err
-		}
-		if _, _, err = n.Run(ipt, "--append", "FORWARD", "-m", "devgroup", "--dst-group", sbGroup, "--match", "set", "--match-set", sbSetName, "dst", "--jump", "ACCEPT"); err != nil {
-			return err
-		}
-		if _, _, err = n.Run(ipt, "--table", "nat", "--append", "POSTROUTING", "--match", "set", "--match-set", sbSetName, "src", "--match", "set", "!", "--match-set", sbSetName, "dst", "--jump", "MASQUERADE"); err != nil {
-			return err
-		}
+	if err := c.Flush(); err != nil {
+		return fmt.Errorf("failed setup nftables: %w", err)
 	}
 
 	return nil
 }
 
-func (n *NAT) updateIPSetInterface(i Interface) error {
-	if i.Group == NATSouthBound {
+func (n *NAT) updateIPSetInterface(c *nft.Conn, i *Interface) error {
+	if i.LinkAttrs.Group == uint32(DeviceGroupSouthBound) {
 		for _, a := range i.Addresses {
-			family := unix.AF_INET
+			f := n.families[nft.TableFamilyIPv4]
 			if a.IP.To4() == nil {
-				family = unix.AF_INET6
-			}
-
-			sbSetName := sbSet
-			if family == unix.AF_INET {
-				sbSetName += "-inet"
-			} else {
-				sbSetName += "-inet6"
+				f = n.families[nft.TableFamilyIPv6]
 			}
 
 			log.WithFields(log.Fields{
-				"set":  sbSetName,
+				"set":  f.Set.Name,
 				"addr": a.String(),
-			}).Info("Adding address to ipset")
+			}).Info("Adding address to nftables set")
 
-			cidr, _ := a.Mask.Size()
-			if err := n.Handle.IpsetAdd(sbSetName, &nl.IPSetEntry{
-				IP:      a.IP.Mask(a.Mask),
-				CIDR:    uint8(cidr),
-				Comment: fmt.Sprintf("gont:%s/%s", n.name, i.Name),
-			}); err != nil {
-				return fmt.Errorf("failed to add address to ipset: %w", err)
+			netw := net.IPNet{
+				IP:   a.IP.Mask(a.Mask),
+				Mask: a.Mask,
+			}
+
+			if err := f.AddNetwork(c, netw); err != nil {
+				return err
 			}
 		}
 	}
@@ -168,10 +152,38 @@ func (n *NAT) updateIPSetInterface(i Interface) error {
 	return nil
 }
 
-func (n *NAT) AddInterface(i Interface) error {
-	if err := n.Host.AddInterface(i); err != nil {
+func (n *NAT) ConfigureInterface(i *Interface) error {
+	c := &nft.Conn{
+		NetNS: int(n.NsHandle),
+	}
+
+	if err := n.updateIPSetInterface(c, i); err != nil {
 		return err
 	}
 
-	return n.updateIPSetInterface(i)
+	if err := c.Flush(); err != nil {
+		return err
+	}
+
+	return n.Router.ConfigureInterface(i)
+}
+
+func ipNetNextRange(netw net.IPNet) (net.IP, net.IP) {
+	start := netw.IP
+	ones, _ := netw.Mask.Size()
+
+	bp := ones / 8
+	bm := ones % 8
+
+	if bm == 0 {
+		bp -= 1
+		bm = 8
+	}
+
+	end := make(net.IP, len(start))
+	copy(end, start)
+
+	end[bp] = end[bp] + 1<<(8-bm)
+
+	return start, end
 }

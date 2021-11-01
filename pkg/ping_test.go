@@ -259,3 +259,73 @@ func TestPingMultiHop(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestPingLoopback(t *testing.T) {
+	var (
+		err error
+		n   *g.Network
+		h   *g.Host
+	)
+
+	if n, err = g.NewNetwork(nname, opts...); err != nil {
+		t.Errorf("Failed to create network: %s", err)
+		t.FailNow()
+	}
+	defer n.Close()
+
+	if h, err = n.AddHost("h"); err != nil {
+		t.Errorf("Failed to add host: %s", err)
+		t.FailNow()
+	}
+
+	if _, _, err := h.Run("ping", "-4", "-c", 1, "localhost"); err != nil {
+		t.Errorf("Failed to ping: %s", err)
+	}
+
+	if _, _, err := h.Run("ping", "-6", "-c", 1, "localhost"); err != nil {
+		t.Errorf("Failed to ping: %s", err)
+	}
+}
+
+func TestPingSelf(t *testing.T) {
+	var (
+		err    error
+		n      *g.Network
+		h1, h2 *g.Host
+	)
+
+	if n, err = g.NewNetwork(nname, opts...); err != nil {
+		t.Errorf("Failed to create network: %s", err)
+		t.FailNow()
+	}
+	defer n.Close()
+
+	if h1, err = n.AddHost("h1"); err != nil {
+		t.Errorf("Failed to add host: %s", err)
+		t.FailNow()
+	}
+
+	if h2, err = n.AddHost("h2"); err != nil {
+		t.Errorf("Failed to add host: %s", err)
+		t.FailNow()
+	}
+
+	if err := n.AddLink(
+		o.Interface("veth0", h1,
+			o.AddressIPv4(10, 0, 0, 1, 24),
+			o.AddressIP("fc::1/64")),
+		o.Interface("veth0", h2,
+			o.AddressIPv4(10, 0, 0, 2, 24),
+			o.AddressIP("fc::2/64")),
+	); err != nil {
+		t.Fail()
+	}
+
+	if _, err := h1.PingWithNetwork(h1, "ip"); err != nil {
+		t.Errorf("Failed to ping: %s", err)
+	}
+
+	if _, err := h1.PingWithNetwork(h1, "ip6"); err != nil {
+		t.Errorf("Failed to ping: %s", err)
+	}
+}

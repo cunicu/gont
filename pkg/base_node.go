@@ -16,16 +16,20 @@ import (
 
 type BaseNode struct {
 	Node
-
 	*Namespace
-	Network *Network
+
+	network *Network
 
 	name string
 
+	BasePath string
+
+	Interfaces []*Interface
+
+	// Options
+	ConfiguredInterfaces    []*Interface
 	ExistingNamespace       string
 	ExistingDockerContainer string
-
-	BasePath string
 }
 
 func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
@@ -41,11 +45,11 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 
 	node := &BaseNode{
 		name:     name,
-		Network:  n,
+		network:  n,
 		BasePath: basePath,
 	}
 
-	log.WithField("name", name).Info("Adding new node")
+	log.WithField("node", node).Info("Adding new node")
 
 	for _, opt := range opts {
 		if nopt, ok := opt.(NodeOption); ok {
@@ -97,72 +101,136 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		return nil, fmt.Errorf("failed to bind mount netns fd: %s", err)
 	}
 
-	n.Nodes[name] = node
+	n.Register(node)
 
 	return node, nil
 }
 
-func (n *BaseNode) Base() *BaseNode {
-	return n
+// Getter
+
+func (n *BaseNode) NetNSHandle() netns.NsHandle {
+	return n.NsHandle
+}
+
+func (n *BaseNode) NetlinkHandle() *nl.Handle {
+	return n.Handle
 }
 
 func (n *BaseNode) Name() string {
 	return n.name
 }
 
-func (n *BaseNode) ConfigurePort(p Port) error {
-	log.WithField("intf", n.name+"/"+p.Name).Info("Activating interface")
+func (n *BaseNode) String() string {
+	return fmt.Sprintf("%s/%s", n.Network(), n.Name())
+}
 
-	link, err := n.Handle.LinkByName(p.Name)
-	if err != nil {
-		return err
+func (n *BaseNode) Network() *Network {
+	return n.network
+}
+
+func (n *BaseNode) Interface(name string) *Interface {
+	for _, i := range n.Interfaces {
+		if i.Name == name {
+			return i
+		}
 	}
 
-	if p.Group != Default {
+	return nil
+}
+
+func (n *BaseNode) ConfigureInterface(i *Interface) error {
+	log.WithField("intf", i).Info("Configuring interface")
+
+	if i.LinkAttrs.MTU != 0 {
 		log.WithFields(log.Fields{
-			"intf":  p,
-			"group": p.Group,
-		}).Info("Setting device group")
-		if err := n.Handle.LinkSetGroup(link, int(p.Group)); err != nil {
+			"intf": i,
+			"mtu":  i.LinkAttrs.MTU,
+		}).Info("Setting interface MTU")
+		if err := n.Handle.LinkSetMTU(i.Link, i.LinkAttrs.MTU); err != nil {
+			return err
+		}
+	}
+
+	if i.LinkAttrs.HardwareAddr != nil {
+		log.WithFields(log.Fields{
+			"intf": i,
+			"mac":  i.LinkAttrs.HardwareAddr,
+		}).Info("Setting interface MAC address")
+		if err := n.Handle.LinkSetHardwareAddr(i.Link, i.LinkAttrs.HardwareAddr); err != nil {
+			return err
+		}
+	}
+
+	if i.LinkAttrs.TxQLen > 0 {
+		log.WithFields(log.Fields{
+			"intf":   i,
+			"txqlen": i.LinkAttrs.TxQLen,
+		}).Info("Setting interface transmit queue length")
+		if err := n.Handle.LinkSetTxQLen(i.Link, i.LinkAttrs.TxQLen); err != nil {
+			return err
+		}
+	}
+
+	if i.LinkAttrs.Group != 0 {
+		log.WithFields(log.Fields{
+			"intf":  i,
+			"group": i.LinkAttrs.Group,
+		}).Info("Setting interface group")
+		if err := n.Handle.LinkSetGroup(i.Link, int(i.LinkAttrs.Group)); err != nil {
 			return err
 		}
 	}
 
 	var pHandle uint32 = nl.HANDLE_ROOT
-	if p.Flags&WithQdiscNetem != 0 {
+	if i.Flags&WithQdiscNetem != 0 {
 		attr := nl.QdiscAttrs{
-			LinkIndex: link.Attrs().Index,
+			LinkIndex: i.Link.Attrs().Index,
 			Handle:    nl.MakeHandle(1, 0),
 			Parent:    pHandle,
 		}
 
-		netem := nl.NewNetem(attr, p.Netem)
+		netem := nl.NewNetem(attr, i.Netem)
 
+		log.WithFields(log.Fields{
+			"intf": i,
+		}).Info("Adding Netem qdisc to interface")
 		if err := n.Handle.QdiscAdd(netem); err != nil {
 			return err
 		}
 
 		pHandle = netem.Handle
 	}
-	if p.Flags&WithQdiscTbf != 0 {
-		p.Tbf.LinkIndex = link.Attrs().Index
-		p.Tbf.Limit = 0x7000
-		p.Tbf.Minburst = 1600
-		p.Tbf.Buffer = 300000
-		p.Tbf.Peakrate = 0x1000000
-		p.Tbf.QdiscAttrs = nl.QdiscAttrs{
-			LinkIndex: link.Attrs().Index,
+	if i.Flags&WithQdiscTbf != 0 {
+		i.Tbf.LinkIndex = i.Link.Attrs().Index
+		i.Tbf.Limit = 0x7000
+		i.Tbf.Minburst = 1600
+		i.Tbf.Buffer = 300000
+		i.Tbf.Peakrate = 0x1000000
+		i.Tbf.QdiscAttrs = nl.QdiscAttrs{
+			LinkIndex: i.Link.Attrs().Index,
 			Handle:    nl.MakeHandle(2, 0),
 			Parent:    pHandle,
 		}
 
-		if err := n.Handle.QdiscAdd(&p.Tbf); err != nil {
+		log.WithFields(log.Fields{
+			"intf": i,
+		}).Info("Adding TBF qdisc to interface")
+		if err := n.Handle.QdiscAdd(&i.Tbf); err != nil {
 			return err
 		}
 	}
 
-	if err := n.Handle.LinkSetUp(link); err != nil {
+	log.WithFields(log.Fields{
+		"intf": i,
+	}).Info("Setting interface up")
+	if err := n.Handle.LinkSetUp(i.Link); err != nil {
 		return err
+	}
+
+	n.Interfaces = append(n.Interfaces, i)
+
+	if err := n.network.GenerateHostsFile(); err != nil {
+		return fmt.Errorf("failed to update hosts file")
 	}
 
 	return nil
@@ -186,8 +254,22 @@ func (n *BaseNode) Teardown() error {
 }
 
 func (n *BaseNode) WriteProcFS(path, value string) error {
-	_, _, err := n.Run("sh", "-c", "echo "+value+" > "+path)
-	return err
+	log.WithFields(log.Fields{
+		"path":  path,
+		"value": value,
+	}).Info("Updating procfs")
+
+	return n.RunFunc(func() error {
+		f, err := os.OpenFile(path, os.O_RDWR, 0)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		_, err = f.WriteString(value)
+
+		return err
+	})
 }
 
 func (n *BaseNode) EnableForwarding() error {
@@ -213,7 +295,7 @@ func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 	}
 
 	log.WithFields(log.Fields{
-		"intf": n.name + "/" + name,
+		"intf": n.String() + "/" + name,
 		"addr": addr.String(),
 	}).Info("Adding new address to interface")
 
@@ -226,7 +308,7 @@ func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 
 func (n *BaseNode) AddRoute(dst net.IPNet, gw net.IP) error {
 	log.WithFields(log.Fields{
-		"node": n.name,
+		"node": n,
 		"dst":  dst.String(),
 		"gw":   gw.String(),
 	}).Info("Add route")
@@ -239,4 +321,22 @@ func (n *BaseNode) AddRoute(dst net.IPNet, gw net.IP) error {
 	}
 
 	return nil
+}
+
+func (n *BaseNode) AddDefaultRoute(gw net.IP) error {
+	if gw.To4() != nil {
+		return n.AddRoute(net.IPNet{
+			IP:   net.IPv4zero,
+			Mask: net.CIDRMask(0, net.IPv6len*8),
+		}, gw)
+	} else {
+		return n.AddRoute(net.IPNet{
+			IP:   net.IPv6zero,
+			Mask: net.CIDRMask(0, net.IPv6len*8),
+		}, gw)
+	}
+}
+
+func (n *BaseNode) AddInterface(i *Interface) {
+	n.ConfiguredInterfaces = append(n.ConfiguredInterfaces, i)
 }

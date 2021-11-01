@@ -11,30 +11,28 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func (n *Network) AddLink(l, r Endpoint, opts ...Option) error {
+func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 	var err error
 
-	lPort := l.port()
-	rPort := r.port()
-
-	lNode := lPort.Node.Base()
-	rNode := rPort.Node.Base()
-
-	if len(lPort.Name) > syscall.IFNAMSIZ-1 || len(rPort.Name) > syscall.IFNAMSIZ-1 {
+	if len(l.Name) > syscall.IFNAMSIZ-1 || len(r.Name) > syscall.IFNAMSIZ-1 {
 		return fmt.Errorf("interface names are too long. max_len=%d", syscall.IFNAMSIZ-1)
 	}
 
-	if lPort.Node == rPort.Node {
-		return errors.New("failed to link the node with itself")
-	}
-
-	if lPort.Node == nil || rPort.Node == nil {
+	if l.Node == nil || r.Node == nil {
 		return errors.New("cant establish link between interfaces without node")
 	}
 
+	if l.Node == r.Node {
+		return errors.New("failed to link the node with itself")
+	}
+
+	if l.Node.Network() != r.Node.Network() {
+		return errors.New("nodes are belonging to different networks")
+	}
+
 	log.WithFields(log.Fields{
-		"left":  lPort,
-		"right": rPort,
+		"left":  l,
+		"right": r,
 	}).Info("Adding new veth pair")
 
 	// Create Veth pair
@@ -50,7 +48,7 @@ func (n *Network) AddLink(l, r Endpoint, opts ...Option) error {
 			Name:   utils.RandStringRunes(unix.IFNAMSIZ - 1), // temporary name
 			TxQLen: -1,
 		},
-		PeerName: rPort.Name,
+		PeerName: r.Name,
 	}
 
 	// Apply options
@@ -58,31 +56,43 @@ func (n *Network) AddLink(l, r Endpoint, opts ...Option) error {
 		switch opt := opt.(type) {
 		case VethOption:
 			opt.Apply(veth)
-		case LinkOption:
-			opt.Apply(&veth.LinkAttrs)
 		}
 	}
 
-	if err = lNode.Handle.LinkAdd(veth); err != nil {
+	lHandle := l.Node.NetlinkHandle()
+	rHandle := r.Node.NetlinkHandle()
+
+	// Create veth pair
+	if err = lHandle.LinkAdd(veth); err != nil {
 		return fmt.Errorf("failed to add link: %w", err)
 	}
 
-	rLink, err := lNode.Handle.LinkByName(rPort.Name)
+	rLink, err := lHandle.LinkByName(r.Name)
 	if err != nil {
 		return err
 	}
 
-	if err := lNode.Handle.LinkSetNsFd(rLink, int(rNode.NsHandle)); err != nil {
+	// Move one side into the target netns
+	if err := lHandle.LinkSetNsFd(rLink, int(r.Node.NetNSHandle())); err != nil {
 		return err
 	}
 
-	if err := lNode.Handle.LinkSetName(veth, lPort.Name); err != nil {
+	// Rename veth
+	if err := lHandle.LinkSetName(veth, l.Name); err != nil {
 		return err
 	}
 
-	// Configuring endpoints (link state, attaching to bridge, adding addresses)
-	for _, e := range []Endpoint{l, r} {
-		if err := e.Configure(); err != nil {
+	if l.Link, err = lHandle.LinkByName(l.Name); err != nil {
+		return err
+	}
+
+	if r.Link, err = rHandle.LinkByName(r.Name); err != nil {
+		return err
+	}
+
+	// Configure interface (link state, attaching to bridge, adding addresses)
+	for _, i := range []*Interface{l, r} {
+		if err := i.Configure(); err != nil {
 			return fmt.Errorf("failed to configure endpoint: %w", err)
 		}
 	}

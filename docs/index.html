@@ -294,7 +294,7 @@
 
 					<section>
 						<h3>Relationships</h3>
-						<img src="images/architecture.svg" />
+						<img class="stretch" src="images/architecture.svg" />
 					</section>
 
 					<section>
@@ -558,17 +558,13 @@
 								</ul>
 							</li>
 							<li>root access / <code>NET_ADMIN</code> caps</li>
-							<li>some userspace tools*
-								<ul>
-									<li>iptables &amp; traceroute</li>
-								</ul>
-							</li>
+							<li>traceroute userspace tool</li>
 						</ul>
 					</section>
 					<section>
 						<h3>Roadmap</h3>
 						<ul>
-							<li>Remove requirement of external userspace tools</li>
+							<li>Use pure Go implementation of traceroute</li>
 							<li>More topology factories</li>
 							<li>Design a nice logo</li>
 							<li>A Graphviz output for topology visualization</li>

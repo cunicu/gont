@@ -9,21 +9,13 @@ import (
 
 // Switch is an abstraction for a Linux virtual bridge
 type Switch struct {
-	BaseNode
-
-	Ports []Port
+	*BaseNode
 }
 
 // Options
 
-func (sw Switch) Apply(p *Port) {
-	p.Node = &sw
-}
-
-// Getter
-
-func (sw *Switch) Base() *BaseNode {
-	return &sw.BaseNode
+func (sw *Switch) Apply(i *Interface) {
+	i.Node = sw
 }
 
 // AddSwitch adds a new Linux virtual bridge in a dedicated namespace
@@ -34,10 +26,10 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 	}
 
 	sw := &Switch{
-		BaseNode: *node,
+		BaseNode: node,
 	}
 
-	n.Nodes[name] = sw // TODO: quirk to get n.UpdateHostsFile() working
+	n.Register(sw)
 
 	br := &nl.Bridge{
 		LinkAttrs: nl.LinkAttrs{
@@ -63,7 +55,7 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 	}
 
 	log.WithFields(log.Fields{
-		"node": name,
+		"node": sw,
 		"intf": br.LinkAttrs.Name,
 	}).Infof("Adding new Linux bridge")
 
@@ -71,31 +63,41 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		return nil, fmt.Errorf("failed to bring bridge up: %w", err)
 	}
 
+	// Connect host to switch interfaces
+	for _, intf := range sw.Interfaces {
+		peerDev := fmt.Sprintf("veth-%s", name)
+
+		left := intf
+		left.Node = sw
+
+		right := &Interface{
+			Name: peerDev,
+			Node: intf.Node,
+		}
+
+		n.AddLink(left, right)
+	}
+
 	return sw, nil
 }
 
-// ConfigurePort attaches an existing interface to a bridge port
-func (sw *Switch) ConfigurePort(p Port) error {
-	log.WithField("intf", p).Info("Connecting port to bridge master")
+// ConfigureInterface attaches an existing interface to a bridge interface
+func (sw *Switch) ConfigureInterface(i *Interface) error {
+	log.WithField("intf", i).Info("Connecting interface to bridge master")
 	br, err := sw.Handle.LinkByName(bridgeInterfaceName)
 	if err != nil {
 		return fmt.Errorf("failed to find bridge intf: %s", err)
 	}
 
-	l, err := sw.Handle.LinkByName(p.Name)
+	l, err := sw.Handle.LinkByName(i.Name)
 	if err != nil {
-		return fmt.Errorf("failed to find new bridge port intf: %s", err)
+		return fmt.Errorf("failed to find new bridge interface: %s", err)
 	}
 
-	// Attach port to bridge
+	// Attach interface to bridge
 	if err := sw.Handle.LinkSetMaster(l, br); err != nil {
 		return err
 	}
 
-	// Bringing port up
-	return sw.BaseNode.ConfigurePort(p)
-}
-
-func (sw Switch) Name() string {
-	return sw.BaseNode.name
+	return sw.BaseNode.ConfigureInterface(i)
 }

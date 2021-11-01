@@ -41,12 +41,12 @@ type Probability struct {
 	Correlation float32
 }
 
-func (ne Netem) Apply(p *g.Port) {
+func (ne Netem) Apply(p *g.Interface) {
 	p.Netem = nl.NetemQdiscAttrs(ne)
 	p.Flags |= g.WithQdiscNetem
 }
 
-func (tbf Tbf) Apply(p *g.Port) {
+func (tbf Tbf) Apply(p *g.Interface) {
 	p.Tbf = nl.Tbf(tbf)
 	p.Flags |= g.WithQdiscTbf
 }

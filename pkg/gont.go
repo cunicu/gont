@@ -72,8 +72,8 @@ func Identify() (string, string, error) {
 		return "", "", err
 	}
 
-	for _, network := range GetNetworkNames() {
-		for _, node := range GetNodeNames(network) {
+	for _, network := range NetworkNames() {
+		for _, node := range NodeNames(network) {
 			f := path.Join("/var/run/gont", network, "nodes", node, "ns", "net")
 
 			handle, err := netns.GetFromPath(f)

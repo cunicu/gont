@@ -12,19 +12,12 @@ import (
 )
 
 type Host struct {
-	BaseNode
+	*BaseNode
 
 	// Options
 	GatewayIPv4 net.IP
 	GatewayIPv6 net.IP
 	Forwarding  bool
-
-	Interfaces []Interface
-}
-
-// Getter
-func (h *Host) Base() *BaseNode {
-	return &h.BaseNode
 }
 
 // Options
@@ -39,11 +32,10 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 	}
 
 	host := &Host{
-		BaseNode:   *node,
-		Interfaces: []Interface{},
+		BaseNode: node,
 	}
 
-	n.Nodes[name] = host // TODO: quirk to get n.UpdateHostsFile() working
+	n.Register(host)
 
 	// Apply host options
 	for _, opt := range opts {
@@ -52,26 +44,28 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		}
 	}
 
-	// Add interfaces
-	for _, intf := range host.Interfaces {
-		if err := host.AddInterface(intf); err != nil {
-			return nil, fmt.Errorf("failed to add interface: %w", err)
-		}
+	// Configure loopback device
+	lo := loopbackInterface
+	if lo.Link, err = host.Handle.LinkByName("lo"); err != nil {
+		return nil, err
 	}
+	if err := host.ConfigureInterface(&lo); err != nil {
+		return nil, fmt.Errorf("failed to configure loopback interface: %w", err)
+	}
+
+	host.ConfigureLinks()
 
 	// Configure host
 	if host.GatewayIPv4 != nil {
-		host.AddRoute(net.IPNet{
-			IP:   net.IPv4zero,
-			Mask: net.CIDRMask(0, net.IPv4len*8),
-		}, host.GatewayIPv4)
+		if err := host.AddDefaultRoute(host.GatewayIPv4); err != nil {
+			return nil, err
+		}
 	}
 
 	if host.GatewayIPv6 != nil {
-		host.AddRoute(net.IPNet{
-			IP:   net.IPv6zero,
-			Mask: net.CIDRMask(0, net.IPv6len*8),
-		}, host.GatewayIPv6)
+		if err := host.AddDefaultRoute(host.GatewayIPv6); err != nil {
+			return nil, err
+		}
 	}
 
 	if host.Forwarding {
@@ -80,44 +74,34 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		}
 	}
 
-	if err := host.ConfigureInterface(loopbackInterface); err != nil {
-		return nil, fmt.Errorf("failed to configure loopback interface: %w", err)
-	}
-
 	return host, nil
 }
 
-func (h *Host) AddInterface(i Interface) error {
-	peerDev := fmt.Sprintf("veth-%s", h.name)
+// ConfigureLinks adds links to other nodes which
+// have been configured by functional options
+func (h *Host) ConfigureLinks() error {
+	for _, intf := range h.ConfiguredInterfaces {
+		peerDev := fmt.Sprintf("veth-%s", h.Name())
 
-	l := Interface{
-		Port: Port{
-			Name: i.Name,
-			Node: h,
-		},
-		Addresses: i.Addresses,
+		right := &Interface{
+			Name: peerDev,
+			Node: intf.Node,
+		}
+
+		left := intf
+		left.Node = h
+
+		if err := h.network.AddLink(left, right); err != nil {
+			return err
+		}
 	}
 
-	r := Port{
-		Name: peerDev,
-		Node: i.Node,
-	}
-
-	var addrs []string
-	for _, a := range l.Addresses {
-		addrs = append(addrs, a.String())
-	}
-
-	log.WithFields(log.Fields{
-		"intf":      l,
-		"intf_peer": r,
-		"addresses": addrs,
-	}).Info("Adding interface")
-
-	return h.Network.AddLink(l, r)
+	return nil
 }
 
-func (h *Host) ConfigureInterface(i Interface) error {
+func (h *Host) ConfigureInterface(i *Interface) error {
+	log.WithField("intf", i).Info("Configuring interface")
+
 	// Disable duplicate address detection (DAD) before adding addresses
 	// so we dont end up with tentative addresses and slow test executions
 	if !i.EnableDAD {
@@ -133,18 +117,7 @@ func (h *Host) ConfigureInterface(i Interface) error {
 		}
 	}
 
-	// Bring interface up
-	if err := h.BaseNode.ConfigurePort(i.Port); err != nil {
-		return err
-	}
-
-	h.Interfaces = append(h.Interfaces, i) // TODO: arent the interface already in there for some cases?
-
-	if err := h.Network.UpdateHostsFile(); err != nil {
-		return fmt.Errorf("failed to update hosts file")
-	}
-
-	return nil
+	return h.BaseNode.ConfigureInterface(i)
 }
 
 func (h *Host) Ping(o *Host) (*ping.Statistics, error) {
@@ -165,7 +138,7 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 	p.Timeout = timeout
 	p.Interval = intv
 
-	if h.Network != o.Network {
+	if h.network != o.network {
 		return nil, fmt.Errorf("hosts must be on same network")
 	}
 
@@ -177,7 +150,7 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 
 	logger := log.WithFields(log.Fields{
 		"logger": "ping",
-		"ns":     h.name,
+		"node":   h,
 	})
 
 	p.SetIPAddr(ip)
@@ -227,7 +200,7 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 }
 
 func (h *Host) Traceroute(o *Host, opts ...interface{}) error {
-	if h.Network != o.Network {
+	if h.network != o.network {
 		return fmt.Errorf("hosts must be on same network")
 	}
 
@@ -238,7 +211,7 @@ func (h *Host) Traceroute(o *Host, opts ...interface{}) error {
 
 func (h *Host) LookupAddress(n string) *net.IPAddr {
 	for _, i := range h.Interfaces {
-		if i.Name == loopbackInterfaceName {
+		if i.IsLoopback() {
 			continue
 		}
 

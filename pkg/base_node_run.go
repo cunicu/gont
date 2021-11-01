@@ -19,13 +19,13 @@ func (n *BaseNode) Command(name string, arg ...string) *exec.Cmd {
 
 	c := exec.Command(name, arg...)
 
-	if !n.NsHandle.Equal(n.Network.HostNode.NsHandle) {
+	if !n.NsHandle.Equal(n.network.HostNode.NsHandle) {
 		if n.ExistingDockerContainer == "" {
 			c.Path = "/proc/self/exe"
 			c.Env = append(os.Environ(),
 				"GONT_UNSHARE=exec",
 				"GONT_NODE="+n.name,
-				"GONT_NETWORK="+n.Network.Name)
+				"GONT_NETWORK="+n.network.Name)
 		} else {
 			c.Path = "/usr/bin/docker"
 			c.Args = append([]string{"docker", "exec", n.ExistingDockerContainer, name}, arg...)
@@ -36,6 +36,45 @@ func (n *BaseNode) Command(name string, arg ...string) *exec.Cmd {
 }
 
 func (n *BaseNode) Run(cmd string, args ...interface{}) ([]byte, *exec.Cmd, error) {
+	stdout, stderr, c, err := n.Start(cmd, args...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	combined := io.MultiReader(stdout, stderr)
+	buf, err := io.ReadAll(combined)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err = c.Wait(); err != nil {
+		if _, ok := err.(*exec.ExitError); !ok {
+			return nil, nil, err
+		}
+	}
+
+	rlogger := log.WithFields(log.Fields{
+		"node":     n,
+		"cmd":      cmd,
+		"cmd_args": args,
+		"pid":      c.Process.Pid,
+		"rc":       c.ProcessState.ExitCode(),
+		"sys_time": c.ProcessState.SystemTime(),
+	})
+
+	f := rlogger.Info
+	if !c.ProcessState.Success() {
+		f = rlogger.Error
+	}
+	f("Process terminated")
+
+	return buf, c, err
+}
+
+func (n *BaseNode) Start(cmd string, args ...interface{}) (io.Reader, io.Reader, *exec.Cmd, error) {
+	var err error
+	var stdout, stderr io.Reader
+
 	strargs := []string{}
 	for _, arg := range args {
 		var strarg string
@@ -65,52 +104,13 @@ func (n *BaseNode) Run(cmd string, args ...interface{}) ([]byte, *exec.Cmd, erro
 		case bool:
 			strarg = strconv.FormatBool(arg)
 		default:
-			return nil, nil, fmt.Errorf("invalid argument: %v", arg)
+			return nil, nil, nil, fmt.Errorf("invalid argument: %v", arg)
 		}
 
 		strargs = append(strargs, strarg)
 	}
 
-	stdout, stderr, c, err := n.Start(cmd, strargs...)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	combined := io.MultiReader(stdout, stderr)
-	buf, err := io.ReadAll(combined)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if err = c.Wait(); err != nil {
-		if _, ok := err.(*exec.ExitError); !ok {
-			return nil, nil, err
-		}
-	}
-
-	rlogger := log.WithFields(log.Fields{
-		"ns":       n.name,
-		"cmd":      cmd,
-		"cmd_args": args,
-		"pid":      c.Process.Pid,
-		"rc":       c.ProcessState.ExitCode(),
-		"sys_time": c.ProcessState.SystemTime(),
-	})
-
-	f := rlogger.Info
-	if !c.ProcessState.Success() {
-		f = rlogger.Error
-	}
-	f("Process terminated")
-
-	return buf, c, err
-}
-
-func (n *BaseNode) Start(cmd string, arg ...string) (io.Reader, io.Reader, *exec.Cmd, error) {
-	var err error
-	var stdout, stderr io.Reader
-
-	c := n.Command(cmd, arg...)
+	c := n.Command(cmd, strargs...)
 
 	if stdout, err = c.StdoutPipe(); err != nil {
 		return nil, nil, nil, err
@@ -121,9 +121,9 @@ func (n *BaseNode) Start(cmd string, arg ...string) (io.Reader, io.Reader, *exec
 	}
 
 	logger := log.WithFields(log.Fields{
-		"ns":       n.name,
+		"node":     n,
 		"cmd":      cmd,
-		"cmd_args": arg,
+		"cmd_args": strargs,
 	})
 
 	if err = c.Start(); err != nil {
@@ -154,11 +154,21 @@ func (n *BaseNode) Start(cmd string, arg ...string) (io.Reader, io.Reader, *exec
 	return stdout, stderr, c, nil
 }
 
-func (n *BaseNode) GoRun(script string, arg ...interface{}) ([]byte, *exec.Cmd, error) {
-	tmp := filepath.Join(n.Network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
-	_, _, err := n.Network.HostNode.Run("go", "build", "-o", tmp, script)
+func (n *BaseNode) StartGo(script string, arg ...interface{}) (io.Reader, io.Reader, *exec.Cmd, error) {
+	tmp := filepath.Join(n.network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
+	_, _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to compile Go code: %w", err)
+	}
+
+	return n.Start(tmp, arg...)
+}
+
+func (n *BaseNode) RunGo(script string, arg ...interface{}) ([]byte, *exec.Cmd, error) {
+	tmp := filepath.Join(n.network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
+	_, _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to compile Go code: %w", err)
 	}
 
 	return n.Run(tmp, arg...)

@@ -15,11 +15,6 @@ type HostOption interface {
 	Apply(h *Host)
 }
 
-type PortOption interface {
-	Option
-	Apply(p *Port)
-}
-
 type InterfaceOption interface {
 	Option
 	Apply(i *Interface)

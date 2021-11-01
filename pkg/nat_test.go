@@ -104,10 +104,8 @@ func TestPingNATIPv6(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.GatewayIPv4(10, 0, 1, 1),
 		o.GatewayIP("fc::1:1"),
 		o.Interface("veth0", sw1,
-			o.AddressIPv4(10, 0, 1, 2, 24),
 			o.AddressIP("fc::1:2/112")),
 	); err != nil {
 		t.Errorf("Failed to create host: %s", err)
@@ -115,10 +113,8 @@ func TestPingNATIPv6(t *testing.T) {
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.GatewayIPv4(10, 0, 2, 1),
 		o.GatewayIP("fc::2:1"),
 		o.Interface("veth0", sw2,
-			o.AddressIPv4(10, 0, 2, 2, 24),
 			o.AddressIP("fc::2:2/112")),
 	); err != nil {
 		t.Errorf("Failed to create host: %s", err)
@@ -127,24 +123,17 @@ func TestPingNATIPv6(t *testing.T) {
 
 	if _, err = n.AddNAT("n1",
 		o.Interface("veth0", sw1, o.SouthBound,
-			o.AddressIPv4(10, 0, 1, 1, 24),
 			o.AddressIP("fc::1:1/112")),
 		o.Interface("veth1", sw2, o.NorthBound,
-			o.AddressIPv4(10, 0, 2, 1, 24),
 			o.AddressIP("fc::2:1/112")),
 	); err != nil {
 		t.Errorf("Failed to create nat: %s", err)
 		t.FailNow()
 	}
 
-	if _, err = h1.Ping(h2); err != nil {
+	if _, err = h1.PingWithNetwork(h2, "ip6"); err != nil {
 		t.Errorf("Failed to ping h1 -> h2: %s", err)
 		t.FailNow()
-	}
-
-	if err = h1.Traceroute(h2, "-4"); err != nil {
-		t.Errorf("Failed to traceroute h1 -> h2: %s", err)
-		t.Fail()
 	}
 
 	if err = h1.Traceroute(h2, "-6"); err != nil {
@@ -239,7 +228,7 @@ func TestPingDoubleNAT(t *testing.T) {
 // TestPingHostNAT performs and end-to-end ping test
 // between a virtual host and the outside host network
 //
-//  h1 <-> sw <-> nat1 <-> external
+//  h1 <-> sw <-> n1 (host) <-> external
 func TestPingHostNAT(t *testing.T) {
 	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
 		// GitHubs Azure based CI environment does not
@@ -288,6 +277,10 @@ func TestPingHostNAT(t *testing.T) {
 	}
 
 	if _, _, err = h1.Run("ping", "-c", 1, "www.rwth-aachen.de"); err != nil {
+		t.Fail()
+	}
+
+	if _, err := h1.Ping(n.HostNode); err != nil {
 		t.Fail()
 	}
 }

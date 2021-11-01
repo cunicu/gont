@@ -8,12 +8,16 @@ import (
 	"strings"
 )
 
-// UpdateHostsFile writes the addresses and hostnames of all nodes
+var (
+	IPv4loopback = net.IPv4(127, 0, 0, 1)
+)
+
+// GenerateHostsFile writes the addresses and hostnames of all nodes
 // into a file located at /run/gont/<network>/files/etc/hosts
 //
 // Processes started via BaseNode.Run or BaseNode.Start, will see
 // this file bind mounted at /etc/hosts
-func (n *Network) UpdateHostsFile() error {
+func (n *Network) GenerateHostsFile() error {
 	fn := filepath.Join(n.BasePath, "files", "etc", "hosts")
 	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
 		return err
@@ -28,8 +32,7 @@ func (n *Network) UpdateHostsFile() error {
 
 	hosts := map[string][]string{}
 
-	IPv4loopback := net.IPv4(127, 0, 0, 1)
-
+	// Loopback addresses
 	hosts[IPv4loopback.String()] = []string{"localhost", "localhost.localdomain", "localhost4", "localhost4.localdomain4"}
 	hosts[net.IPv6loopback.String()] = []string{"localhost", "localhost.localdomain", "localhost6", "localhost6.localdomain6"}
 
@@ -51,16 +54,16 @@ func (n *Network) UpdateHostsFile() error {
 		}
 	}
 
-	for _, node := range n.Nodes {
-		if host, ok := node.(*Host); ok {
-			for _, i := range host.Interfaces {
-				if i.Name == loopbackInterfaceName {
+	for _, n := range n.Nodes {
+		if n, ok := n.(*Host); ok {
+			for _, i := range n.Interfaces {
+				if i.IsLoopback() {
 					continue
 				}
 
 				for _, a := range i.Addresses {
-					add(host.name, a.IP)
-					add(host.name+"-"+i.Name, a.IP)
+					add(n.Name(), a.IP)
+					add(n.Name()+"-"+i.Name, a.IP)
 				}
 			}
 		}
@@ -72,6 +75,39 @@ func (n *Network) UpdateHostsFile() error {
 
 	if err := f.Sync(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (n *Network) GenerateConfigFiles() error {
+	return n.GenerateIProute2Files()
+}
+
+func (n *Network) GenerateIProute2Files() error {
+	fn := filepath.Join(n.BasePath, "files/etc/iproute2/group")
+	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if contentsOrig, err := os.ReadFile("/etc/iproute2/group"); err == nil {
+		f.Write(contentsOrig)
+		f.WriteString("\n")
+	}
+
+	groups := map[DeviceGroup]string{
+		DeviceGroupNorthBound: "north-bound",
+		DeviceGroupSouthBound: "south-bound",
+	}
+
+	for group, name := range groups {
+		fmt.Fprintf(f, "%d %s\n", group, name)
 	}
 
 	return nil

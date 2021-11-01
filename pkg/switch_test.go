@@ -52,8 +52,8 @@ func TestPingCascadedSwitches(t *testing.T) {
 	}
 
 	if err = n.AddLink(
-		o.Port("br-sw2", sw1),
-		o.Port("br-sw1", sw2),
+		o.Interface("br-sw2", sw1),
+		o.Interface("br-sw1", sw2),
 	); err != nil {
 		t.Errorf("Failed to add link: %s", err)
 		t.FailNow()
