@@ -84,7 +84,7 @@ func TestNetemLoss(t *testing.T) {
 	}
 
 	ne := o.WithNetem(
-		o.Loss{Probability: 20.0},
+		o.Loss{Probability: 10.0},
 	)
 
 	stats, err := testNetem(t, ne)

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"kernel.org/pub/linux/libs/security/libcap/cap"
@@ -37,14 +38,14 @@ func HostNode(n *Network) *Host {
 	}
 
 	return &Host{
-		BaseNode: BaseNode{
+		BaseNode: &BaseNode{
 			name: "host",
 			Namespace: &Namespace{
 				Name:     "base",
 				NsHandle: baseNs,
 				Handle:   baseHandle,
 			},
-			Network: n,
+			network: n,
 		},
 	}
 }
@@ -68,7 +69,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		Name:           name,
 		BasePath:       basePath,
 		Nodes:          map[string]Node{},
-		DefaultOptions: Options{},
+		DefaultOptions: opts,
 		NSPrefix:       "gont-",
 	}
 
@@ -95,7 +96,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		return nil, errors.New("failed to create host node")
 	}
 
-	if err := n.UpdateHostsFile(); err != nil {
+	if err := n.GenerateHostsFile(); err != nil {
 		return nil, fmt.Errorf("failed to update hosts file: %w", err)
 	}
 
@@ -103,10 +104,16 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		return nil, fmt.Errorf("failed to generate configuration files: %w", err)
 	}
 
+	log.Infof("Created new network: %s", n.Name)
+
 	return n, nil
 }
 
 // Getter
+
+func (n *Network) String() string {
+	return n.Name
+}
 
 func (n *Network) Hosts() []*Host {
 	hosts := []*Host{}

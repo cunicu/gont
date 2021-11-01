@@ -1,7 +1,11 @@
 package gont
 
 type Router struct {
-	Host
+	*Host
+}
+
+func (h *Router) Apply(i *Interface) {
+	i.Node = h
 }
 
 func (n *Network) AddRouter(name string, opts ...Option) (*Router, error) {
@@ -15,7 +19,7 @@ func (n *Network) AddRouter(name string, opts ...Option) (*Router, error) {
 	}
 
 	rtr := &Router{
-		Host: *host,
+		Host: host,
 	}
 
 	n.Register(rtr)
