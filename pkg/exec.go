@@ -22,9 +22,16 @@ func init() {
 
 	if unshare != "" {
 		SetupLogging()
+
+		// Avoid recursion
+		if err := os.Unsetenv("GONT_UNSHARE"); err != nil {
+			panic(err)
+		}
+
 		if err := Exec(network, node, os.Args); err != nil {
 			panic(err)
 		}
+
 		os.Exit(-1)
 	}
 }
