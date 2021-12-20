@@ -69,25 +69,25 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 
 	rLink, err := lHandle.LinkByName(r.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to find interface %s: %w", r.Name, err)
 	}
 
 	// Move one side into the target netns
 	if err := lHandle.LinkSetNsFd(rLink, int(r.Node.NetNSHandle())); err != nil {
-		return err
+		return fmt.Errorf("failed to move interface to namespace: %w", err)
 	}
 
 	// Rename veth
 	if err := lHandle.LinkSetName(veth, l.Name); err != nil {
-		return err
+		return fmt.Errorf("failed to rename interface: %w", err)
 	}
 
 	if l.Link, err = lHandle.LinkByName(l.Name); err != nil {
-		return err
+		return fmt.Errorf("failed to find interface %s: %w", l.Name, err)
 	}
 
 	if r.Link, err = rHandle.LinkByName(r.Name); err != nil {
-		return err
+		return fmt.Errorf("failed to find interface %s: %w", r.Name, err)
 	}
 
 	// Configure interface (link state, attaching to bridge, adding addresses)
