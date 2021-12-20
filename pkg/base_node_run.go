@@ -156,9 +156,9 @@ func (n *BaseNode) Start(cmd string, args ...interface{}) (io.Reader, io.Reader,
 
 func (n *BaseNode) StartGo(script string, arg ...interface{}) (io.Reader, io.Reader, *exec.Cmd, error) {
 	tmp := filepath.Join(n.network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
-	_, _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script)
+	out, _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to compile Go code: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to compile Go code: %w\n%s", err, string(out))
 	}
 
 	return n.Start(tmp, arg...)
