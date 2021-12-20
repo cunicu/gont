@@ -16,13 +16,9 @@ require (
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/koneu/natend v0.0.0-20150829182554-ec0926ea948d // indirect
 	github.com/mdlayher/netlink v0.0.0-20191009155606-de872b0d824b // indirect
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/text v0.3.7 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.59 // indirect
 )
 
 replace github.com/vishvananda/netlink => github.com/stv0g/netlink v1.1.1-gont
-
-replace github.com/vishvananda/netns => github.com/stv0g/netns v0.0.0-20211014154538-c4d5d2062cf1
