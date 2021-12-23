@@ -25,24 +25,20 @@ func TestGetMyIP(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if server, err = AddWebServer(n, "server"); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if client, err = n.AddHost("client"); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if nat, err = n.AddNAT("n1"); err != nil {
-		t.Errorf("Failed to create nat: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create nat: %s", err)
 	}
 
 	if err := n.AddLink(

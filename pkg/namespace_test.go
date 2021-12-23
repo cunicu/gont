@@ -15,8 +15,7 @@ func TestNamespace(t *testing.T) {
 
 	n, err := g.NewNamespace(nsName)
 	if err != nil {
-		t.Errorf("Failed to create new namespace: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create new namespace: %s", err)
 	}
 	defer n.Close()
 

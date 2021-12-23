@@ -20,43 +20,37 @@ func TestPingCascadedSwitches(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw1, err = n.AddSwitch("sw1"); err != nil {
-		t.Errorf("Failed to add switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add switch: %s", err)
 	}
 
 	if sw2, err = n.AddSwitch("sw2"); err != nil {
-		t.Errorf("Failed to add switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
 		o.Interface("veth0", sw1,
 			o.AddressIPv4(10, 0, 0, 1, 24)),
 	); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
 		o.Interface("veth0", sw2,
 			o.AddressIPv4(10, 0, 0, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if err = n.AddLink(
 		o.Interface("br-sw2", sw1),
 		o.Interface("br-sw1", sw2),
 	); err != nil {
-		t.Errorf("Failed to add link: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add link: %s", err)
 	}
 
 	if err := g.TestConnectivity(h1, h2); err != nil {

@@ -21,14 +21,12 @@ func TestDocker(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw, err = n.AddSwitch("sw"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	// h1 is a normal Gont node
@@ -37,15 +35,13 @@ func TestDocker(t *testing.T) {
 			o.AddressIPv4(10, 0, 0, 1, 24),
 			o.AddressIP("fc::1/64")),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	// h2 is a Docker container
 	outp, _, err := n.HostNode.Run("docker", "run", "--detach", "nginx")
 	if err != nil {
-		t.Errorf("Failed to start Docker container")
-		t.FailNow()
+		t.Fatalf("Failed to start Docker container")
 	}
 
 	id := strings.TrimSpace(string(outp))
@@ -58,8 +54,7 @@ func TestDocker(t *testing.T) {
 			o.AddressIPv4(10, 0, 0, 2, 24),
 			o.AddressIP("fc::2/64")),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	h2.Run("hostname")

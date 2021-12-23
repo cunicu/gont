@@ -21,19 +21,16 @@ func TestPingNATIPv4(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw1, err = n.AddSwitch("sw1"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if sw2, err = n.AddSwitch("sw2"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
@@ -41,8 +38,7 @@ func TestPingNATIPv4(t *testing.T) {
 		o.Interface("veth0", sw1,
 			o.AddressIPv4(10, 0, 1, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
@@ -50,8 +46,7 @@ func TestPingNATIPv4(t *testing.T) {
 		o.Interface("veth0", sw2,
 			o.AddressIPv4(10, 0, 2, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err = n.AddNAT("n1",
@@ -60,13 +55,11 @@ func TestPingNATIPv4(t *testing.T) {
 		o.Interface("veth1", sw2, o.NorthBound,
 			o.AddressIPv4(10, 0, 2, 1, 24)),
 	); err != nil {
-		t.Errorf("Failed to create nat: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create nat: %s", err)
 	}
 
 	if _, err = h1.Ping(h2); err != nil {
-		t.Errorf("Failed to ping h1 -> h2: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to ping h1 -> h2: %s", err)
 	}
 
 	if err = h1.Traceroute(h2); err != nil {
@@ -88,19 +81,16 @@ func TestPingNATIPv6(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw1, err = n.AddSwitch("sw1"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if sw2, err = n.AddSwitch("sw2"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
@@ -108,8 +98,7 @@ func TestPingNATIPv6(t *testing.T) {
 		o.Interface("veth0", sw1,
 			o.AddressIP("fc::1:2/112")),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
@@ -117,8 +106,7 @@ func TestPingNATIPv6(t *testing.T) {
 		o.Interface("veth0", sw2,
 			o.AddressIP("fc::2:2/112")),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err = n.AddNAT("n1",
@@ -127,13 +115,11 @@ func TestPingNATIPv6(t *testing.T) {
 		o.Interface("veth1", sw2, o.NorthBound,
 			o.AddressIP("fc::2:1/112")),
 	); err != nil {
-		t.Errorf("Failed to create nat: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create nat: %s", err)
 	}
 
 	if _, err = h1.PingWithNetwork(h2, "ip6"); err != nil {
-		t.Errorf("Failed to ping h1 -> h2: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to ping h1 -> h2: %s", err)
 	}
 
 	if err = h1.Traceroute(h2, "-6"); err != nil {
@@ -155,24 +141,20 @@ func TestPingDoubleNAT(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw1, err = n.AddSwitch("sw1"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if sw2, err = n.AddSwitch("sw2"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if sw3, err = n.AddSwitch("sw3"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
@@ -180,8 +162,7 @@ func TestPingDoubleNAT(t *testing.T) {
 		o.Interface("veth0", sw1,
 			o.AddressIPv4(10, 0, 1, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
@@ -189,8 +170,7 @@ func TestPingDoubleNAT(t *testing.T) {
 		o.Interface("veth0", sw3,
 			o.AddressIPv4(10, 0, 2, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err = n.AddNAT("n1",
@@ -200,8 +180,7 @@ func TestPingDoubleNAT(t *testing.T) {
 		o.Interface("veth0", sw2, o.NorthBound,
 			o.AddressIPv4(10, 0, 3, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to create NAT router: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create NAT router: %s", err)
 	}
 
 	if _, err = n.AddNAT("n2",
@@ -210,13 +189,11 @@ func TestPingDoubleNAT(t *testing.T) {
 		o.Interface("veth0", sw3, o.NorthBound,
 			o.AddressIPv4(10, 0, 2, 1, 24)),
 	); err != nil {
-		t.Errorf("Failed to create NAT router: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create NAT router: %s", err)
 	}
 
 	if _, err = h1.Ping(h2); err != nil {
-		t.Errorf("Failed to ping h1 <-> h2: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to ping h1 <-> h2: %s", err)
 	}
 
 	if err = h1.Traceroute(h2); err != nil {
@@ -244,14 +221,12 @@ func TestPingHostNAT(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw1, err = n.AddSwitch("sw1"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
@@ -259,21 +234,18 @@ func TestPingHostNAT(t *testing.T) {
 		o.Interface("veth0", sw1,
 			o.AddressIPv4(10, 0, 0, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err := n.AddHostNAT("n1",
 		o.Interface("veth0", sw1, o.SouthBound,
 			o.AddressIPv4(10, 0, 0, 1, 24)),
 	); err != nil {
-		t.Errorf("Failed to create host NAT: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host NAT: %s", err)
 	}
 
 	if _, _, err = h1.Run("ping", "-c", 1, "1.1.1.1"); err != nil {
-		t.Errorf("Failed to ping: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to ping: %s", err)
 	}
 
 	if _, _, err = h1.Run("ping", "-c", 1, "www.rwth-aachen.de"); err != nil {

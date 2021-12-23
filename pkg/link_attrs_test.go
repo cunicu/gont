@@ -16,19 +16,16 @@ func TestLinkAttrs(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if h1, err = n.AddHost("h1"); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2"); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if err := n.AddLink(

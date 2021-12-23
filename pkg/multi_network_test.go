@@ -22,29 +22,25 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 	}
 
 	if n, err = g.NewNetwork("", opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 
 	if sw, err = n.AddSwitch(pfx + "sw"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if _, err = n.AddHost(pfx+"h1",
 		o.Interface("veth0", sw,
 			address(1)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err = n.AddHost(pfx+"h2",
 		o.Interface("veth0", sw,
 			address(2)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	return n
@@ -81,15 +77,13 @@ func TestNetworkNameCollision(t *testing.T) {
 	)
 
 	if n1, err = g.NewNetwork("", opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n1.Close()
 
 	// Creating another network with the same name must fail
 	if n2, err = g.NewNetwork(n1.Name, opts...); err == nil {
 		defer n2.Close()
-		t.Errorf("Cannot create multiple networks with same name")
-		t.FailNow()
+		t.Fatalf("Cannot create multiple networks with same name")
 	}
 }

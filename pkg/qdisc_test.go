@@ -20,19 +20,16 @@ func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if h1, err = n.AddHost("h1"); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2"); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if err := n.AddLink(
@@ -41,8 +38,7 @@ func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
 		o.Interface("veth0", h2,
 			o.AddressIPv4(10, 0, 0, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to connect hosts: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to connect hosts: %s", err)
 	}
 
 	return h1.PingWithOptions(h2, "ip", 1000, 2000*time.Millisecond, time.Millisecond, false)

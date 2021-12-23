@@ -12,14 +12,12 @@ import (
 func prepare(t *testing.T) (*g.Network, *g.BaseNode) {
 	n, err := g.NewNetwork(nname, opts...)
 	if err != nil {
-		t.Errorf("Failed to create new network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create new network: %s", err)
 	}
 
 	n1, err := n.AddNode("n1")
 	if err != nil {
-		t.Errorf("Failed to create node: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create node: %s", err)
 	}
 
 	return n, n1
@@ -52,8 +50,7 @@ func TestRunFunc(t *testing.T) {
 		}
 
 		if !handle.Equal(n1.NsHandle) {
-			t.Errorf("mismatching netns handles")
-			t.FailNow()
+			t.Fatalf("mismatching netns handles")
 		}
 
 		return nil
@@ -68,8 +65,7 @@ func TestRunGo(t *testing.T) {
 
 	out, cmd, err := n1.RunGo("../cmd/gontc/gontc.go", "identify")
 	if err != nil {
-		t.Errorf("Failed to run Go script: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to run Go script: %s", err)
 	}
 
 	if !cmd.ProcessState.Exited() || !cmd.ProcessState.Success() {
@@ -97,8 +93,7 @@ func TestEnter(t *testing.T) {
 	}
 
 	if !handle.Equal(n1.NsHandle) {
-		t.Errorf("mismatching netns handles")
-		t.FailNow()
+		t.Fatalf("mismatching netns handles")
 	}
 }
 

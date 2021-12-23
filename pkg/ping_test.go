@@ -21,14 +21,12 @@ func TestPingDualStack(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw, err = n.AddSwitch("sw"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
@@ -36,8 +34,7 @@ func TestPingDualStack(t *testing.T) {
 			o.AddressIPv4(10, 0, 0, 1, 24),
 			o.AddressIP("fc::1/64")),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
@@ -45,8 +42,7 @@ func TestPingDualStack(t *testing.T) {
 			o.AddressIPv4(10, 0, 0, 2, 24),
 			o.AddressIP("fc::2/64")),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	for _, net := range []string{"ip4", "ip6"} {
@@ -70,30 +66,26 @@ func TestPingIPv4(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw, err = n.AddSwitch("sw"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
 		o.Interface("veth0", sw,
 			o.AddressIPv4(10, 0, 0, 1, 24)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
 		o.Interface("veth0", sw,
 			o.AddressIPv4(10, 0, 0, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if err := g.TestConnectivity(h1, h2); err != nil {
@@ -115,30 +107,26 @@ func TestPingIPv6(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw, err = n.AddSwitch("sw"); err != nil {
-		t.Errorf("Failed to create switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
 		o.Interface("veth0", sw,
 			o.AddressIP("fc::1/64")),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
 		o.Interface("veth0", sw,
 			o.AddressIP("fc::2/64")),
 	); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if err := g.TestConnectivity(h1, h2); err != nil {
@@ -158,19 +146,16 @@ func TestPingDirect(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if h1, err = n.AddHost("h1"); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2"); err != nil {
-		t.Errorf("Failed to create host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if err := n.AddLink(
@@ -179,8 +164,7 @@ func TestPingDirect(t *testing.T) {
 		o.Interface("veth0", h2,
 			o.AddressIPv4(10, 0, 0, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to connect hosts: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to connect hosts: %s", err)
 	}
 
 	if _, _, err = h1.Run("cat", "/etc/hosts"); err != nil {
@@ -205,19 +189,16 @@ func TestPingMultiHop(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if sw1, err = n.AddSwitch("sw1"); err != nil {
-		t.Errorf("Failed to add switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add switch: %s", err)
 	}
 
 	if sw2, err = n.AddSwitch("sw2"); err != nil {
-		t.Errorf("Failed to add switch: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add switch: %s", err)
 	}
 
 	if h1, err = n.AddHost("h1",
@@ -226,8 +207,7 @@ func TestPingMultiHop(t *testing.T) {
 			o.AddressIPv4(10, 0, 1, 2, 24),
 		),
 	); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
@@ -235,8 +215,7 @@ func TestPingMultiHop(t *testing.T) {
 		o.Interface("veth0", sw2,
 			o.AddressIPv4(10, 0, 2, 2, 24)),
 	); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if _, err := n.AddRouter("r1",
@@ -247,8 +226,7 @@ func TestPingMultiHop(t *testing.T) {
 			o.AddressIPv4(10, 0, 2, 1, 24),
 		),
 	); err != nil {
-		t.Errorf("Failed to add router: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add router: %s", err)
 	}
 
 	if err := g.TestConnectivity(h1, h2); err != nil {
@@ -268,14 +246,12 @@ func TestPingLoopback(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if h, err = n.AddHost("h"); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if _, _, err := h.Run("ping", "-4", "-c", 1, "localhost"); err != nil {
@@ -295,19 +271,16 @@ func TestPingSelf(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(nname, opts...); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
 	if h1, err = n.AddHost("h1"); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2"); err != nil {
-		t.Errorf("Failed to add host: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if err := n.AddLink(

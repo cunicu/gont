@@ -28,8 +28,7 @@ func TestNamedNetwork(t *testing.T) {
 	ns := fmt.Sprintf("gont-%s-h1", name)
 
 	if n, err = g.NewNetwork(name); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
@@ -61,8 +60,7 @@ func TestNetworkNSPrefix(t *testing.T) {
 	ns := fmt.Sprintf("%s%s-h1", prefix, name)
 
 	if n, err = g.NewNetwork(name, o.NSPrefix(prefix)); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
 
@@ -90,8 +88,7 @@ func TestNetworkGeneratedName(t *testing.T) {
 	)
 
 	if n1, err = g.NewNetwork(""); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n1.Close()
 
@@ -110,14 +107,12 @@ func TestNetworkExists(t *testing.T) {
 	name := g.GenerateNetworkName()
 
 	if n1, err = g.NewNetwork(name); err != nil {
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n1.Close()
 
 	if n2, err = g.NewNetwork(name); err == nil {
 		defer n2.Close()
-		t.Errorf("Failed to create network: %s", err)
-		t.FailNow()
+		t.Fatalf("Failed to create network: %s", err)
 	}
 }
