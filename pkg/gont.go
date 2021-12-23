@@ -1,14 +1,10 @@
 package gont
 
 import (
-	crand "crypto/rand"
-	"encoding/binary"
 	"errors"
-	"math/rand"
 	"os"
 	"path"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netns"
 	"kernel.org/pub/linux/libs/security/libcap/cap"
 )
@@ -21,40 +17,6 @@ const (
 	loopbackInterfaceName = "lo"
 	bridgeInterfaceName   = "br"
 )
-
-func TestConnectivity(hosts ...*Host) error {
-	for _, a := range hosts {
-		for _, b := range hosts {
-			if a != b {
-				if _, err := a.Ping(b); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func SetupRand() error {
-	var seed int64
-
-	if err := binary.Read(crand.Reader, binary.LittleEndian, &seed); err != nil {
-		return err
-	}
-
-	rand.Seed(seed)
-
-	return nil
-}
-
-func SetupLogging() {
-	log.SetFormatter(&log.TextFormatter{
-		ForceColors:  true,
-		DisableQuote: true,
-	})
-	log.SetLevel(log.DebugLevel)
-}
 
 func CheckCaps() error {
 	c := cap.GetProc()
@@ -88,4 +50,18 @@ func Identify() (string, string, error) {
 	}
 
 	return "", "", os.ErrNotExist
+}
+
+func TestConnectivity(hosts ...*Host) error {
+	for _, a := range hosts {
+		for _, b := range hosts {
+			if a != b {
+				if _, err := a.Ping(b); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }

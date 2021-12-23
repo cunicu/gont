@@ -21,8 +21,6 @@ func init() {
 	network := os.Getenv("GONT_NETWORK")
 
 	if unshare != "" {
-		SetupLogging()
-
 		// Avoid recursion
 		if err := os.Unsetenv("GONT_UNSHARE"); err != nil {
 			panic(err)

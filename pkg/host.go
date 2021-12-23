@@ -5,7 +5,7 @@ import (
 	"net"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type Host struct {
@@ -97,7 +97,7 @@ func (h *Host) ConfigureLinks() error {
 }
 
 func (h *Host) ConfigureInterface(i *Interface) error {
-	log.WithField("intf", i).Info("Configuring interface")
+	h.logger.Info("Configuring interface", zap.Any("intf", i))
 
 	// Disable duplicate address detection (DAD) before adding addresses
 	// so we dont end up with tentative addresses and slow test executions

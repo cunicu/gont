@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stv0g/gont/internal/utils"
 	nl "github.com/vishvananda/netlink"
+	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 )
 
@@ -30,10 +30,10 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 		return errors.New("nodes are belonging to different networks")
 	}
 
-	log.WithFields(log.Fields{
-		"left":  l,
-		"right": r,
-	}).Info("Adding new veth pair")
+	n.logger.Info("Adding new veth pair",
+		zap.Any("left", l),
+		zap.Any("right", r),
+	)
 
 	// Create Veth pair
 

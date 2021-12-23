@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-ping/ping"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap/zapio"
 )
 
 func (h *Host) Ping(o *Host) (*ping.Statistics, error) {
@@ -37,19 +37,17 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 		return nil, errors.New("failed to find address")
 	}
 
-	logger := log.WithFields(log.Fields{
-		"logger": "ping",
-		"node":   h,
-	})
+	logger := h.logger.Named("pinger")
+	wlog := &zapio.Writer{Log: logger}
 
 	p.SetIPAddr(ip)
-	p.SetLogger(logger)
+	p.SetLogger(logger.Sugar())
 	p.SetPrivileged(true)
 	p.SetNetwork(net)
 
 	if output {
 		p.OnRecv = func(p *ping.Packet) {
-			logger.Printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%v\n",
+			fmt.Fprintf(wlog, "%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%v\n",
 				p.Nbytes,
 				p.Addr,
 				p.IPAddr.String(),
@@ -60,15 +58,15 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 		}
 
 		p.OnFinish = func(s *ping.Statistics) {
-			logger.Printf("-- %s (%s) ping statistics ---", o.Name(), s.IPAddr)
-			logger.Printf("%d packets transmitted, %d received, %d duplicates, %.2f%% packet loss\n", s.PacketsSent, s.PacketsRecv, s.PacketsRecvDuplicates, s.PacketLoss)
-			logger.Printf("rtt min/avg/max/mdev = %s/%s/%s/%s\n", s.MinRtt, s.AvgRtt, s.MaxRtt, s.StdDevRtt)
+			fmt.Fprintf(wlog, "-- %s (%s) ping statistics ---", o.Name(), s.IPAddr)
+			fmt.Fprintf(wlog, "%d packets transmitted, %d received, %d duplicates, %.2f%% packet loss\n", s.PacketsSent, s.PacketsRecv, s.PacketsRecvDuplicates, s.PacketLoss)
+			fmt.Fprintf(wlog, "rtt min/avg/max/mdev = %s/%s/%s/%s\n", s.MinRtt, s.AvgRtt, s.MaxRtt, s.StdDevRtt)
 		}
 	}
 
 	if err = h.RunFunc(func() error {
 		if output {
-			logger.Printf("PING %s(%s) %d data bytes\n",
+			fmt.Fprintf(wlog, "PING %s(%s) %d data bytes\n",
 				o.Name(),
 				p.Addr(),
 				p.Size,

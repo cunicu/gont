@@ -5,7 +5,7 @@ import (
 	"net"
 
 	nft "github.com/google/nftables"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 var (
@@ -127,20 +127,20 @@ func (n *NAT) setup() error {
 
 func (n *NAT) updateIPSetInterface(c *nft.Conn, i *Interface) error {
 	if i.LinkAttrs.Group == uint32(DeviceGroupSouthBound) {
-		for _, a := range i.Addresses {
+		for _, addr := range i.Addresses {
 			f := n.families[nft.TableFamilyIPv4]
-			if a.IP.To4() == nil {
+			if addr.IP.To4() == nil {
 				f = n.families[nft.TableFamilyIPv6]
 			}
 
-			log.WithFields(log.Fields{
-				"set":  f.Set.Name,
-				"addr": a.String(),
-			}).Info("Adding address to nftables set")
+			n.logger.Info("Adding address to nftables set",
+				zap.String("set", f.Set.Name),
+				zap.String("addr", addr.String()),
+			)
 
 			netw := net.IPNet{
-				IP:   a.IP.Mask(a.Mask),
-				Mask: a.Mask,
+				IP:   addr.IP.Mask(addr.Mask),
+				Mask: addr.Mask,
 			}
 
 			if err := f.AddNetwork(c, netw); err != nil {

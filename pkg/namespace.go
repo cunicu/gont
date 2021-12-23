@@ -4,9 +4,9 @@ import (
 	"runtime"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"go.uber.org/zap"
 
 	"golang.org/x/sys/unix"
 )
@@ -18,14 +18,17 @@ type Namespace struct {
 	*nl.Handle
 
 	Name string
+
+	logger *zap.Logger
 }
 
 func NewNamespace(name string) (*Namespace, error) {
 	ns := &Namespace{
-		Name: name,
+		Name:   name,
+		logger: zap.L().Named("namespace").With(zap.String("ns", name)),
 	}
 
-	log.WithField("ns", name).Info("Creating new namespace")
+	ns.logger.Info("Creating new namespace")
 
 	return ns, ns.createNamespaceAndNetlinkHandles()
 }
@@ -66,7 +69,7 @@ func (ns *Namespace) Close() error {
 			return err
 		}
 
-		log.WithField("ns", ns.Name).Info("Deleted namespace")
+		ns.logger.Info("Deleted namespace")
 	}
 
 	return nil
@@ -95,7 +98,7 @@ func (ns *Namespace) Enter() (func(), error) {
 		return nil, err
 	}
 
-	log.WithField("ns", ns.Name).Debug("Entered namespace")
+	ns.logger.Debug("Entered namespace")
 
 	return func() {
 		// Restore original netns namespace
@@ -103,7 +106,7 @@ func (ns *Namespace) Enter() (func(), error) {
 			panic(err)
 		}
 
-		log.WithField("ns", ns.Name).Debug("Left namespace")
+		ns.logger.Debug("Left namespace")
 
 		runtime.UnlockOSThread()
 	}, nil

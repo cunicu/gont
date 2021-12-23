@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stv0g/gont/internal/utils"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 )
 
@@ -30,6 +30,8 @@ type BaseNode struct {
 	ConfiguredInterfaces    []*Interface
 	ExistingNamespace       string
 	ExistingDockerContainer string
+
+	logger *zap.Logger
 }
 
 func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
@@ -47,9 +49,10 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		name:     name,
 		network:  n,
 		BasePath: basePath,
+		logger:   zap.L().Named("node").With(zap.String("node", name)),
 	}
 
-	log.WithField("node", node).Info("Adding new node")
+	node.logger.Info("Adding new node")
 
 	for _, opt := range opts {
 		if nopt, ok := opt.(NodeOption); ok {
@@ -139,43 +142,40 @@ func (n *BaseNode) Interface(name string) *Interface {
 }
 
 func (n *BaseNode) ConfigureInterface(i *Interface) error {
-	log.WithField("intf", i).Info("Configuring interface")
+	logger := n.logger.With(zap.Any("intf", i))
+	logger.Info("Configuring interface")
 
 	if i.LinkAttrs.MTU != 0 {
-		log.WithFields(log.Fields{
-			"intf": i,
-			"mtu":  i.LinkAttrs.MTU,
-		}).Info("Setting interface MTU")
+		logger.Info("Setting interface MTU",
+			zap.Int("mtu", i.LinkAttrs.MTU),
+		)
 		if err := n.Handle.LinkSetMTU(i.Link, i.LinkAttrs.MTU); err != nil {
 			return err
 		}
 	}
 
 	if i.LinkAttrs.HardwareAddr != nil {
-		log.WithFields(log.Fields{
-			"intf": i,
-			"mac":  i.LinkAttrs.HardwareAddr,
-		}).Info("Setting interface MAC address")
+		logger.Info("Setting interface MAC address",
+			zap.Any("mac", i.LinkAttrs.HardwareAddr),
+		)
 		if err := n.Handle.LinkSetHardwareAddr(i.Link, i.LinkAttrs.HardwareAddr); err != nil {
 			return err
 		}
 	}
 
 	if i.LinkAttrs.TxQLen > 0 {
-		log.WithFields(log.Fields{
-			"intf":   i,
-			"txqlen": i.LinkAttrs.TxQLen,
-		}).Info("Setting interface transmit queue length")
+		logger.Info("Setting interface transmit queue length",
+			zap.Int("txqlen", i.LinkAttrs.TxQLen),
+		)
 		if err := n.Handle.LinkSetTxQLen(i.Link, i.LinkAttrs.TxQLen); err != nil {
 			return err
 		}
 	}
 
 	if i.LinkAttrs.Group != 0 {
-		log.WithFields(log.Fields{
-			"intf":  i,
-			"group": i.LinkAttrs.Group,
-		}).Info("Setting interface group")
+		logger.Info("Setting interface group",
+			zap.Uint32("group", i.LinkAttrs.Group),
+		)
 		if err := n.Handle.LinkSetGroup(i.Link, int(i.LinkAttrs.Group)); err != nil {
 			return err
 		}
@@ -191,9 +191,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 
 		netem := nl.NewNetem(attr, i.Netem)
 
-		log.WithFields(log.Fields{
-			"intf": i,
-		}).Info("Adding Netem qdisc to interface")
+		logger.Info("Adding Netem qdisc to interface")
 		if err := n.Handle.QdiscAdd(netem); err != nil {
 			return err
 		}
@@ -212,17 +210,13 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 			Parent:    pHandle,
 		}
 
-		log.WithFields(log.Fields{
-			"intf": i,
-		}).Info("Adding TBF qdisc to interface")
+		logger.Info("Adding TBF qdisc to interface")
 		if err := n.Handle.QdiscAdd(&i.Tbf); err != nil {
 			return err
 		}
 	}
 
-	log.WithFields(log.Fields{
-		"intf": i,
-	}).Info("Setting interface up")
+	logger.Info("Setting interface up")
 	if err := n.Handle.LinkSetUp(i.Link); err != nil {
 		return err
 	}
@@ -254,10 +248,10 @@ func (n *BaseNode) Teardown() error {
 }
 
 func (n *BaseNode) WriteProcFS(path, value string) error {
-	log.WithFields(log.Fields{
-		"path":  path,
-		"value": value,
-	}).Info("Updating procfs")
+	n.logger.Info("Updating procfs",
+		zap.String("path", path),
+		zap.String("value", value),
+	)
 
 	return n.RunFunc(func() error {
 		f, err := os.OpenFile(path, os.O_RDWR, 0)
@@ -294,10 +288,10 @@ func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 		IPNet: &addr,
 	}
 
-	log.WithFields(log.Fields{
-		"intf": n.String() + "/" + name,
-		"addr": addr.String(),
-	}).Info("Adding new address to interface")
+	n.logger.Info("Adding new address to interface",
+		zap.String("intf", fmt.Sprintf("%s/%s", n, name)),
+		zap.String("addr", addr.String()),
+	)
 
 	if err := n.Handle.AddrAdd(link, nlAddr); err != nil {
 		return err
@@ -307,11 +301,10 @@ func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 }
 
 func (n *BaseNode) AddRoute(dst net.IPNet, gw net.IP) error {
-	log.WithFields(log.Fields{
-		"node": n,
-		"dst":  dst.String(),
-		"gw":   gw.String(),
-	}).Info("Add route")
+	n.logger.Info("Add route",
+		zap.Any("dst", dst),
+		zap.Any("gw", gw),
+	)
 
 	if err := n.Handle.RouteAdd(&nl.Route{
 		Dst: &dst,

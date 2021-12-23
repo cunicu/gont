@@ -3,8 +3,8 @@ package gont
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	nl "github.com/vishvananda/netlink"
+	"go.uber.org/zap"
 )
 
 // Switch is an abstraction for a Linux virtual bridge
@@ -54,10 +54,10 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		return nil, fmt.Errorf("failed to add bridge interface: %w", err)
 	}
 
-	log.WithFields(log.Fields{
-		"node": sw,
-		"intf": br.LinkAttrs.Name,
-	}).Infof("Adding new Linux bridge")
+	n.logger.Info("Adding new Linux bridge",
+		zap.Any("node", sw),
+		zap.String("intf", br.LinkAttrs.Name),
+	)
 
 	if err := sw.Handle.LinkSetUp(br); err != nil {
 		return nil, fmt.Errorf("failed to bring bridge up: %w", err)
@@ -83,7 +83,7 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 
 // ConfigureInterface attaches an existing interface to a bridge interface
 func (sw *Switch) ConfigureInterface(i *Interface) error {
-	log.WithField("intf", i).Info("Connecting interface to bridge master")
+	sw.logger.Info("Connecting interface to bridge master", zap.Any("intf", i))
 	br, err := sw.Handle.LinkByName(bridgeInterfaceName)
 	if err != nil {
 		return fmt.Errorf("failed to find bridge intf: %s", err)

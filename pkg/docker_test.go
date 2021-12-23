@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 )
@@ -51,7 +50,7 @@ func TestDocker(t *testing.T) {
 
 	id := strings.TrimSpace(string(outp))
 
-	log.WithField("id", id).Info("Started nginx Docker container")
+	t.Logf("Started nginx Docker container with id %s", id)
 
 	if h2, err = n.AddHost("h2",
 		o.ExistingDockerContainer(id),

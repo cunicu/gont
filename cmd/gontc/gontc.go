@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/stv0g/gont/internal"
 	g "github.com/stv0g/gont/pkg"
 )
 
@@ -43,13 +44,14 @@ func usage() {
 }
 
 func main() {
+	var err error
 	var network, node string
 
-	g.SetupLogging()
-	g.SetupRand()
+	internal.SetupRand()
+	logger := internal.SetupLogging()
+	defer logger.Sync()
 
-	err := g.CheckCaps()
-	if err != nil {
+	if err := g.CheckCaps(); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(-1)
 	}
@@ -67,8 +69,7 @@ func main() {
 
 	switch subcmd {
 	case "shell":
-		network, node, err = getNetworkNode(args)
-		if err == nil {
+		if network, node, err = getNetworkNode(args); err == nil {
 			shell := os.Getenv("SHELL")
 			if shell == "" {
 				shell = "/bin/bash"
@@ -82,8 +83,7 @@ func main() {
 		}
 
 	case "exec":
-		network, node, err = getNetworkNode(args)
-		if err == nil {
+		if network, node, err = getNetworkNode(args); err == nil {
 			err = execCommand(network, node, args[2:])
 		}
 

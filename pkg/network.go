@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"go.uber.org/zap"
 	"kernel.org/pub/linux/libs/security/libcap/cap"
 )
 
@@ -24,6 +24,8 @@ type Network struct {
 	NSPrefix   string
 
 	DefaultOptions Options
+
+	logger *zap.Logger
 }
 
 func HostNode(n *Network) *Host {
@@ -44,8 +46,10 @@ func HostNode(n *Network) *Host {
 				Name:     "base",
 				NsHandle: baseNs,
 				Handle:   baseHandle,
+				logger:   zap.L().Named("namespace"),
 			},
 			network: n,
+			logger:  zap.L().Named("host"),
 		},
 	}
 }
@@ -71,6 +75,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		Nodes:          map[string]Node{},
 		DefaultOptions: opts,
 		NSPrefix:       "gont-",
+		logger:         zap.L().Named("network").With(zap.String("network", name)),
 	}
 
 	// Apply network specific options
@@ -104,7 +109,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		return nil, fmt.Errorf("failed to generate configuration files: %w", err)
 	}
 
-	log.Infof("Created new network: %s", n.Name)
+	n.logger.Info("Created new network")
 
 	return n, nil
 }
