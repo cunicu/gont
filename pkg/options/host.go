@@ -4,32 +4,35 @@ import (
 	"net"
 
 	g "github.com/stv0g/gont/pkg"
+	nl "github.com/vishvananda/netlink"
 )
 
 type Forwarding bool
-type Gateway net.IP
 
 func (b Forwarding) Apply(h *g.Host) {
 	h.Forwarding = bool(b)
 }
 
-func (g Gateway) Apply(h *g.Host) {
-	ip := net.IP(g)
-	if ipv4 := ip.To4(); ipv4 != nil {
-		h.GatewayIPv4 = ipv4
-	} else if ipv6 := ip.To16(); ipv6 != nil {
-		h.GatewayIPv6 = ipv6
+func Route(network net.IPNet, gw net.IP) g.Route {
+	return g.Route{
+		Route: nl.Route{
+			Dst: &network,
+			Gw:  gw,
+		},
 	}
 }
 
-func GatewayIPv4(a, b, c, d byte) Gateway {
-	return Gateway(
-		net.IPv4(a, b, c, d),
-	)
+func DefaultGatewayIPv4(a, b, c, d byte) g.Route {
+	return Route(g.DefaultIPv4Mask, net.IPv4(a, b, c, d))
 }
 
-func GatewayIP(str string) Gateway {
-	return Gateway(
-		net.ParseIP(str),
-	)
+func DefaultGatewayIP(str string) g.Route {
+	gw := net.ParseIP(str)
+	isV4 := gw.To4() != nil
+
+	if isV4 {
+		return Route(g.DefaultIPv4Mask, gw)
+	} else {
+		return Route(g.DefaultIPv6Mask, gw)
+	}
 }

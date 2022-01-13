@@ -202,7 +202,7 @@ func TestPingMultiHop(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.GatewayIPv4(10, 0, 1, 1),
+		o.DefaultGatewayIPv4(10, 0, 1, 1),
 		o.Interface("veth0", sw1,
 			o.AddressIPv4(10, 0, 1, 2, 24),
 		),
@@ -211,7 +211,7 @@ func TestPingMultiHop(t *testing.T) {
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.GatewayIPv4(10, 0, 2, 1),
+		o.DefaultGatewayIPv4(10, 0, 2, 1),
 		o.Interface("veth0", sw2,
 			o.AddressIPv4(10, 0, 2, 2, 24)),
 	); err != nil {

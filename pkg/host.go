@@ -5,6 +5,7 @@ import (
 	"net"
 	"path/filepath"
 
+	nl "github.com/vishvananda/netlink"
 	"go.uber.org/zap"
 )
 
@@ -12,9 +13,8 @@ type Host struct {
 	*BaseNode
 
 	// Options
-	GatewayIPv4 net.IP
-	GatewayIPv6 net.IP
-	Forwarding  bool
+	Routes     []nl.Route
+	Forwarding bool
 }
 
 // Options
@@ -44,24 +44,20 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 	// Configure loopback device
 	lo := loopbackInterface
 	if lo.Link, err = host.Handle.LinkByName("lo"); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get loopback interface: %w", err)
 	}
 	if err := host.ConfigureInterface(&lo); err != nil {
 		return nil, fmt.Errorf("failed to configure loopback interface: %w", err)
 	}
 
-	host.ConfigureLinks()
-
-	// Configure host
-	if host.GatewayIPv4 != nil {
-		if err := host.AddDefaultRoute(host.GatewayIPv4); err != nil {
-			return nil, err
-		}
+	if err := host.ConfigureLinks(); err != nil {
+		return nil, fmt.Errorf("failed to configure links: %w", err)
 	}
 
-	if host.GatewayIPv6 != nil {
-		if err := host.AddDefaultRoute(host.GatewayIPv6); err != nil {
-			return nil, err
+	// Configure host
+	for _, r := range host.Routes {
+		if err := host.AddRoute(r); err != nil {
+			return nil, fmt.Errorf("failed to add route: %w", err)
 		}
 	}
 

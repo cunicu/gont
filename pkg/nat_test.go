@@ -34,7 +34,7 @@ func TestPingNATIPv4(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.GatewayIPv4(10, 0, 1, 1),
+		o.DefaultGatewayIPv4(10, 0, 1, 1),
 		o.Interface("veth0", sw1,
 			o.AddressIPv4(10, 0, 1, 2, 24)),
 	); err != nil {
@@ -42,7 +42,7 @@ func TestPingNATIPv4(t *testing.T) {
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.GatewayIPv4(10, 0, 2, 1),
+		o.DefaultGatewayIPv4(10, 0, 2, 1),
 		o.Interface("veth0", sw2,
 			o.AddressIPv4(10, 0, 2, 2, 24)),
 	); err != nil {
@@ -94,7 +94,7 @@ func TestPingNATIPv6(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.GatewayIP("fc::1:1"),
+		o.DefaultGatewayIP("fc::1:1"),
 		o.Interface("veth0", sw1,
 			o.AddressIP("fc::1:2/112")),
 	); err != nil {
@@ -102,7 +102,7 @@ func TestPingNATIPv6(t *testing.T) {
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.GatewayIP("fc::2:1"),
+		o.DefaultGatewayIP("fc::2:1"),
 		o.Interface("veth0", sw2,
 			o.AddressIP("fc::2:2/112")),
 	); err != nil {
@@ -158,7 +158,7 @@ func TestPingDoubleNAT(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.GatewayIPv4(10, 0, 1, 1),
+		o.DefaultGatewayIPv4(10, 0, 1, 1),
 		o.Interface("veth0", sw1,
 			o.AddressIPv4(10, 0, 1, 2, 24)),
 	); err != nil {
@@ -166,7 +166,7 @@ func TestPingDoubleNAT(t *testing.T) {
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.GatewayIPv4(10, 0, 2, 1),
+		o.DefaultGatewayIPv4(10, 0, 2, 1),
 		o.Interface("veth0", sw3,
 			o.AddressIPv4(10, 0, 2, 2, 24)),
 	); err != nil {
@@ -174,7 +174,7 @@ func TestPingDoubleNAT(t *testing.T) {
 	}
 
 	if _, err = n.AddNAT("n1",
-		o.GatewayIPv4(10, 0, 3, 1),
+		o.DefaultGatewayIPv4(10, 0, 3, 1),
 		o.Interface("veth1", sw1, o.SouthBound,
 			o.AddressIPv4(10, 0, 1, 1, 24)),
 		o.Interface("veth0", sw2, o.NorthBound,
@@ -230,7 +230,7 @@ func TestPingHostNAT(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.GatewayIPv4(10, 0, 0, 1),
+		o.DefaultGatewayIPv4(10, 0, 0, 1),
 		o.Interface("veth0", sw1,
 			o.AddressIPv4(10, 0, 0, 2, 24)),
 	); err != nil {

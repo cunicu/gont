@@ -300,33 +300,26 @@ func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 	return err
 }
 
-func (n *BaseNode) AddRoute(dst net.IPNet, gw net.IP) error {
+func (n *BaseNode) AddRoute(r nl.Route) error {
 	n.logger.Info("Add route",
-		zap.Any("dst", dst),
-		zap.Any("gw", gw),
+		zap.Any("dst", r.Dst),
+		zap.Any("gw", r.Gw),
 	)
 
-	if err := n.Handle.RouteAdd(&nl.Route{
-		Dst: &dst,
-		Gw:  gw,
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	return n.Handle.RouteAdd(&r)
 }
 
 func (n *BaseNode) AddDefaultRoute(gw net.IP) error {
 	if gw.To4() != nil {
-		return n.AddRoute(net.IPNet{
-			IP:   net.IPv4zero,
-			Mask: net.CIDRMask(0, net.IPv6len*8),
-		}, gw)
+		return n.AddRoute(nl.Route{
+			Dst: &DefaultIPv4Mask,
+			Gw:  gw,
+		})
 	} else {
-		return n.AddRoute(net.IPNet{
-			IP:   net.IPv6zero,
-			Mask: net.CIDRMask(0, net.IPv6len*8),
-		}, gw)
+		return n.AddRoute(nl.Route{
+			Dst: &DefaultIPv6Mask,
+			Gw:  gw,
+		})
 	}
 }
 
