@@ -64,7 +64,7 @@ func (n *BaseNode) Run(cmd string, args ...interface{}) ([]byte, *exec.Cmd, erro
 	)
 
 	var f func(string, ...zap.Field)
-	if !c.ProcessState.Success() {
+	if c.ProcessState.Success() {
 		f = rlogger.Info
 	} else {
 		f = rlogger.Error
