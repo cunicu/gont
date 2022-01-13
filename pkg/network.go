@@ -3,6 +3,7 @@ package gont
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"syscall"
 
 	"os"
@@ -15,8 +16,11 @@ import (
 )
 
 type Network struct {
-	Name     string
-	Nodes    map[string]Node
+	Name string
+
+	Nodes     map[string]Node
+	NodesLock sync.RWMutex
+
 	HostNode *Host
 	BasePath string
 
@@ -73,6 +77,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		Name:           name,
 		BasePath:       basePath,
 		Nodes:          map[string]Node{},
+		NodesLock:      sync.RWMutex{},
 		DefaultOptions: opts,
 		NSPrefix:       "gont-",
 		logger:         zap.L().Named("network").With(zap.String("network", name)),
@@ -157,10 +162,15 @@ func (n *Network) Routers() []*Router {
 }
 
 func (n *Network) Teardown() error {
-	for _, node := range n.Nodes {
+	n.NodesLock.Lock()
+	defer n.NodesLock.Unlock()
+
+	for name, node := range n.Nodes {
 		if err := node.Teardown(); err != nil {
 			return err
 		}
+
+		delete(n.Nodes, name)
 	}
 
 	if n.BasePath != "" {
@@ -181,5 +191,10 @@ func (n *Network) Close() error {
 }
 
 func (n *Network) Register(m Node) {
+	n.NodesLock.Lock()
+	defer n.NodesLock.Unlock()
+
+	// TODO handle name collisions
+
 	n.Nodes[m.Name()] = m
 }
