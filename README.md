@@ -2,9 +2,9 @@
 
 [![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
 [![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
-![Snyk.io](https://img.shields.io/snyk/vulnerabilities/github/stv0g/gont)
+[![Snyk.io](https://img.shields.io/snyk/vulnerabilities/github/stv0g/gont)](https://app.snyk.io/org/stv0g/project/56c6dcc1-12bc-43c2-9998-6d98fc648c60)
+[![libraries.io](https://img.shields.io/librariesio/github/stv0g/gont)](https://libraries.io/github/stv0g/gont)
 [![Build](https://img.shields.io/github/checks-status/stv0g/gont/master)](https://github.com/stv0g/gont/actions)
-[![libraries.io](https://img.shields.io/librariesio/release/stv0g/gont)](https://libraries.io/github/stv0g/gont)
 [![GitHub](https://img.shields.io/github/license/stv0g/gont)](https://github.com/stv0g/gont/blob/master/LICENSE)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
 
@@ -20,28 +20,28 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
 
 ## Features
 
-- L3 Routers
-- L2 Switches
-- L3 NAT Routers
-- L3 Host NAT (to host network)
-- Hostname resolution (using /etc/hosts)
-- Support for multiple simultaneous and isolated networks
-- Ideal for golang unit tests
-- Can run in workflows powered by GitHub's runners
-- Lean code thanks to [functional options](https://sagikazarmark.hu/blog/functional-options-on-steroids/)
-- Full IPv6 support
-- Per link network emulation and bandwidth limiting via for netem and tbf qdiscs
-- Use of existing network namespaces as nodes
+-   L3 Routers
+-   L2 Switches
+-   L3 NAT Routers
+-   L3 Host NAT (to host network)
+-   Hostname resolution (using /etc/hosts)
+-   Support for multiple simultaneous and isolated networks
+-   Ideal for golang unit tests
+-   Can run in workflows powered by GitHub's runners
+-   Lean code thanks to [functional options](https://sagikazarmark.hu/blog/functional-options-on-steroids/)
+-   Full IPv6 support
+-   Per link network emulation and bandwidth limiting via for netem and tbf qdiscs
+-   Use of existing network namespaces as nodes
 
 ## Examples
 
 Have a look at the unit tests for usage examples:
 
-- [Simple](pkg/simple_test.go)
-- [Run](pkg/node_test.go)
-- [NAT](pkg/nat_test.go)
-- [Switch](pkg/switch_test.go)
-- [Links](pkg/link_test.go)
+-   [Simple](pkg/simple_test.go)
+-   [Run](pkg/node_test.go)
+-   [NAT](pkg/nat_test.go)
+-   [Switch](pkg/switch_test.go)
+-   [Links](pkg/link_test.go)
 
 ## Prerequisites
 
@@ -117,7 +117,7 @@ classDiagram
 
 ## Credits
 
-- [Steffen Vogel](https://github.com/stv0g) [📧](mailto:post@steffenvogel.de)
+-   [Steffen Vogel](https://github.com/stv0g) [📧](mailto:post@steffenvogel.de)
 
 ### Funding acknowledment
 
