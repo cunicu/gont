@@ -311,12 +311,12 @@ func (n *BaseNode) AddDefaultRoute(gw net.IP) error {
 			Dst: &DefaultIPv4Mask,
 			Gw:  gw,
 		})
-	} else {
-		return n.AddRoute(nl.Route{
-			Dst: &DefaultIPv6Mask,
-			Gw:  gw,
-		})
 	}
+
+	return n.AddRoute(nl.Route{
+		Dst: &DefaultIPv6Mask,
+		Gw:  gw,
+	})
 }
 
 // AddInterface adds an interface to the list of configured interfaces
