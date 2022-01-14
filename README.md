@@ -45,7 +45,7 @@ Have a look at the unit tests for usage examples:
 
 ## Prerequisites
 
-- `traceroute` (for testing)
+-   `traceroute` (for testing)
 
 ## Architecture
 
@@ -121,8 +121,8 @@ classDiagram
 
 ### Funding acknowledment
 
-<img alt="European Flag" src="https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg" align="left" style="margin-right: 10px"/> The development of [Gont] has been supported by the [ERIGrid 2.0] project \
+<img alt="European Flag" src="https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg" align="left" style="margin-right: 10px"/> The development of [Gont][gont] has been supported by the [ERIGrid 2.0][erigrid] project \
 of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.eu/project/id/870620)
 
-[ERIGrid 2.0]: https://erigrid2.eu
-[Gont]: https://github.com/stv0g/gont
+[erigrid]: https://erigrid2.eu
+[gont]: https://github.com/stv0g/gont
