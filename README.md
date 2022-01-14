@@ -1,14 +1,13 @@
 # Gont - A Go network testing toolkit
 
-[![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
-[![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/stv0g/gont/Run%20tests)](https://github.com/stv0g/gont/actions)
 [![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
 [![Codacy coverage](https://img.shields.io/codacy/coverage/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
-[![Snyk.io](https://img.shields.io/snyk/vulnerabilities/github/stv0g/gont)](https://app.snyk.io/org/stv0g/project/56c6dcc1-12bc-43c2-9998-6d98fc648c60)
 [![libraries.io](https://img.shields.io/librariesio/github/stv0g/gont)](https://libraries.io/github/stv0g/gont)
-[![Build](https://img.shields.io/github/checks-status/stv0g/gont/master)](https://github.com/stv0g/gont/actions)
-[![GitHub](https://img.shields.io/github/license/stv0g/gont)](https://github.com/stv0g/gont/blob/master/LICENSE)
+[![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
+[![License](https://img.shields.io/github/license/stv0g/gont)](https://github.com/stv0g/gont/blob/master/LICENSE)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
+[![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
 
 Gont is a package to creat realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native).
 
