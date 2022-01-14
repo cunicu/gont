@@ -52,6 +52,7 @@ func Identify() (string, string, error) {
 	return "", "", os.ErrNotExist
 }
 
+// TestConnectivity performs ICMP ping tests between all pairs of nodes in the network
 func TestConnectivity(hosts ...*Host) error {
 	for _, a := range hosts {
 		for _, b := range hosts {

@@ -176,7 +176,7 @@ func ipNetNextRange(netw net.IPNet) (net.IP, net.IP) {
 	bm := ones % 8
 
 	if bm == 0 {
-		bp -= 1
+		bp--
 		bm = 8
 	}
 

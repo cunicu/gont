@@ -127,6 +127,7 @@ func (n *BaseNode) String() string {
 	return fmt.Sprintf("%s/%s", n.Network(), n.Name())
 }
 
+// Network returns the network to which this node belongs
 func (n *BaseNode) Network() *Network {
 	return n.network
 }
@@ -266,6 +267,7 @@ func (n *BaseNode) WriteProcFS(path, value string) error {
 	})
 }
 
+// EnableForwarding enables forwarding for both IPv4 and IPv6 protocols in the kernel for all interfaces
 func (n *BaseNode) EnableForwarding() error {
 	if err := n.WriteProcFS("/proc/sys/net/ipv4/conf/all/forwarding", "1"); err != nil {
 		return err
@@ -323,6 +325,7 @@ func (n *BaseNode) AddDefaultRoute(gw net.IP) error {
 	}
 }
 
+// AddInterface adds an interface to the list of configured interfaces
 func (n *BaseNode) AddInterface(i *Interface) {
 	n.ConfiguredInterfaces = append(n.ConfiguredInterfaces, i)
 }

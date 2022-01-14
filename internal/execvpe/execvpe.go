@@ -23,6 +23,8 @@ func maybeScriptExecute(argv0 string, argv []string, envp []string) error {
 	return syscall.Exec(new_argv[0], new_argv, envp)
 }
 
+// Execvpe searches the executable binary or a shell script in the currently configured
+// path using a custom environment
 func Execvpe(argv0 string, argv []string, envp []string) error {
 	// We check the simple case first.
 	if argv0 == "" {
