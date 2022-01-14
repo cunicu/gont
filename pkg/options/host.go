@@ -32,7 +32,7 @@ func DefaultGatewayIP(str string) g.Route {
 
 	if isV4 {
 		return Route(g.DefaultIPv4Mask, gw)
-	} else {
-		return Route(g.DefaultIPv6Mask, gw)
 	}
+
+	return Route(g.DefaultIPv6Mask, gw)
 }

@@ -106,9 +106,5 @@ func TeardownNetwork(name string) error {
 		netns.DeleteNamed(netNsName)
 	}
 
-	if err := os.RemoveAll(baseDir); err != nil {
-		return err
-	}
-
-	return nil
+	return os.RemoveAll(baseDir)
 }

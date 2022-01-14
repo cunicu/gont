@@ -62,23 +62,25 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 
 	if node.ExistingNamespace != "" {
 		// Use an existing namespace created by "ip netns add"
-		if nsh, err := netns.GetFromName(node.ExistingNamespace); err != nil {
+		nsh, err := netns.GetFromName(node.ExistingNamespace)
+		if err != nil {
 			return nil, fmt.Errorf("failed to find existing network namespace %s: %w", node.ExistingNamespace, err)
-		} else {
-			node.Namespace = &Namespace{
-				Name:     node.ExistingNamespace,
-				NsHandle: nsh,
-			}
+		}
+
+		node.Namespace = &Namespace{
+			Name:     node.ExistingNamespace,
+			NsHandle: nsh,
 		}
 	} else if node.ExistingDockerContainer != "" {
 		// Use an existing net namespace from a Docker container
-		if nsh, err := netns.GetFromDocker(node.ExistingDockerContainer); err != nil {
+		nsh, err := netns.GetFromDocker(node.ExistingDockerContainer)
+		if err != nil {
 			return nil, fmt.Errorf("failed to find existing docker container %s: %w", node.ExistingNamespace, err)
-		} else {
-			node.Namespace = &Namespace{
-				Name:     node.ExistingDockerContainer,
-				NsHandle: nsh,
-			}
+		}
+
+		node.Namespace = &Namespace{
+			Name:     node.ExistingDockerContainer,
+			NsHandle: nsh,
 		}
 	} else {
 		// Create a new network namespace
@@ -241,11 +243,7 @@ func (n *BaseNode) Teardown() error {
 		return err
 	}
 
-	if err := os.RemoveAll(n.BasePath); err != nil {
-		return err
-	}
-
-	return nil
+	return os.RemoveAll(n.BasePath)
 }
 
 func (n *BaseNode) WriteProcFS(path, value string) error {
@@ -273,11 +271,7 @@ func (n *BaseNode) EnableForwarding() error {
 		return err
 	}
 
-	if err := n.WriteProcFS("/proc/sys/net/ipv6/conf/all/forwarding", "1"); err != nil {
-		return err
-	}
-
-	return nil
+	return n.WriteProcFS("/proc/sys/net/ipv6/conf/all/forwarding", "1")
 }
 
 func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {

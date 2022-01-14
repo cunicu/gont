@@ -12,7 +12,7 @@ const (
 	WithQdiscTbf   = (1 << iota)
 )
 
-var loopbackInterface Interface = Interface{
+var loopbackInterface = Interface{
 	Name: loopbackInterfaceName,
 	Addresses: []net.IPNet{
 		{
@@ -51,9 +51,9 @@ func (i *Interface) Apply(n *BaseNode) {
 func (i Interface) String() string {
 	if i.Node != nil {
 		return fmt.Sprintf("%s/%s", i.Node, i.Name)
-	} else {
-		return i.Name
 	}
+
+	return i.Name
 }
 
 func (i Interface) IsLoopback() bool {

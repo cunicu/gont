@@ -56,11 +56,7 @@ func (ns *Namespace) createNamespaceAndNetlinkHandles() error {
 	}
 
 	// Restore original netns namespace
-	if err := unix.Setns(curNetNs, syscall.CLONE_NEWNET); err != nil {
-		return err
-	}
-
-	return nil
+	return unix.Setns(curNetNs, syscall.CLONE_NEWNET)
 }
 
 func (ns *Namespace) Close() error {
@@ -75,8 +71,8 @@ func (ns *Namespace) Close() error {
 	return nil
 }
 
-func (n *Namespace) RunFunc(cb Callback) error {
-	exit, _ := n.Enter()
+func (ns *Namespace) RunFunc(cb Callback) error {
+	exit, _ := ns.Enter()
 	defer exit()
 
 	errCb := cb()

@@ -98,18 +98,18 @@ func (f *natFamily) SetupChains(c *nft.Conn, sbGroup uint32) error {
 	accept := &expr.Verdict{Kind: expr.VerdictAccept}
 	drop := &expr.Verdict{Kind: expr.VerdictDrop}
 
-	is_southbound_dev := &expr.Cmp{
+	isSouthboundDev := &expr.Cmp{
 		Op:       expr.CmpOpEq,
 		Register: 1,
 		Data:     binaryutil.NativeEndian.PutUint32(sbGroup),
 	}
 
-	is_southbound_net := &expr.Lookup{
+	isSouthboundNet := &expr.Lookup{
 		SourceRegister: 1,
 		SetName:        f.Set.Name,
 	}
 
-	is_not_southbound_net := &expr.Lookup{
+	isNotSouthboundNet := &expr.Lookup{
 		SourceRegister: 1,
 		SetName:        f.Set.Name,
 		Invert:         true,
@@ -138,8 +138,8 @@ func (f *natFamily) SetupChains(c *nft.Conn, sbGroup uint32) error {
 		Table: f.Table,
 		Chain: f.Forward,
 		Exprs: []expr.Any{
-			iifgroup, is_southbound_dev, // meta iifgroup <sbGroup>
-			daddr, is_southbound_net, // ip daddr @sb
+			iifgroup, isSouthboundDev, // meta iifgroup <sbGroup>
+			daddr, isSouthboundNet, // ip daddr @sb
 			drop,
 		},
 	})
@@ -148,8 +148,8 @@ func (f *natFamily) SetupChains(c *nft.Conn, sbGroup uint32) error {
 		Table: f.Table,
 		Chain: f.Forward,
 		Exprs: []expr.Any{
-			iifgroup, is_southbound_dev, // meta iifgroup <sbGroup>
-			saddr, is_southbound_net, // ip saddr @sb
+			iifgroup, isSouthboundDev, // meta iifgroup <sbGroup>
+			saddr, isSouthboundNet, // ip saddr @sb
 			accept,
 		},
 	})
@@ -158,8 +158,8 @@ func (f *natFamily) SetupChains(c *nft.Conn, sbGroup uint32) error {
 		Table: f.Table,
 		Chain: f.Forward,
 		Exprs: []expr.Any{
-			oifgroup, is_southbound_dev, // meta oifgroup <sbGroup>
-			daddr, is_not_southbound_net, // ip daddr @sb
+			oifgroup, isSouthboundDev, // meta oifgroup <sbGroup>
+			daddr, isNotSouthboundNet, // ip daddr @sb
 			accept,
 		},
 	})
@@ -177,8 +177,8 @@ func (f *natFamily) SetupChains(c *nft.Conn, sbGroup uint32) error {
 		Table: f.Table,
 		Chain: postrouting,
 		Exprs: []expr.Any{
-			saddr, is_southbound_net, // ip saddr @sb
-			daddr, is_not_southbound_net, // ip daddr != @sb
+			saddr, isSouthboundNet, // ip saddr @sb
+			daddr, isNotSouthboundNet, // ip daddr != @sb
 			&expr.Masq{}, // masquerade
 		},
 	})

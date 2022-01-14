@@ -21,8 +21,8 @@ type NAT struct {
 	families map[nft.TableFamily]*natFamily
 }
 
-func (h *NAT) Apply(i *Interface) {
-	i.Node = h
+func (n *NAT) Apply(i *Interface) {
+	i.Node = n
 }
 
 func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {

@@ -15,12 +15,12 @@ import (
 func maybeScriptExecute(argv0 string, argv []string, envp []string) error {
 	argc := len(argv)
 
-	new_argv := []string{"/bin/sh", argv0}
+	newArgv := []string{"/bin/sh", argv0}
 	if argc > 1 {
-		new_argv = append(new_argv, argv[1:]...)
+		newArgv = append(newArgv, argv[1:]...)
 	}
 
-	return syscall.Exec(new_argv[0], new_argv, envp)
+	return syscall.Exec(newArgv[0], newArgv, envp)
 }
 
 // Execvpe searches the executable binary or a shell script in the currently configured

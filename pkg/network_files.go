@@ -73,11 +73,7 @@ func (n *Network) GenerateHostsFile() error {
 		fmt.Fprintf(f, "%s %s\n", addr, strings.Join(names, " "))
 	}
 
-	if err := f.Sync(); err != nil {
-		return err
-	}
-
-	return nil
+	return f.Sync()
 }
 
 func (n *Network) GenerateConfigFiles() error {
