@@ -32,4 +32,13 @@ jobs:
       run: |
         sudo --preserve-env \
           env "PATH=$PATH" \
-          go test -v ./...
+          go test -coverprofile coverage.out -v ./...
+
+    - name: Run codacy-coverage-reporter
+      uses: codacy/codacy-coverage-reporter-action@v1
+      env:
+        CODACY_REPORTER_TMP_FOLDER: .codacy
+      with:
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: coverage.out
+        force-coverage-parser: go
