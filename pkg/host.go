@@ -13,7 +13,7 @@ type Host struct {
 	*BaseNode
 
 	// Options
-	Routes     []nl.Route
+	Routes     []*nl.Route
 	Forwarding bool
 }
 

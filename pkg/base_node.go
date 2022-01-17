@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	nft "github.com/google/nftables"
 	"github.com/stv0g/gont/internal/utils"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
@@ -300,24 +301,24 @@ func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 	return err
 }
 
-func (n *BaseNode) AddRoute(r nl.Route) error {
+func (n *BaseNode) AddRoute(r *nl.Route) error {
 	n.logger.Info("Add route",
 		zap.Any("dst", r.Dst),
 		zap.Any("gw", r.Gw),
 	)
 
-	return n.Handle.RouteAdd(&r)
+	return n.nlHandle.RouteAdd(r)
 }
 
 func (n *BaseNode) AddDefaultRoute(gw net.IP) error {
 	if gw.To4() != nil {
-		return n.AddRoute(nl.Route{
+		return n.AddRoute(&nl.Route{
 			Dst: &DefaultIPv4Mask,
 			Gw:  gw,
 		})
 	}
 
-	return n.AddRoute(nl.Route{
+	return n.AddRoute(&nl.Route{
 		Dst: &DefaultIPv6Mask,
 		Gw:  gw,
 	})
