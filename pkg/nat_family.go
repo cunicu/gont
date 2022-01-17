@@ -36,13 +36,12 @@ func newNATFamily(f nft.TableFamily) *natFamily {
 func (f *natFamily) SetupTable(c *nft.Conn) error {
 	t := &nft.Table{
 		Family: f.Family,
-		Name:   "gont",
+		Name:   "gont-nat",
 	}
 
 	c.DelTable(t)
-	if err := c.Flush(); err != nil {
-		return err
-	}
+	c.Flush()
+	// We ignore the error here, as DelTable might fail if there is no old table existing
 
 	f.Table = c.AddTable(t)
 

@@ -20,7 +20,7 @@ func TestPingDualStack(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -65,7 +65,7 @@ func TestPingIPv4(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -106,7 +106,7 @@ func TestPingIPv6(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -145,7 +145,7 @@ func TestPingDirect(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -188,7 +188,7 @@ func TestPingMultiHop(t *testing.T) {
 		h1, h2   *g.Host
 	)
 
-	if n, err = g.NewNetwork(nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -245,7 +245,7 @@ func TestPingLoopback(t *testing.T) {
 		h   *g.Host
 	)
 
-	if n, err = g.NewNetwork(nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -270,7 +270,7 @@ func TestPingSelf(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()

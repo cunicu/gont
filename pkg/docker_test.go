@@ -20,7 +20,7 @@ func TestDocker(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()

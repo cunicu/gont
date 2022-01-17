@@ -15,7 +15,8 @@ import (
 )
 
 var opts = g.Options{}
-var nname string
+var nname = flag.String("name", "", "Network name")
+var persist = flag.Bool("persist", false, "Do not teardown networks after test")
 
 func setupLogging() *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()
@@ -52,13 +53,9 @@ func TestMain(m *testing.M) {
 	logger := setupLogging()
 	defer logger.Sync()
 
-	var persist bool
-	flag.BoolVar(&persist, "persist", false, "Do not teardown networks after test")
-	flag.StringVar(&nname, "name", "", "Network name")
-	flag.Parse()
-
-	if persist {
-		opts = append(opts, o.Persistent(persist))
+	// Handle global flags
+	if *persist {
+		opts = append(opts, o.Persistent(*persist))
 	}
 
 	os.Exit(m.Run())
