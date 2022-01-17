@@ -12,9 +12,12 @@ import (
 type Host struct {
 	*BaseNode
 
+	Filter *Filter
+
 	// Options
-	Routes     []*nl.Route
-	Forwarding bool
+	FilterRules []*FilterRule
+	Routes      []*nl.Route
+	Forwarding  bool
 }
 
 // Options
@@ -29,7 +32,9 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 	}
 
 	host := &Host{
-		BaseNode: node,
+		BaseNode:    node,
+		Routes:      []*nl.Route{},
+		FilterRules: []*FilterRule{},
 	}
 
 	n.Register(host)
@@ -65,6 +70,18 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		if err := host.EnableForwarding(); err != nil {
 			return nil, fmt.Errorf("failed to enable forwarding: %w", err)
 		}
+	}
+
+	if host.Filter, err = NewFilter(host.nftConn); err != nil {
+		return nil, fmt.Errorf("failed to setup nftables: %w", err)
+	}
+
+	for _, r := range host.FilterRules {
+		host.Filter.AddRule(r.Hook, r.Exprs...)
+	}
+
+	if err := host.Filter.Flush(); err != nil {
+		return nil, fmt.Errorf("failed to configure nftables: %w", err)
 	}
 
 	return host, nil

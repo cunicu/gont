@@ -3,7 +3,9 @@ package options
 import (
 	"net"
 
+	"github.com/google/nftables/expr"
 	g "github.com/stv0g/gont/pkg"
+	"github.com/stv0g/gont/pkg/options/filters"
 	nl "github.com/vishvananda/netlink"
 )
 
@@ -35,4 +37,17 @@ func DefaultGatewayIP(str string) g.Route {
 	}
 
 	return Route(g.DefaultIPv6Mask, gw)
+}
+
+func Filter(h g.FilterHook, stmts ...filters.Statement) g.FilterRule {
+	r := g.FilterRule{
+		Hook:  h,
+		Exprs: []expr.Any{},
+	}
+
+	for _, stmt := range stmts {
+		r.Exprs = append(r.Exprs, stmt...)
+	}
+
+	return r
 }

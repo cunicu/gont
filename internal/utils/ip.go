@@ -29,7 +29,7 @@ func intToIP(ipInt *big.Int, bits int) net.IP {
 	return net.IP(ret)
 }
 
-// addressRange returns the first and last addresses in the given CIDR range.
+// AddressRange returns the first and last addresses in the given CIDR range.
 func AddressRange(network *net.IPNet) (net.IP, net.IP) {
 	// the first IP is easy
 	firstIP := network.IP
