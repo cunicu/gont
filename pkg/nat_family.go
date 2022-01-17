@@ -40,7 +40,9 @@ func (f *natFamily) SetupTable(c *nft.Conn) error {
 	}
 
 	c.DelTable(t)
-	c.Flush()
+	if err := c.Flush(); err != nil {
+		return err
+	}
 
 	f.Table = c.AddTable(t)
 
