@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	nft "github.com/google/nftables"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
@@ -50,6 +51,7 @@ func HostNode(n *Network) *Host {
 				Name:     "base",
 				NsHandle: baseNs,
 				nlHandle: baseHandle,
+				nftConn:  &nft.Conn{},
 				logger:   zap.L().Named("namespace"),
 			},
 			network: n,

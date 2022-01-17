@@ -92,20 +92,16 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 func (n *NAT) setup() error {
 	var sbGroup uint32 = uint32(DeviceGroupSouthBound)
 
-	c := &nft.Conn{
-		NetNS: int(n.NsHandle),
-	}
-
 	for _, g := range families {
 		f := newNATFamily(g)
 
-		if err := f.SetupTable(c); err != nil {
+		if err := f.SetupTable(n.nftConn); err != nil {
 			return err
 		}
-		if err := f.SetupSet(c); err != nil {
+		if err := f.SetupSet(n.nftConn); err != nil {
 			return err
 		}
-		if err := f.SetupChains(c, sbGroup); err != nil {
+		if err := f.SetupChains(n.nftConn, sbGroup); err != nil {
 			return err
 		}
 
@@ -113,19 +109,19 @@ func (n *NAT) setup() error {
 	}
 
 	for _, i := range n.Interfaces {
-		if err := n.updateIPSetInterface(c, i); err != nil {
+		if err := n.updateIPSetInterface(i); err != nil {
 			return err
 		}
 	}
 
-	if err := c.Flush(); err != nil {
+	if err := n.nftConn.Flush(); err != nil {
 		return fmt.Errorf("failed setup nftables: %w", err)
 	}
 
 	return nil
 }
 
-func (n *NAT) updateIPSetInterface(c *nft.Conn, i *Interface) error {
+func (n *NAT) updateIPSetInterface(i *Interface) error {
 	if i.LinkAttrs.Group == uint32(DeviceGroupSouthBound) {
 		for _, addr := range i.Addresses {
 			f := n.families[nft.TableFamilyIPv4]
@@ -143,7 +139,7 @@ func (n *NAT) updateIPSetInterface(c *nft.Conn, i *Interface) error {
 				Mask: addr.Mask,
 			}
 
-			if err := f.AddNetwork(c, netw); err != nil {
+			if err := f.AddNetwork(n.nftConn, netw); err != nil {
 				return err
 			}
 		}
@@ -153,15 +149,11 @@ func (n *NAT) updateIPSetInterface(c *nft.Conn, i *Interface) error {
 }
 
 func (n *NAT) ConfigureInterface(i *Interface) error {
-	c := &nft.Conn{
-		NetNS: int(n.NsHandle),
-	}
-
-	if err := n.updateIPSetInterface(c, i); err != nil {
+	if err := n.updateIPSetInterface(i); err != nil {
 		return err
 	}
 
-	if err := c.Flush(); err != nil {
+	if err := n.nftConn.Flush(); err != nil {
 		return err
 	}
 

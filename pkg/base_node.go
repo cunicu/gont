@@ -121,6 +121,10 @@ func (n *BaseNode) NetlinkHandle() *nl.Handle {
 	return n.nlHandle
 }
 
+func (n *BaseNode) NftConn() *nft.Conn {
+	return n.nftConn
+}
+
 func (n *BaseNode) Name() string {
 	return n.name
 }

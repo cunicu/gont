@@ -4,6 +4,7 @@ import (
 	"runtime"
 	"syscall"
 
+	nft "github.com/google/nftables"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
@@ -17,6 +18,7 @@ type Namespace struct {
 	netns.NsHandle
 
 	nlHandle *nl.Handle
+	nftConn  *nft.Conn
 
 	Name string
 
@@ -51,6 +53,11 @@ func NewNamespace(name string) (*Namespace, error) {
 	// Create a netlink socket handle while we are in the namespace
 	if ns.nlHandle, err = nl.NewHandle(); err != nil {
 		return nil, err
+	}
+
+	// nftables connection
+	ns.nftConn = &nft.Conn{
+		NetNS: int(ns.NsHandle),
 	}
 
 	// Restore original netns namespace
