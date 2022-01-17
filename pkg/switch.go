@@ -59,7 +59,7 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		zap.String("intf", br.LinkAttrs.Name),
 	)
 
-	if err := sw.Handle.LinkSetUp(br); err != nil {
+	if err := sw.nlHandle.LinkSetUp(br); err != nil {
 		return nil, fmt.Errorf("failed to bring bridge up: %w", err)
 	}
 
@@ -84,18 +84,18 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 // ConfigureInterface attaches an existing interface to a bridge interface
 func (sw *Switch) ConfigureInterface(i *Interface) error {
 	sw.logger.Info("Connecting interface to bridge master", zap.Any("intf", i))
-	br, err := sw.Handle.LinkByName(bridgeInterfaceName)
+	br, err := sw.nlHandle.LinkByName(bridgeInterfaceName)
 	if err != nil {
 		return fmt.Errorf("failed to find bridge intf: %s", err)
 	}
 
-	l, err := sw.Handle.LinkByName(i.Name)
+	l, err := sw.nlHandle.LinkByName(i.Name)
 	if err != nil {
 		return fmt.Errorf("failed to find new bridge interface: %s", err)
 	}
 
 	// Attach interface to bridge
-	if err := sw.Handle.LinkSetMaster(l, br); err != nil {
+	if err := sw.nlHandle.LinkSetMaster(l, br); err != nil {
 		return err
 	}
 

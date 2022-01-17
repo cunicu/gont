@@ -49,7 +49,7 @@ func HostNode(n *Network) *Host {
 			Namespace: &Namespace{
 				Name:     "base",
 				NsHandle: baseNs,
-				Handle:   baseHandle,
+				nlHandle: baseHandle,
 				logger:   zap.L().Named("namespace"),
 			},
 			network: n,

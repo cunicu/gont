@@ -43,7 +43,7 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 
 	// Configure loopback device
 	lo := loopbackInterface
-	if lo.Link, err = host.Handle.LinkByName("lo"); err != nil {
+	if lo.Link, err = host.nlHandle.LinkByName("lo"); err != nil {
 		return nil, fmt.Errorf("failed to get loopback interface: %w", err)
 	}
 	if err := host.ConfigureInterface(&lo); err != nil {

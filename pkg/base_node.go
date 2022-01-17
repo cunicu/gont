@@ -90,8 +90,8 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
-	if node.Handle == nil {
-		node.Handle, err = nl.NewHandleAt(node.NsHandle)
+	if node.nlHandle == nil {
+		node.nlHandle, err = nl.NewHandleAt(node.NsHandle)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func (n *BaseNode) NetNSHandle() netns.NsHandle {
 }
 
 func (n *BaseNode) NetlinkHandle() *nl.Handle {
-	return n.Handle
+	return n.nlHandle
 }
 
 func (n *BaseNode) Name() string {
@@ -152,7 +152,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		logger.Info("Setting interface MTU",
 			zap.Int("mtu", i.LinkAttrs.MTU),
 		)
-		if err := n.Handle.LinkSetMTU(i.Link, i.LinkAttrs.MTU); err != nil {
+		if err := n.nlHandle.LinkSetMTU(i.Link, i.LinkAttrs.MTU); err != nil {
 			return err
 		}
 	}
@@ -161,7 +161,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		logger.Info("Setting interface MAC address",
 			zap.Any("mac", i.LinkAttrs.HardwareAddr),
 		)
-		if err := n.Handle.LinkSetHardwareAddr(i.Link, i.LinkAttrs.HardwareAddr); err != nil {
+		if err := n.nlHandle.LinkSetHardwareAddr(i.Link, i.LinkAttrs.HardwareAddr); err != nil {
 			return err
 		}
 	}
@@ -170,7 +170,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		logger.Info("Setting interface transmit queue length",
 			zap.Int("txqlen", i.LinkAttrs.TxQLen),
 		)
-		if err := n.Handle.LinkSetTxQLen(i.Link, i.LinkAttrs.TxQLen); err != nil {
+		if err := n.nlHandle.LinkSetTxQLen(i.Link, i.LinkAttrs.TxQLen); err != nil {
 			return err
 		}
 	}
@@ -179,7 +179,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		logger.Info("Setting interface group",
 			zap.Uint32("group", i.LinkAttrs.Group),
 		)
-		if err := n.Handle.LinkSetGroup(i.Link, int(i.LinkAttrs.Group)); err != nil {
+		if err := n.nlHandle.LinkSetGroup(i.Link, int(i.LinkAttrs.Group)); err != nil {
 			return err
 		}
 	}
@@ -195,7 +195,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		netem := nl.NewNetem(attr, i.Netem)
 
 		logger.Info("Adding Netem qdisc to interface")
-		if err := n.Handle.QdiscAdd(netem); err != nil {
+		if err := n.nlHandle.QdiscAdd(netem); err != nil {
 			return err
 		}
 
@@ -214,13 +214,13 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		}
 
 		logger.Info("Adding TBF qdisc to interface")
-		if err := n.Handle.QdiscAdd(&i.Tbf); err != nil {
+		if err := n.nlHandle.QdiscAdd(&i.Tbf); err != nil {
 			return err
 		}
 	}
 
 	logger.Info("Setting interface up")
-	if err := n.Handle.LinkSetUp(i.Link); err != nil {
+	if err := n.nlHandle.LinkSetUp(i.Link); err != nil {
 		return err
 	}
 
@@ -275,7 +275,7 @@ func (n *BaseNode) EnableForwarding() error {
 }
 
 func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
-	link, err := n.Handle.LinkByName(name)
+	link, err := n.nlHandle.LinkByName(name)
 	if err != nil {
 		return err
 	}
@@ -289,7 +289,7 @@ func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 		zap.String("addr", addr.String()),
 	)
 
-	if err := n.Handle.AddrAdd(link, nlAddr); err != nil {
+	if err := n.nlHandle.AddrAdd(link, nlAddr); err != nil {
 		return err
 	}
 

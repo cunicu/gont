@@ -15,7 +15,8 @@ type Callback func() error
 
 type Namespace struct {
 	netns.NsHandle
-	*nl.Handle
+
+	nlHandle *nl.Handle
 
 	Name string
 
@@ -23,6 +24,8 @@ type Namespace struct {
 }
 
 func NewNamespace(name string) (*Namespace, error) {
+	var err error
+
 	ns := &Namespace{
 		Name:   name,
 		logger: zap.L().Named("namespace").With(zap.String("ns", name)),
@@ -30,33 +33,28 @@ func NewNamespace(name string) (*Namespace, error) {
 
 	ns.logger.Info("Creating new namespace")
 
-	return ns, ns.createNamespaceAndNetlinkHandles()
-}
-
-func (ns *Namespace) createNamespaceAndNetlinkHandles() error {
-	var err error
-
+	// We lock the goroutine to an OS thread for the duration while we open the netlink sockets
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
 	// Save fd to current network namespace
 	curNetNs, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0777)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create new named namespace
 	if ns.NsHandle, err = netns.NewNamed(ns.Name); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create a netlink socket handle while we are in the namespace
-	if ns.Handle, err = nl.NewHandle(); err != nil {
-		return err
+	if ns.nlHandle, err = nl.NewHandle(); err != nil {
+		return nil, err
 	}
 
 	// Restore original netns namespace
-	return unix.Setns(curNetNs, syscall.CLONE_NEWNET)
+	return ns, unix.Setns(curNetNs, syscall.CLONE_NEWNET)
 }
 
 func (ns *Namespace) Close() error {
