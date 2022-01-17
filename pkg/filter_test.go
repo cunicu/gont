@@ -34,7 +34,8 @@ func TestFilterIPv4(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		o.Filter(g.FilterInput,
-			fo.Protocol(unix.IPPROTO_ICMP),
+			fo.Protocol(unix.AF_INET),
+			fo.TransportProtocol(unix.IPPROTO_ICMP),
 			fo.Source(flt),
 			fo.Drop,
 		),
@@ -91,7 +92,8 @@ func TestFilterIPv6(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		o.Filter(g.FilterInput,
-			fo.Protocol(unix.IPPROTO_ICMPV6),
+			fo.Protocol(unix.AF_INET6),
+			fo.TransportProtocol(unix.IPPROTO_ICMPV6),
 			fo.Source(flt),
 			fo.Drop,
 		),

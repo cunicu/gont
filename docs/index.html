@@ -446,6 +446,19 @@
 					</section>
 
 					<section>
+						<h3>Add some firewall rules for a host</h3>
+						<pre><code class=" language-go" data-trim>
+							_, src, _ := net.ParseCIDR("10.0.0.1/32")
+
+							h1, _ := n.AddHost("h1", o.Filter(g.FilterInput,
+												fo.Source(src),
+												fo.Protocol(unix.AF_INET),
+												fo.TransportProtocol(unix.IPPROTO_TCP),
+												fo.SourcePortRange(0, 1024)))
+						</code></pre>
+					</section>
+
+					<section>
 						<h3>A topology factory (WIP)</h3>
 						<pre><code class="language-go" data-trim>
 							createHost := func(pos int) (*g.Host. error) {
