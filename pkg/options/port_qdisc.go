@@ -57,14 +57,14 @@ type Latency time.Duration
 
 func (m Latency) ApplyNetem(n *Netem) {
 	d := time.Duration(m)
-	n.Latency = uint64(d / time.Microsecond)
+	n.Latency = uint32(d / time.Microsecond)
 }
 
 type Jitter time.Duration
 
 func (j Jitter) ApplyNetem(n *Netem) {
 	d := time.Duration(j)
-	n.Jitter = uint64(d / time.Microsecond)
+	n.Jitter = uint32(d / time.Microsecond)
 }
 
 type Gap uint32
@@ -135,9 +135,9 @@ func (l Limit) ApplyTbf(t *Tbf) {
 
 type Rate uint64
 
-func (r Rate) ApplyNetem(n *Netem) {
-	n.Rate = uint64(r)
-}
+// func (r Rate) ApplyNetem(n *Netem) {
+// 	n.Rate = uint64(r)
+// }
 
 func (r Rate) ApplyTbf(t *Tbf) {
 	t.Rate = uint64(r)

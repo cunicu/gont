@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/go-ping/ping v0.0.0-20211130115550-779d1e919534
 	github.com/google/nftables v0.0.0-20211209220838-6f19c4381e13
-	github.com/vishvananda/netlink v1.1.1-0.20210924202909-187053b97868
+	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.uber.org/zap v1.20.0
 	golang.org/x/sys v0.0.0-20220111092808-5a964db01320
@@ -31,4 +31,4 @@ require (
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.62 // indirect
 )
 
-replace github.com/vishvananda/netlink => github.com/stv0g/netlink v1.1.1-gont
+// replace github.com/vishvananda/netlink => github.com/stv0g/netlink v1.1.1-gont
