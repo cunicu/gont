@@ -29,5 +29,3 @@ require (
 	honnef.co/go/tools v0.2.2 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.64 // indirect
 )
-
-// replace github.com/vishvananda/netlink => github.com/stv0g/netlink v1.1.1-gont
