@@ -9,7 +9,7 @@
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
 [![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
 
-Gont is a package to creat realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native).
+Gont is a package to create realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native).
 
 Gont is heavily inspired by [Mininet](https://mininet.org).
 It allows the user to build virtual network topologies using Go code.
