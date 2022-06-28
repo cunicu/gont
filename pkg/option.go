@@ -2,7 +2,7 @@ package gont
 
 import nl "github.com/vishvananda/netlink"
 
-type Option interface{}
+type Option any
 type Options []Option
 
 type NodeOption interface {

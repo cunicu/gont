@@ -36,7 +36,7 @@ func (n *BaseNode) Command(name string, args ...string) *exec.Cmd {
 	return c
 }
 
-func (n *BaseNode) Run(cmd string, args ...interface{}) ([]byte, *exec.Cmd, error) {
+func (n *BaseNode) Run(cmd string, args ...any) ([]byte, *exec.Cmd, error) {
 	stdout, stderr, c, err := n.Start(cmd, args...)
 	if err != nil {
 		return nil, nil, err
@@ -74,7 +74,7 @@ func (n *BaseNode) Run(cmd string, args ...interface{}) ([]byte, *exec.Cmd, erro
 	return buf, c, err
 }
 
-func (n *BaseNode) Start(cmd string, args ...interface{}) (io.Reader, io.Reader, *exec.Cmd, error) {
+func (n *BaseNode) Start(cmd string, args ...any) (io.Reader, io.Reader, *exec.Cmd, error) {
 	var err error
 	var stdout, stderr io.Reader
 
@@ -166,7 +166,7 @@ func (n *BaseNode) Start(cmd string, args ...interface{}) (io.Reader, io.Reader,
 	return stdout, stderr, c, nil
 }
 
-func (n *BaseNode) StartGo(script string, args ...interface{}) (io.Reader, io.Reader, *exec.Cmd, error) {
+func (n *BaseNode) StartGo(script string, args ...any) (io.Reader, io.Reader, *exec.Cmd, error) {
 	tmp := filepath.Join(n.network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
 
 	if out, _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script); err != nil {
@@ -176,7 +176,7 @@ func (n *BaseNode) StartGo(script string, args ...interface{}) (io.Reader, io.Re
 	return n.Start(tmp, args...)
 }
 
-func (n *BaseNode) RunGo(script string, args ...interface{}) ([]byte, *exec.Cmd, error) {
+func (n *BaseNode) RunGo(script string, args ...any) ([]byte, *exec.Cmd, error) {
 	tmp := filepath.Join(n.network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
 
 	if _, _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script); err != nil {

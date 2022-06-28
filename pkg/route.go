@@ -22,6 +22,6 @@ type Route struct {
 	nl.Route
 }
 
-func (r *Route) Apply(h *Host) {
+func (r Route) Apply(h *Host) {
 	h.Routes = append(h.Routes, &r.Route)
 }
