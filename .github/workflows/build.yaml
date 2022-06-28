@@ -1,7 +1,16 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 ---
-name: Run tests
-on: [push, pull_request]
+
+name: Build and Test
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
 jobs:
   build:
     runs-on: ubuntu-latest
