@@ -1,6 +1,6 @@
 # Gont - A Go network testing toolkit
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/stv0g/gont/Run%20tests)](https://github.com/stv0g/gont/actions)
+[![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/stv0g/gont/Build%20and%20Test/master)](https://github.com/stv0g/gont/actions)
 [![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
 [![Codacy coverage](https://img.shields.io/codacy/coverage/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
 [![libraries.io](https://img.shields.io/librariesio/github/stv0g/gont)](https://libraries.io/github/stv0g/gont)
