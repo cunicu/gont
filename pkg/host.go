@@ -130,7 +130,7 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 	return h.BaseNode.ConfigureInterface(i)
 }
 
-func (h *Host) Traceroute(o *Host, opts ...interface{}) error {
+func (h *Host) Traceroute(o *Host, opts ...any) error {
 	if h.network != o.network {
 		return fmt.Errorf("hosts must be on same network")
 	}

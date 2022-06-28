@@ -1,6 +1,6 @@
 module github.com/stv0g/gont
 
-go 1.17
+go 1.18
 
 require (
 	github.com/go-ping/ping v1.1.0
