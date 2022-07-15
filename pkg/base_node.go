@@ -31,6 +31,7 @@ type BaseNode struct {
 	ConfiguredInterfaces    []*Interface
 	ExistingNamespace       string
 	ExistingDockerContainer string
+	LogToDebug              bool
 
 	logger *zap.Logger
 }
@@ -52,6 +53,9 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		BasePath: basePath,
 		logger:   zap.L().Named("node").With(zap.String("node", name)),
 	}
+
+	// Enable log if level is debug
+	node.LogToDebug = node.logger.Core().Enabled(zap.DebugLevel)
 
 	node.logger.Info("Adding new node")
 

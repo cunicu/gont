@@ -23,6 +23,7 @@ func Interface(name string, opts ...g.Option) *g.Interface {
 
 type ExistingNamespace string
 type ExistingDockerContainer string
+type LogToDebug bool
 
 func (e ExistingNamespace) Apply(n *g.BaseNode) {
 	n.ExistingNamespace = string(e)
@@ -30,4 +31,8 @@ func (e ExistingNamespace) Apply(n *g.BaseNode) {
 
 func (d ExistingDockerContainer) Apply(n *g.BaseNode) {
 	n.ExistingDockerContainer = string(d)
+}
+
+func (l LogToDebug) Apply(n *g.BaseNode) {
+	n.LogToDebug = bool(l)
 }

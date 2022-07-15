@@ -140,7 +140,7 @@ func (n *BaseNode) Start(cmd string, args ...any) (io.Reader, io.Reader, *exec.C
 
 	logger.Info("Process started")
 
-	if logger.Core().Enabled(zap.DebugLevel) {
+	if n.LogToDebug {
 		slogger := zap.L().With(zap.Int("pid", c.Process.Pid))
 
 		logStdout := &zapio.Writer{
