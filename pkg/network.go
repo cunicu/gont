@@ -13,7 +13,6 @@ import (
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
-	"kernel.org/pub/linux/libs/security/libcap/cap"
 )
 
 type Network struct {
@@ -61,12 +60,8 @@ func HostNode(n *Network) *Host {
 }
 
 func NewNetwork(name string, opts ...Option) (*Network, error) {
-	// Check for required permissions
-	caps := cap.GetProc()
-	if val, err := caps.GetFlag(cap.Effective, cap.SYS_ADMIN); err != nil {
+	if err := CheckCaps(); err != nil {
 		return nil, err
-	} else if !val {
-		return nil, errors.New("missing SYS_ADMIN capability")
 	}
 
 	if name == "" {

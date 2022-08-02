@@ -18,9 +18,10 @@ const (
 	bridgeInterfaceName   = "br"
 )
 
+// CheckCaps checks if the current process has the required privileges to run Gont
 func CheckCaps() error {
 	c := cap.GetProc()
-	if v, err := c.GetFlag(cap.Effective, cap.NET_ADMIN); err != nil || !v {
+	if v, err := c.GetFlag(cap.Effective, cap.SYS_ADMIN); err != nil || !v {
 		return errors.New("missing NET_ADMIN capabilities")
 	}
 	return nil

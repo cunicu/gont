@@ -79,7 +79,7 @@ func TestFilterIPv6(t *testing.T) {
 	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
-	// defer n.Close()
+	defer n.Close()
 
 	if sw, err = n.AddSwitch("sw"); err != nil {
 		t.Fatalf("Failed to create switch: %s", err)
