@@ -26,7 +26,7 @@ func TestCaptureNetwork(t *testing.T) {
 	}
 
 	opts = append(opts,
-		o.CaptureNetwork(
+		o.CaptureAll(
 			o.File{tmpPCAP},
 			o.CaptureLength(1600),
 			o.Promisc(false),
@@ -34,7 +34,7 @@ func TestCaptureNetwork(t *testing.T) {
 			o.Comment("Some random comment which will be included in the capture file"),
 		),
 		// Also multiple capturers are supported
-		o.CaptureNetwork(
+		o.CaptureAll(
 			o.Filename("all.pcapng"), // We can create a file
 		),
 	)

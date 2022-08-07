@@ -95,7 +95,7 @@ func (c *Capture) Close() error {
 	close(c.stop)
 
 	if err := c.Flush(); err != nil {
-		return err
+		return fmt.Errorf("failed to flush: %w", err)
 	}
 
 	return nil

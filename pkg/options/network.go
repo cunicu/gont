@@ -6,7 +6,7 @@ import (
 
 type NSPrefix string
 type Persistent bool
-type captureNetwork struct {
+type CaptureNetwork struct {
 	*g.Capture
 }
 
@@ -18,10 +18,10 @@ func (p Persistent) Apply(n *g.Network) {
 	n.Persistent = bool(p)
 }
 
-func (c captureNetwork) Apply(n *g.Network) {
+func (c CaptureNetwork) Apply(n *g.Network) {
 	n.Captures = append(n.Captures, c.Capture)
 }
 
-func CaptureNetwork(opts ...g.Option) captureNetwork {
-	return captureNetwork{Capture(opts...)}
+func CaptureAll(opts ...g.Option) CaptureNetwork {
+	return CaptureNetwork{Capture(opts...)}
 }
