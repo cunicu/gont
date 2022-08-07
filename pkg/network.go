@@ -24,10 +24,10 @@ type Network struct {
 	HostNode *Host
 	BasePath string
 
+	// Options
 	Persistent bool
 	NSPrefix   string
-
-	DefaultOptions Options
+	Captures   []*Capture
 
 	logger *zap.Logger
 }
@@ -71,13 +71,13 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 	basePath := filepath.Join(varDir, name)
 
 	n := &Network{
-		Name:           name,
-		BasePath:       basePath,
-		Nodes:          map[string]Node{},
-		NodesLock:      sync.RWMutex{},
-		DefaultOptions: opts,
-		NSPrefix:       "gont-",
-		logger:         zap.L().Named("network").With(zap.String("network", name)),
+		Name:      name,
+		BasePath:  basePath,
+		Nodes:     map[string]Node{},
+		NodesLock: sync.RWMutex{},
+		NSPrefix:  "gont-",
+		Captures:  []*Capture{},
+		logger:    zap.L().Named("network").With(zap.String("network", name)),
 	}
 
 	// Apply network specific options
@@ -180,6 +180,20 @@ func (n *Network) Teardown() error {
 func (n *Network) Close() error {
 	if !n.Persistent {
 		if err := n.Teardown(); err != nil {
+			return err
+		}
+	}
+
+	for name, node := range n.Nodes {
+		if err := node.Close(); err != nil {
+			return err
+		}
+
+		delete(n.Nodes, name)
+	}
+
+	for _, c := range n.Captures {
+		if err := c.Close(); err != nil {
 			return err
 		}
 	}

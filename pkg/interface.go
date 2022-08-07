@@ -40,6 +40,7 @@ type Interface struct {
 	EnableDAD bool
 	LinkAttrs nl.LinkAttrs
 	Addresses []net.IPNet
+	Captures  []*Capture
 }
 
 // Options

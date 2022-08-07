@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/go-ping/ping v1.1.0
+	github.com/google/gopacket v1.1.19
 	github.com/google/nftables v0.0.0-20220729163259-ec1e802faf94
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
