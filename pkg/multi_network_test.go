@@ -21,7 +21,7 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 		return o.AddressIP(fmt.Sprintf("fc::%d:%d/112", i, j))
 	}
 
-	if n, err = g.NewNetwork("", opts...); err != nil {
+	if n, err = g.NewNetwork("", globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 
@@ -76,13 +76,13 @@ func TestNetworkNameCollision(t *testing.T) {
 		n1, n2 *g.Network
 	)
 
-	if n1, err = g.NewNetwork("", opts...); err != nil {
+	if n1, err = g.NewNetwork("", globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n1.Close()
 
 	// Creating another network with the same name must fail
-	if n2, err = g.NewNetwork(n1.Name, opts...); err == nil {
+	if n2, err = g.NewNetwork(n1.Name, globalOpts...); err == nil {
 		defer n2.Close()
 		t.Fatalf("Cannot create multiple networks with same name")
 	}

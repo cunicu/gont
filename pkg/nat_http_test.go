@@ -14,7 +14,7 @@ import (
 // and checks the proper NATing by using a HTTP
 // "getmyip" service
 //
-//  h1 <-> nat1 <-> h2
+//	h1 <-> nat1 <-> h2
 func TestGetMyIP(t *testing.T) {
 	var (
 		err    error
@@ -24,7 +24,7 @@ func TestGetMyIP(t *testing.T) {
 		nat    *g.NAT
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()

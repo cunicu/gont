@@ -10,7 +10,7 @@ import (
 // TestPing performs and end-to-end ping test
 // between two hosts on a switched topology
 //
-//  h1 <-> sw1 <-> sw2 <-> h2
+//	h1 <-> sw1 <-> sw2 <-> h2
 func TestPingCascadedSwitches(t *testing.T) {
 	var (
 		err      error
@@ -19,7 +19,7 @@ func TestPingCascadedSwitches(t *testing.T) {
 		h1, h2   *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()

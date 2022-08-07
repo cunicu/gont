@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var opts = g.Options{}
+var globalOpts = g.Options{}
 var nname = flag.String("name", "", "Network name")
 var persist = flag.Bool("persist", false, "Do not teardown networks after test")
 
@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 
 	// Handle global flags
 	if *persist {
-		opts = append(opts, o.Persistent(*persist))
+		globalOpts = append(globalOpts, o.Persistent(*persist))
 	}
 
 	os.Exit(m.Run())

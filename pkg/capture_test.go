@@ -25,6 +25,7 @@ func TestCaptureNetwork(t *testing.T) {
 		t.Fatalf("Failed to open temporary file: %s", err)
 	}
 
+	opts := append([]g.Option{}, globalOpts)
 	opts = append(opts,
 		o.CaptureAll(
 			o.File{tmpPCAP},
@@ -39,7 +40,7 @@ func TestCaptureNetwork(t *testing.T) {
 		),
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 

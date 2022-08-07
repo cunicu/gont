@@ -11,7 +11,7 @@ import (
 // between two hosts on a switched topology
 // using both IPv4 and IPv6 addresses
 //
-//  h1 <-> sw <-> h2
+//	h1 <-> sw <-> h2
 func TestPingDualStack(t *testing.T) {
 	var (
 		err    error
@@ -20,7 +20,7 @@ func TestPingDualStack(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -56,7 +56,7 @@ func TestPingDualStack(t *testing.T) {
 // between two hosts on a switched topology
 // using IPv4 addressing
 //
-//  h1 <-> sw <-> h2
+//	h1 <-> sw <-> h2
 func TestPingIPv4(t *testing.T) {
 	var (
 		err    error
@@ -65,7 +65,7 @@ func TestPingIPv4(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -97,7 +97,7 @@ func TestPingIPv4(t *testing.T) {
 // between two hosts on a switched topology
 // using IPv6 addressing
 //
-//  h1 <-> sw <-> h2
+//	h1 <-> sw <-> h2
 func TestPingIPv6(t *testing.T) {
 	var (
 		err    error
@@ -106,7 +106,7 @@ func TestPingIPv6(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -145,7 +145,7 @@ func TestPingDirect(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -179,7 +179,7 @@ func TestPingDirect(t *testing.T) {
 // TestPingMultiHop performs and end-to-end ping test
 // through a routed multi-hop topology
 //
-//  h1 <-> sw1 <-> r1 <-> sw2 <-> h2
+//	h1 <-> sw1 <-> r1 <-> sw2 <-> h2
 func TestPingMultiHop(t *testing.T) {
 	var (
 		err      error
@@ -188,7 +188,7 @@ func TestPingMultiHop(t *testing.T) {
 		h1, h2   *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -245,7 +245,7 @@ func TestPingLoopback(t *testing.T) {
 		h   *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -270,7 +270,7 @@ func TestPingSelf(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
