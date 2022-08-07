@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/gopacket"
-	pprque "github.com/stv0g/gont/internal/packet_queue"
+	"github.com/stv0g/gont/internal/pprque"
 )
 
 func TestPacketPriorityQueue(t *testing.T) {

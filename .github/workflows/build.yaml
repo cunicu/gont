@@ -21,7 +21,7 @@ jobs:
       run: sudo apt-get install traceroute make libpcap-dev
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version-file: 'go.mod'
         check-latest: true

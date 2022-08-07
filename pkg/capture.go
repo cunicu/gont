@@ -10,7 +10,7 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/pcapgo"
-	pprque "github.com/stv0g/gont/internal/packet_queue"
+	"github.com/stv0g/gont/internal/pprque"
 	"go.uber.org/zap"
 	"golang.org/x/net/bpf"
 )
