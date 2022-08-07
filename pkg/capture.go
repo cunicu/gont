@@ -74,33 +74,6 @@ func NewCapture() *Capture {
 	}
 }
 
-func (c *Capture) Flush() error {
-	for c.queue.Len() > 0 {
-		pkt := c.queue.Pop()
-		if err := c.writer.WritePacket(pkt.CaptureInfo, pkt.Data); err != nil {
-			return fmt.Errorf("failed to write packet: %w", err)
-		}
-	}
-
-	for _, ci := range c.interfaces {
-		if err := ci.writeStats(c.writer); err != nil {
-			return fmt.Errorf("failed to write stats %w", err)
-		}
-	}
-
-	return c.writer.Flush()
-}
-
-func (c *Capture) Close() error {
-	close(c.stop)
-
-	if err := c.Flush(); err != nil {
-		return fmt.Errorf("failed to flush: %w", err)
-	}
-
-	return nil
-}
-
 func (c *Capture) Start(i *Interface) error {
 	var err error
 	var hdl *pcapgo.EthernetHandle
@@ -184,6 +157,50 @@ func (c *Capture) Start(i *Interface) error {
 	return nil
 }
 
+func (c *Capture) Flush() error {
+	for c.queue.Len() > 0 {
+		pkt := c.queue.Pop()
+		if err := c.writer.WritePacket(pkt.CaptureInfo, pkt.Data); err != nil {
+			return fmt.Errorf("failed to write packet: %w", err)
+		}
+	}
+
+	for _, ci := range c.interfaces {
+		if err := ci.writeStats(c.writer); err != nil {
+			return fmt.Errorf("failed to write stats %w", err)
+		}
+	}
+
+	return c.writer.Flush()
+}
+
+func (c *Capture) Close() error {
+	close(c.stop)
+
+	if err := c.Flush(); err != nil {
+		return fmt.Errorf("failed to flush: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Capture) Reader() (*pcapgo.NgReader, error) {
+	if err := c.Flush(); err != nil {
+		return nil, fmt.Errorf("failed to flush capture: %w", err)
+	}
+
+	if _, err := c.File.Seek(0, 0); err != nil {
+		return nil, fmt.Errorf("failed to rewind file: %w", err)
+	}
+
+	rd, err := pcapgo.NewNgReader(c.File, pcapgo.DefaultNgReaderOptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read PCAPng file: %w", err)
+	}
+
+	return rd, nil
+}
+
 func (c *Capture) writePackets() {
 	tickerPackets := time.NewTicker(1 * time.Second)
 	tickerStats := time.NewTicker(10 * time.Second)
@@ -195,6 +212,7 @@ func (c *Capture) writePackets() {
 				if err := ci.writeStats(c.writer); err != nil {
 					c.logger.Error("Failed to write stats:", zap.Error(err))
 				}
+				c.logger.Info("stats")
 			}
 
 		case now := <-tickerPackets.C:
@@ -213,6 +231,8 @@ func (c *Capture) writePackets() {
 				if err := c.writer.WritePacket(pkt.CaptureInfo, pkt.Data); err != nil {
 					c.logger.Error("Failed to write packet", zap.Error(err))
 				}
+				c.logger.Info("packet")
+
 			}
 
 		case <-c.stop:

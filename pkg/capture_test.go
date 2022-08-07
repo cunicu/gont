@@ -25,22 +25,22 @@ func TestCaptureNetwork(t *testing.T) {
 		t.Fatalf("Failed to open temporary file: %s", err)
 	}
 
+	c1 := o.CaptureAll(
+		o.File{tmpPCAP},
+		o.CaptureLength(1600),
+		o.Promisc(false),
+		o.BPFilter("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
+		o.Comment("Some random comment which will be included in the capture file"),
+	)
+
 	opts := append([]g.Option{}, globalOpts)
-	opts = append(opts,
-		o.CaptureAll(
-			o.File{tmpPCAP},
-			o.CaptureLength(1600),
-			o.Promisc(false),
-			o.BPFilter("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
-			o.Comment("Some random comment which will be included in the capture file"),
-		),
-		// Also multiple capturers are supported
+	opts = append(opts, c1, // Also multiple capturers are supported
 		o.CaptureAll(
 			o.Filename("all.pcapng"), // We can create a file
 		),
 	)
 
-	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
+	if n, err = g.NewNetwork(*nname, opts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 
@@ -70,19 +70,9 @@ func TestCaptureNetwork(t *testing.T) {
 		t.Fatalf("Failed to ping: %s", err)
 	}
 
-	for _, c := range n.Captures {
-		if err := c.Flush(); err != nil {
-			t.Fatalf("Failed to flush capture: %s", err)
-		}
-	}
-
-	if _, err := tmpPCAP.Seek(0, 0); err != nil {
-		t.Fatalf("Failed to rewind file: %s", err)
-	}
-
-	rd, err := pcapgo.NewNgReader(tmpPCAP, pcapgo.DefaultNgReaderOptions)
+	rd, err := c1.Reader()
 	if err != nil {
-		t.Fatalf("Failed to read PCAPng file: %s", err)
+		t.Fatalf("Failed to get reader for PCAPng file: %s", err)
 	}
 
 	h1veth0 := h1.Interface("veth0")
