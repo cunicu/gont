@@ -2,6 +2,7 @@ package packet_prque
 
 import (
 	"container/heap"
+	"sync"
 	"time"
 
 	"github.com/google/gopacket"
@@ -39,25 +40,42 @@ func (q *packetHeap) Pop() any {
 }
 
 type PacketQueue struct {
-	packetHeap
+	heap packetHeap
+	lock sync.RWMutex
 }
 
 func New() *PacketQueue {
 	return &PacketQueue{
-		packetHeap: []Packet{},
+		heap: []Packet{},
 	}
 }
 
 func (q *PacketQueue) Push(pkt Packet) {
-	heap.Push(&q.packetHeap, pkt)
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	heap.Push(&q.heap, pkt)
 }
 
 func (q *PacketQueue) Pop() Packet {
-	pkt := heap.Pop(&q.packetHeap).(Packet)
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
+	pkt := heap.Pop(&q.heap).(Packet)
 
 	return pkt
 }
 
 func (q *PacketQueue) Oldest() time.Time {
-	return q.packetHeap[0].CaptureInfo.Timestamp
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+
+	return q.heap[0].CaptureInfo.Timestamp
+}
+
+func (q *PacketQueue) Len() int {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+
+	return len(q.heap)
 }
