@@ -1,4 +1,4 @@
-package packet_prque_test
+package pprque_test
 
 import (
 	"testing"

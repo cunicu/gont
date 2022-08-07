@@ -50,7 +50,7 @@ type Capture struct {
 
 	stop chan any
 
-	queue *pprque.PacketQueue
+	queue *pprque.PacketPriorityQueue
 
 	interfaces []*captureInterface
 
@@ -260,7 +260,7 @@ func (c *Capture) createHandle(name string) (*pcapgo.EthernetHandle, error) {
 	return hdl, nil
 }
 
-func (ci *captureInterface) readPackets(queue *pprque.PacketQueue) {
+func (ci *captureInterface) readPackets(queue *pprque.PacketPriorityQueue) {
 	for {
 		data, cinfo, err := ci.Handle.ReadPacketData()
 		if err != nil {

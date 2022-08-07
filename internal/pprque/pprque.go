@@ -1,4 +1,4 @@
-package packet_prque
+package pprque
 
 import (
 	"container/heap"
@@ -39,25 +39,25 @@ func (q *packetHeap) Pop() any {
 	return x
 }
 
-type PacketQueue struct {
+type PacketPriorityQueue struct {
 	heap packetHeap
 	lock sync.RWMutex
 }
 
-func New() *PacketQueue {
-	return &PacketQueue{
+func New() *PacketPriorityQueue {
+	return &PacketPriorityQueue{
 		heap: []Packet{},
 	}
 }
 
-func (q *PacketQueue) Push(pkt Packet) {
+func (q *PacketPriorityQueue) Push(pkt Packet) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
 	heap.Push(&q.heap, pkt)
 }
 
-func (q *PacketQueue) Pop() Packet {
+func (q *PacketPriorityQueue) Pop() Packet {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -66,14 +66,14 @@ func (q *PacketQueue) Pop() Packet {
 	return pkt
 }
 
-func (q *PacketQueue) Oldest() time.Time {
+func (q *PacketPriorityQueue) Oldest() time.Time {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 
 	return q.heap[0].CaptureInfo.Timestamp
 }
 
-func (q *PacketQueue) Len() int {
+func (q *PacketPriorityQueue) Len() int {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 
