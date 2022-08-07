@@ -22,6 +22,7 @@ require (
 	github.com/mdlayher/socket v0.2.3 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.65 // indirect
 )
