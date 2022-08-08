@@ -212,7 +212,6 @@ func (c *Capture) writePackets() {
 				if err := ci.writeStats(c.writer); err != nil {
 					c.logger.Error("Failed to write stats:", zap.Error(err))
 				}
-				c.logger.Info("stats")
 			}
 
 		case now := <-tickerPackets.C:
@@ -231,8 +230,6 @@ func (c *Capture) writePackets() {
 				if err := c.writer.WritePacket(pkt.CaptureInfo, pkt.Data); err != nil {
 					c.logger.Error("Failed to write packet", zap.Error(err))
 				}
-				c.logger.Info("packet")
-
 			}
 
 		case <-c.stop:
