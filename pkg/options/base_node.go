@@ -6,7 +6,8 @@ import (
 
 func Interface(name string, opts ...g.Option) *g.Interface {
 	i := &g.Interface{
-		Name: name,
+		Name:     name,
+		Captures: []*g.Capture{},
 	}
 
 	for _, o := range opts {

@@ -19,7 +19,7 @@ func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()

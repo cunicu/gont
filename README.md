@@ -36,6 +36,7 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
 -   Use of existing network namespaces as nodes
 -   Configuration of per-host nftables firewall rules
 -   Built-in Ping & Traceroute diagnostic tools
+-   Built-in packet tracing with [PCAPng](https://wiki.wireshark.org/Development/PcapNg) output
 
 ## Examples
 
@@ -47,10 +48,12 @@ Have a look at the unit tests for usage examples:
 -   [Switch](pkg/switch_test.go)
 -   [Links](pkg/link_test.go)
 -   [Firewall Rules](pkg/filter_test.go)
+-   [Packet tracing](pkg/capture_test.go)
 
 ## Prerequisites
 
 -   `traceroute` (for testing)
+-   `libpcap` (for compiling BPF filter expressions of packet tracing feature)
 
 ## Architecture
 

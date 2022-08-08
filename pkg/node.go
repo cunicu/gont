@@ -6,6 +6,7 @@ import (
 )
 
 type Node interface {
+	Close() error
 	Teardown() error
 
 	// Getters
@@ -15,6 +16,8 @@ type Node interface {
 	Interface(name string) *Interface
 	NetNSHandle() netns.NsHandle
 	NetlinkHandle() *nl.Handle
+
+	RunFunc(cb Callback) error
 
 	ConfigureInterface(i *Interface) error
 }

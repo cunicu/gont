@@ -14,7 +14,7 @@ func TestLink(t *testing.T) {
 		h1, h2 *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.FailNow()
 	}
 	defer n.Close()

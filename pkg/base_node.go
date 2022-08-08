@@ -16,7 +16,6 @@ import (
 )
 
 type BaseNode struct {
-	Node
 	*Namespace
 
 	network *Network
@@ -233,10 +232,35 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		return err
 	}
 
+	// Start packet capturing if requested on network or host level
+	allCaptures := []*Capture{}
+	allCaptures = append(allCaptures, n.network.Captures...)
+	allCaptures = append(allCaptures, i.Captures...)
+
+	for _, c := range allCaptures {
+		if c != nil && (c.Filter == nil || c.Filter(i)) {
+			if err := c.Start(i); err != nil {
+				return fmt.Errorf("failed to capture interface: %w", err)
+			}
+		}
+	}
+
 	n.Interfaces = append(n.Interfaces, i)
 
 	if err := n.network.GenerateHostsFile(); err != nil {
 		return fmt.Errorf("failed to update hosts file")
+	}
+
+	return nil
+}
+
+func (n *BaseNode) Close() error {
+	for _, i := range n.Interfaces {
+		for _, c := range i.Captures {
+			if err := c.Close(); err != nil {
+				return fmt.Errorf("failed to close capture: %w", err)
+			}
+		}
 	}
 
 	return nil
@@ -255,6 +279,7 @@ func (n *BaseNode) Teardown() error {
 	return os.RemoveAll(n.BasePath)
 }
 
+// WriteProcFS write a value to a path within the ProcFS by entering the namespace of this node.
 func (n *BaseNode) WriteProcFS(path, value string) error {
 	n.logger.Info("Updating procfs",
 		zap.String("path", path),
@@ -283,6 +308,7 @@ func (n *BaseNode) EnableForwarding() error {
 	return n.WriteProcFS("/proc/sys/net/ipv6/conf/all/forwarding", "1")
 }
 
+// LinkAddAddress adds a network layer address to a link identified by its name.
 func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 	link, err := n.nlHandle.LinkByName(name)
 	if err != nil {
@@ -305,6 +331,7 @@ func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
 	return err
 }
 
+// AddRoute adds a route to the node.
 func (n *BaseNode) AddRoute(r *nl.Route) error {
 	n.logger.Info("Add route",
 		zap.Any("dst", r.Dst),
@@ -314,6 +341,7 @@ func (n *BaseNode) AddRoute(r *nl.Route) error {
 	return n.nlHandle.RouteAdd(r)
 }
 
+// AddDefaultRoute adds a default route for this node by providing a default gateway.
 func (n *BaseNode) AddDefaultRoute(gw net.IP) error {
 	if gw.To4() != nil {
 		return n.AddRoute(&nl.Route{

@@ -11,7 +11,7 @@ import (
 // TestPingNAT performs and end-to-end ping test
 // through a NAT topology
 //
-//  h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
+//	h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
 func TestPingNATIPv4(t *testing.T) {
 	var (
 		err      error
@@ -20,7 +20,7 @@ func TestPingNATIPv4(t *testing.T) {
 		h1, h2   *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -71,7 +71,7 @@ func TestPingNATIPv4(t *testing.T) {
 // TestPingNATIPv6 performs and end-to-end ping test
 // through a NAT topology using IPv6 addressing
 //
-//  h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
+//	h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
 func TestPingNATIPv6(t *testing.T) {
 	var (
 		err      error
@@ -80,7 +80,7 @@ func TestPingNATIPv6(t *testing.T) {
 		h1, h2   *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -131,7 +131,7 @@ func TestPingNATIPv6(t *testing.T) {
 // TestPingDoubleNAT performs and end-to-end ping test
 // through a double / carrier-grade NAT topology
 //
-//  h1 <-> sw1 <-> nat1 <-> sw2 <-> nat2 <-> sw3 <-> h2
+//	h1 <-> sw1 <-> nat1 <-> sw2 <-> nat2 <-> sw3 <-> h2
 func TestPingDoubleNAT(t *testing.T) {
 	var (
 		err           error
@@ -140,7 +140,7 @@ func TestPingDoubleNAT(t *testing.T) {
 		sw1, sw2, sw3 *g.Switch
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
@@ -205,7 +205,7 @@ func TestPingDoubleNAT(t *testing.T) {
 // TestPingHostNAT performs and end-to-end ping test
 // between a virtual host and the outside host network
 //
-//  h1 <-> sw <-> n1 (host) <-> external
+//	h1 <-> sw <-> n1 (host) <-> external
 func TestPingHostNAT(t *testing.T) {
 	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
 		// GitHubs Azure based CI environment does not
@@ -220,7 +220,7 @@ func TestPingHostNAT(t *testing.T) {
 		h1  *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
