@@ -10,6 +10,7 @@ import (
 
 	"github.com/stv0g/gont/internal"
 	g "github.com/stv0g/gont/pkg"
+	"golang.org/x/exp/slices"
 )
 
 var GitCommit string
@@ -152,18 +153,29 @@ func execCommand(network, node string, args []string) error {
 func getNetworkNode(args []string) (string, string, error) {
 	var node, network string
 
+	networks := g.NetworkNames()
+
 	c := strings.SplitN(args[1], "/", 2)
 	if len(c) == 1 { // no network in name
-		if networks := g.NetworkNames(); len(networks) > 0 {
-			network = networks[0]
-		} else {
-			return "", "", errors.New("no Gont network")
+		if len(networks) == 0 {
+			return "", "", errors.New("no-existing Gont network")
 		}
 
+		network = networks[0]
 		node = c[0]
 	} else {
 		network = c[0]
 		node = c[1]
+
+		if !slices.Contains(networks, network) {
+			return "", "", fmt.Errorf("non-existing network '%s'", network)
+		}
+	}
+
+	nodes := g.NodeNames(network)
+
+	if !slices.Contains(nodes, node) {
+		return "", "", fmt.Errorf("non-existing node '%s' in network '%s'", node, network)
 	}
 
 	return network, node, nil
