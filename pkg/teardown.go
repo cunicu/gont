@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/stv0g/gont/internal/utils"
 	"github.com/vishvananda/netns"
 	"golang.org/x/sys/unix"
 )
@@ -74,7 +75,7 @@ func GenerateNetworkName() string {
 func TeardownAllNetworks() error {
 	for _, name := range NetworkNames() {
 		if err := TeardownNetwork(name); err != nil {
-			return err
+			return fmt.Errorf("failed to teardown network '%s': %w", name, err)
 		}
 	}
 
@@ -87,7 +88,7 @@ func TeardownNetwork(name string) error {
 
 	fis, err := ioutil.ReadDir(nodesDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read nodes dir: %w", err)
 	}
 
 	for _, fi := range fis {
@@ -99,8 +100,13 @@ func TeardownNetwork(name string) error {
 		netNsName := fmt.Sprintf("gont-%s-%s", name, nodeName)
 
 		nsMount := filepath.Join(nodesDir, nodeName, "ns", "net")
-		if err := unix.Unmount(nsMount, 0); err != nil {
-			return err
+
+		if mounted, err := utils.IsMountPoint(nsMount); err == nil && mounted {
+			if err := unix.Unmount(nsMount, 0); err != nil {
+				return fmt.Errorf("failed to unmount netns of node '%s': %w", nodeName, err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("failed to check if mounted: %w", err)
 		}
 
 		netns.DeleteNamed(netNsName)

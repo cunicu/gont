@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/stv0g/gont/internal"
+	"github.com/stv0g/gont/internal/utils"
 	g "github.com/stv0g/gont/pkg"
 	"golang.org/x/exp/slices"
 )
@@ -91,7 +92,9 @@ func main() {
 	case "clean":
 		if len(args) > 1 {
 			network := args[1]
-			err = g.TeardownNetwork(network)
+			if err = g.TeardownNetwork(network); err != nil {
+				err = fmt.Errorf("failed to teardown network '%s': %w", network, err)
+			}
 		} else {
 			err = g.TeardownAllNetworks()
 		}
