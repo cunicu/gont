@@ -14,8 +14,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var GitCommit string
-var GitTag string
+// Set via ldflags (see Makefile)
+var tag string
 
 func usage() {
 	w := flag.CommandLine.Output() // may be os.Stderr - but not necessarily
@@ -118,7 +118,21 @@ func main() {
 		}
 
 	case "version":
-		fmt.Printf("%s-%s\n", GitTag, GitCommit[:7])
+		version := "unknown"
+		if tag != "" {
+			version = tag
+		}
+
+		if ok, rev, dirty, btime := utils.ReadVCSInfos(); ok {
+			dirtyFlag := ""
+			if dirty {
+				dirtyFlag = "-dirty"
+			}
+
+			fmt.Printf("%s (%s%s, build on %s)\n", version, rev[:8], dirtyFlag, btime.String())
+		} else {
+			fmt.Println(version)
+		}
 
 	case "help":
 		flag.Usage()
