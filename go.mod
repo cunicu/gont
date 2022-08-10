@@ -9,6 +9,7 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.uber.org/zap v1.21.0
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 	golang.org/x/net v0.0.0-20220805013720-a33c5aa5df48
 	golang.org/x/sys v0.0.0-20220804214406-8e32c043e418
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.65
@@ -22,7 +23,6 @@ require (
 	github.com/mdlayher/socket v0.2.3 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.65 // indirect
 )

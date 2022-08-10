@@ -255,7 +255,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 	allCaptures = append(allCaptures, i.Captures...)
 
 	for _, c := range allCaptures {
-		if c != nil && (c.Filter == nil || c.Filter(i)) {
+		if c != nil && (c.FilterInterface == nil || c.FilterInterface(i)) {
 			if err := c.Start(i); err != nil {
 				return fmt.Errorf("failed to capture interface: %w", err)
 			}

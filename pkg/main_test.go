@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var globalOpts = g.Options{}
+var globalOpts = []g.Option{}
 var nname = flag.String("name", "", "Network name")
 var persist = flag.Bool("persist", false, "Do not teardown networks after test")
 

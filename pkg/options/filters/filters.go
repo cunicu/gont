@@ -1,3 +1,4 @@
+// Package filters contains the options for configuring NFTables filtering
 package filters
 
 import "github.com/google/nftables/expr"

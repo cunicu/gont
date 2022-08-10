@@ -1,3 +1,4 @@
+// gontc is a command line interface for inspecting and managing networks created by Gont
 package main
 
 import (

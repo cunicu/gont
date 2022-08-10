@@ -6,6 +6,7 @@ import (
 	g "github.com/stv0g/gont/pkg"
 )
 
+// Address assigns an network address (IP layer) to the interface.
 type Address net.IPNet
 
 func (a Address) Apply(i *g.Interface) {
@@ -26,4 +27,16 @@ func AddressIP(str string) Address {
 		IP:   ip,
 		Mask: n.Mask,
 	}
+}
+
+func Capture(opts ...g.CaptureOption) *g.Capture {
+	c := g.NewCapture()
+
+	for _, o := range opts {
+		if o, ok := o.(g.CaptureOption); ok {
+			o.Apply(c)
+		}
+	}
+
+	return c
 }
