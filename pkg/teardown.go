@@ -1,6 +1,7 @@
 package gont
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -82,9 +83,9 @@ func TeardownAllNetworks() error {
 	return nil
 }
 
-func TeardownNetwork(name string) error {
-	baseDir := filepath.Join(varDir, name)
-	nodesDir := filepath.Join(baseDir, "nodes")
+func TeardownNetwork(network string) error {
+	networkDir := filepath.Join(varDir, network)
+	nodesDir := filepath.Join(networkDir, "nodes")
 
 	fis, err := ioutil.ReadDir(nodesDir)
 	if err != nil {
@@ -96,21 +97,40 @@ func TeardownNetwork(name string) error {
 			continue
 		}
 
-		nodeName := fi.Name()
-		netNsName := fmt.Sprintf("gont-%s-%s", name, nodeName)
-
-		nsMount := filepath.Join(nodesDir, nodeName, "ns", "net")
-
-		if mounted, err := utils.IsMountPoint(nsMount); err == nil && mounted {
-			if err := unix.Unmount(nsMount, 0); err != nil {
-				return fmt.Errorf("failed to unmount netns of node '%s': %w", nodeName, err)
-			}
-		} else if err != nil {
-			return fmt.Errorf("failed to check if mounted: %w", err)
+		node := fi.Name()
+		if err := TeardownNode(network, node); err != nil {
+			return fmt.Errorf("failed to teardown node '%s': %w", node, err)
 		}
-
-		netns.DeleteNamed(netNsName)
 	}
 
-	return os.RemoveAll(baseDir)
+	if err := os.RemoveAll(networkDir); err != nil {
+		return fmt.Errorf("failed to delete network dir: %w", err)
+	}
+
+	return nil
+}
+
+func TeardownNode(network, node string) error {
+	nodeDir := filepath.Join(varDir, network, "nodes", node)
+	nsMount := filepath.Join(nodeDir, "ns", "net")
+
+	netNsName := fmt.Sprintf("gont-%s-%s", network, node)
+
+	if mounted, err := utils.IsMountPoint(nsMount); err == nil && mounted {
+		if err := unix.Unmount(nsMount, 0); err != nil {
+			return fmt.Errorf("failed to unmount netns of node '%s': %w", node, err)
+		}
+	} else if err != nil && !errors.Is(err, unix.ENOENT) {
+		return fmt.Errorf("failed to check if mounted: %w", err)
+	}
+
+	if err := netns.DeleteNamed(netNsName); err != nil && !errors.Is(err, unix.ENOENT) {
+		return fmt.Errorf("failed to delete named network namespace: %w", err)
+	}
+
+	if err := os.RemoveAll(nodeDir); err != nil {
+		return fmt.Errorf("failed to delete node dir: %w", err)
+	}
+
+	return nil
 }
