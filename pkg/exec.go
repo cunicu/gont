@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/stv0g/gont/internal/execvpe"
-	"github.com/stv0g/gont/internal/utils"
 	"golang.org/x/sys/unix"
 )
 
@@ -35,41 +35,31 @@ func init() {
 }
 
 func Exec(network, node string, args []string) error {
-	basePath := filepath.Join(varDir, network)
-	nodeDir := filepath.Join(basePath, "nodes", node)
+	networkDir := filepath.Join(varDir, network)
+	nodeDir := filepath.Join(networkDir, "nodes", node)
 
 	// Setup UTS and mount namespaces
 	if err := syscall.Unshare(syscall.CLONE_NEWUTS | syscall.CLONE_NEWNS); err != nil {
 		panic(err)
 	}
 
+	// Setup node hostname
 	hostname := fmt.Sprintf("%s.%s%s", node, network, gontNetworkSuffix)
 	if err := syscall.Sethostname([]byte(hostname)); err != nil {
 		panic(err)
 	}
 
+	// Setup bind mounts
 	if err := syscall.Mount("none", "/", "", syscall.MS_REC|syscall.MS_PRIVATE, ""); err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to make root mount point private: %w", err))
 	}
 
-	filesRootPath := filepath.Join(basePath, "files")
-
-	files, err := utils.FindFiles(filesRootPath)
-	if err != nil {
-		panic(err)
+	if err := setupBindMounts(networkDir); err != nil {
+		panic(fmt.Errorf("failed setup network bind mounts: %w", err))
 	}
 
-	if err := syscall.Unshare(syscall.CLONE_NEWNS); err != nil {
-		panic(err)
-	}
-
-	// Bind mount our files into the unshared rootfs
-	for _, path := range files {
-		src := filepath.Join(filesRootPath, path)
-		tgt := filepath.Join("/", path)
-		if err := syscall.Mount(src, tgt, "", syscall.MS_BIND, ""); err != nil {
-			return err
-		}
+	if err := setupBindMounts(nodeDir); err != nil {
+		panic(fmt.Errorf("failed setup node bind mounts: %w", err))
 	}
 
 	// Switch network namespace
@@ -89,4 +79,56 @@ func Exec(network, node string, args []string) error {
 	}
 
 	return nil
+}
+
+func setupBindMounts(basePath string) error {
+	filesRootPath := filepath.Join(basePath, "files")
+	files, err := findBindMounts(filesRootPath)
+	if err != nil {
+		return fmt.Errorf("failed to find bindable mount points: %w", err)
+	}
+
+	// Bind mount our files and dirs into the unshared root filesystem
+	for _, path := range files {
+		src := filepath.Join(filesRootPath, path)
+		tgt := filepath.Join("/", path)
+
+		if err := syscall.Mount(src, tgt, "", syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("failed to mount: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// findBindMounts returns a slice of all files/directories which should be bind mounted.
+func findBindMounts(basePath string) ([]string, error) {
+	files := []string{}
+
+	if err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		path = strings.TrimPrefix(path, basePath)
+
+		if info.IsDir() {
+			// Directories containing a hidden .mount file will be mounted
+			// as a whole instead of the individual files contained in it.
+			// Note: This can shadow parts of the underlying mount point.
+			hfn := filepath.Join(basePath, path, ".mount")
+			if fi, err := os.Stat(hfn); err == nil && !fi.IsDir() {
+				files = append(files, path)
+				return filepath.SkipDir
+			}
+		} else {
+			files = append(files, path)
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }

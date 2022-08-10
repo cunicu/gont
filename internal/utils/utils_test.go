@@ -29,19 +29,16 @@ func TestTouch(t *testing.T) {
 		t.Fail()
 	}
 
-	fns, err := utils.FindFiles(dir)
+	fi, err := os.Stat(fn)
 	if err != nil {
 		t.Fail()
 	}
 
-	found := false
-	for _, f := range fns {
-		if f == "/test-file" {
-			found = true
-		}
+	if fi.IsDir() {
+		t.Fail()
 	}
 
-	if !found {
+	if fi.Size() != 0 {
 		t.Fail()
 	}
 }

@@ -31,6 +31,7 @@ type BaseNode struct {
 	ExistingNamespace       string
 	ExistingDockerContainer string
 	LogToDebug              bool
+	EmptyDirs               []string
 
 	logger *zap.Logger
 }
@@ -39,7 +40,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 	var err error
 
 	basePath := filepath.Join(n.BasePath, "nodes", name)
-	for _, path := range []string{"ns"} {
+	for _, path := range []string{"ns", "files"} {
 		path = filepath.Join(basePath, path)
 		if err := os.MkdirAll(path, 0755); err != nil {
 			return nil, err
@@ -53,14 +54,30 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		logger:   zap.L().Named("node").With(zap.String("node", name)),
 	}
 
+	node.logger.Info("Adding new node")
+
 	// Enable log if level is debug
 	node.LogToDebug = node.logger.Core().Enabled(zap.DebugLevel)
-
-	node.logger.Info("Adding new node")
 
 	for _, opt := range opts {
 		if nopt, ok := opt.(NodeOption); ok {
 			nopt.Apply(node)
+		}
+	}
+
+	// Create mount point dirs
+	for _, ed := range node.EmptyDirs {
+		path := filepath.Join(basePath, "files", ed)
+
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
+
+		// Directories containing a hidden .mount file will be bind mounted
+		// as a whole rather than just the files it contains.
+		hfn := filepath.Join(path, ".mount")
+		if err := utils.Touch(hfn); err != nil {
+			return nil, fmt.Errorf("failed to create file: %w", err)
 		}
 	}
 
