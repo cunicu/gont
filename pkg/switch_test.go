@@ -19,7 +19,7 @@ func TestPingCascadedSwitches(t *testing.T) {
 		h1, h2   *g.Host
 	)
 
-	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalNetworkOptions...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()

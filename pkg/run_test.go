@@ -10,7 +10,7 @@ import (
 )
 
 func prepare(t *testing.T) (*g.Network, *g.BaseNode) {
-	n, err := g.NewNetwork(*nname, globalOpts...)
+	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	if err != nil {
 		t.Fatalf("Failed to create new network: %s", err)
 	}

@@ -24,7 +24,7 @@ func TestGetMyIP(t *testing.T) {
 		nat    *g.NAT
 	)
 
-	if n, err = g.NewNetwork(*nname, globalOpts...); err != nil {
+	if n, err = g.NewNetwork(*nname, globalNetworkOptions...); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 	defer n.Close()
