@@ -49,13 +49,17 @@ type CapturePacket struct {
 	Interface *CaptureInterface
 }
 
+func (p CapturePacket) Time() time.Time {
+	return p.Metadata().Timestamp
+}
+
 type CaptureStats struct {
 	PacketsReceived int
 	PacketsDropped  int
 }
 
-func (p CapturePacket) Time() time.Time {
-	return p.Metadata().Timestamp
+type CaptureOption interface {
+	Apply(n *Capture)
 }
 
 type Capture struct {

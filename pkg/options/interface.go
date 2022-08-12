@@ -29,7 +29,7 @@ func AddressIP(str string) Address {
 	}
 }
 
-func Capture(opts ...g.CaptureOption) *g.Capture {
+func Capture(opts ...g.Option) *g.Capture {
 	c := g.NewCapture()
 
 	for _, o := range opts {

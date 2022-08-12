@@ -9,6 +9,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type HostOption interface {
+	Apply(h *Host)
+}
+
 type Host struct {
 	*BaseNode
 
@@ -114,7 +118,7 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 	h.logger.Info("Configuring interface", zap.Any("intf", i))
 
 	// Disable duplicate address detection (DAD) before adding addresses
-	// so we dont end up with tentative addresses and slow test executions
+	// so we do not end up with tentative addresses and slow test executions
 	if !i.EnableDAD {
 		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
 		if err := h.WriteProcFS(fn, "0"); err != nil {

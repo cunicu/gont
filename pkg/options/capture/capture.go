@@ -65,7 +65,7 @@ func (f File) Apply(c *g.Capture) {
 	c.File = f.File
 }
 
-func ToFile(f *os.File) g.CaptureOption { return File{File: f} }
+func ToFile(f *os.File) File { return File{File: f} }
 
 // Filename writes all captured packets to a PCAPng file
 type Filename string
@@ -74,7 +74,7 @@ func (fn Filename) Apply(c *g.Capture) {
 	c.Filename = string(fn)
 }
 
-func ToFilename(fn string) g.CaptureOption { return Filename(fn) }
+func ToFilename(fn string) Filename { return Filename(fn) }
 
 // Channel sends all captured packets to the provided channel.
 type Channel chan g.CapturePacket

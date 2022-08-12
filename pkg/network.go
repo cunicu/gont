@@ -15,6 +15,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type NetworkOption interface {
+	Apply(n *Network)
+}
+
 type Network struct {
 	Name string
 

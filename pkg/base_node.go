@@ -15,6 +15,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+type BaseNodeOption interface {
+	Apply(b *BaseNode)
+}
+
 type BaseNode struct {
 	*Namespace
 
@@ -60,7 +64,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 	node.LogToDebug = node.logger.Core().Enabled(zap.DebugLevel)
 
 	for _, opt := range opts {
-		if nopt, ok := opt.(NodeOption); ok {
+		if nopt, ok := opt.(BaseNodeOption); ok {
 			nopt.Apply(node)
 		}
 	}

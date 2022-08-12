@@ -26,6 +26,10 @@ var loopbackInterface = Interface{
 	},
 }
 
+type InterfaceOption interface {
+	Apply(n *Interface)
+}
+
 type Interface struct {
 	Name string
 	Node Node
@@ -45,7 +49,7 @@ type Interface struct {
 
 // Options
 
-func (i *Interface) Apply(n *BaseNode) {
+func (i *Interface) ApplyBaseNode(n *BaseNode) {
 	n.ConfiguredInterfaces = append(n.ConfiguredInterfaces, i)
 }
 

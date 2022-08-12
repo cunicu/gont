@@ -15,6 +15,10 @@ var (
 	}
 )
 
+type NATOption interface {
+	Apply(n *NAT)
+}
+
 type NAT struct {
 	*Router
 
@@ -71,7 +75,7 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 		switch opt := o.(type) {
 		case NATOption:
 			opt.Apply(nat)
-		case NodeOption:
+		case BaseNodeOption:
 			opt.Apply(host.BaseNode)
 		}
 	}

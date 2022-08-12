@@ -11,6 +11,14 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+type VethOption interface {
+	Apply(ve *nl.Veth)
+}
+
+type LinkOption interface {
+	Apply(a *nl.LinkAttrs)
+}
+
 func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 	var err error
 
@@ -42,7 +50,7 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 	// and move + rename it later.
 
 	// We also cant create the interface from the host namespace
-	// as this leads to race conditions due to dupplicate device names
+	// as this leads to race conditions due to duplicate device names
 	veth := &nl.Veth{
 		LinkAttrs: nl.LinkAttrs{
 			Name:   utils.RandStringRunes(unix.IFNAMSIZ - 1), // temporary name

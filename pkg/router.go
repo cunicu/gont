@@ -1,5 +1,9 @@
 package gont
 
+type RouterOption interface {
+	ApplyRouter(r *Router)
+}
+
 type Router struct {
 	*Host
 }

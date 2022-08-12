@@ -7,6 +7,14 @@ import (
 	"go.uber.org/zap"
 )
 
+type SwitchOption interface {
+	Apply(sw *Switch)
+}
+
+type BridgeOption interface {
+	Apply(br *nl.Bridge)
+}
+
 // Switch is an abstraction for a Linux virtual bridge
 type Switch struct {
 	*BaseNode
