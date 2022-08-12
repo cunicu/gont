@@ -18,6 +18,9 @@ const (
 	bridgeInterfaceName   = "br"
 )
 
+// Option is the base type for all functional options.
+type Option any
+
 // CheckCaps checks if the current process has the required privileges to run Gont
 func CheckCaps() error {
 	c := cap.GetProc()

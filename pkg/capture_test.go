@@ -86,7 +86,7 @@ func TestCaptureNetwork(t *testing.T) {
 		copt.Comment("Some random comment which will be included in the capture file"),
 	)
 
-	opts := g.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
+	opts := gopt.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
 		gopt.CaptureAll(
 			copt.ToFilename("all.pcapng"), // We can create a file
 		),
