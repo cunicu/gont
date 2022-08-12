@@ -67,6 +67,7 @@ func GenerateNetworkName() string {
 		}
 	}
 
+	// TODO: This can generate non-unique network names!
 	index := rand.Intn(len(Names))
 	random := Names[index]
 
