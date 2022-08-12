@@ -1,7 +1,7 @@
 package gont
 
 type RouterOption interface {
-	ApplyRouter(r *Router)
+	Apply(r *Router)
 }
 
 type Router struct {

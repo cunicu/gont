@@ -49,7 +49,7 @@ type Interface struct {
 
 // Options
 
-func (i *Interface) ApplyBaseNode(n *BaseNode) {
+func (i *Interface) Apply(n *BaseNode) {
 	n.ConfiguredInterfaces = append(n.ConfiguredInterfaces, i)
 }
 
