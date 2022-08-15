@@ -14,6 +14,10 @@ import (
 )
 
 func (n *BaseNode) Command(name string, args ...string) *exec.Cmd {
+	return n.CommandWith(name, nil, "", args...)
+}
+
+func (n *BaseNode) CommandWith(name string, env []string, dir string, args ...string) *exec.Cmd {
 	// Actual namespace switching is done similar to Docker's reexec
 	// in a forked version of ourself by passing all required details
 	// in environment variables.
@@ -33,11 +37,18 @@ func (n *BaseNode) Command(name string, args ...string) *exec.Cmd {
 		}
 	}
 
+	c.Env = append(c.Env, env...)
+	c.Dir = dir
+
 	return c
 }
 
 func (n *BaseNode) Run(cmd string, args ...any) ([]byte, *exec.Cmd, error) {
-	stdout, stderr, c, err := n.Start(cmd, args...)
+	return n.RunWith(cmd, nil, "", args...)
+}
+
+func (n *BaseNode) RunWith(cmd string, env []string, dir string, args ...any) ([]byte, *exec.Cmd, error) {
+	stdout, stderr, c, err := n.StartWith(cmd, env, dir, args...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -63,18 +74,20 @@ func (n *BaseNode) Run(cmd string, args ...any) ([]byte, *exec.Cmd, error) {
 		zap.Duration("sys_time", c.ProcessState.SystemTime()),
 	)
 
-	var f func(string, ...zap.Field)
 	if c.ProcessState.Success() {
-		f = rlogger.Info
+		rlogger.Info("Process terminated successfully")
 	} else {
-		f = rlogger.Error
+		rlogger.Error("Process terminated with error code")
 	}
-	f("Process terminated")
 
 	return buf, c, err
 }
 
 func (n *BaseNode) Start(cmd string, args ...any) (io.Reader, io.Reader, *exec.Cmd, error) {
+	return n.StartWith(cmd, nil, "", args...)
+}
+
+func (n *BaseNode) StartWith(cmd string, env []string, dir string, args ...any) (io.Reader, io.Reader, *exec.Cmd, error) {
 	var err error
 	var stdout, stderr io.Reader
 
@@ -113,7 +126,7 @@ func (n *BaseNode) Start(cmd string, args ...any) (io.Reader, io.Reader, *exec.C
 		strargs = append(strargs, strarg)
 	}
 
-	c := n.Command(cmd, strargs...)
+	c := n.CommandWith(cmd, env, dir, strargs...)
 
 	if stdout, err = c.StdoutPipe(); err != nil {
 		return nil, nil, nil, err
