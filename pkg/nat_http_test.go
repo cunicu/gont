@@ -121,32 +121,3 @@ func (h *HTTPServer) ListenTCP(port int) error {
 		return err
 	})
 }
-
-// type HTTPClient struct {
-// 	g.Host
-
-// 	Client *http.Client
-// }
-
-// func AddHttpClient(n *g.Network, name string) (*HTTPClient, error) {
-// 	h, err := n.AddHost(name)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	s := &HTTPClient{
-// 		Host: *h,
-// 	}
-
-// 	s.Client = &http.Client{
-// 		Transport: &http.Transport{
-// 			Dial: s.Dial,
-// 		},
-// 	}
-
-// 	return s, nil
-// }
-
-// func (h *HTTPClient) Dial(network, addr string) (net.Conn, error) {
-// 	return net.Dial(network)
-// }
