@@ -10,6 +10,7 @@ import (
 
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
+	co "github.com/stv0g/gont/pkg/options/capture"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -17,6 +18,7 @@ import (
 var globalNetworkOptions = []g.Option{}
 var nname = flag.String("name", "", "Network name")
 var persist = flag.Bool("persist", false, "Do not teardown networks after test")
+var capture = flag.String("capture", "", "Capture network traffic to PCAPng file")
 
 func setupLogging() *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()
@@ -55,7 +57,17 @@ func TestMain(m *testing.M) {
 
 	// Handle global flags
 	if *persist {
-		globalNetworkOptions = append(globalNetworkOptions, o.Persistent(*persist))
+		globalNetworkOptions = append(globalNetworkOptions,
+			o.Persistent(*persist),
+		)
+	}
+
+	if *capture != "" {
+		globalNetworkOptions = append(globalNetworkOptions,
+			o.CaptureAll(
+				co.Filename(*capture),
+			),
+		)
 	}
 
 	os.Exit(m.Run())
