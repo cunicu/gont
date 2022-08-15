@@ -40,21 +40,21 @@ func TestFilterIPv4(t *testing.T) {
 			fo.Drop,
 		),
 		o.Interface("veth0", sw,
-			o.AddressIPv4(10, 0, 1, 1, 16)),
+			o.AddressIP("10.0.1.1/16")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
 		o.Interface("veth0", sw,
-			o.AddressIPv4(10, 0, 2, 1, 16)),
+			o.AddressIP("10.0.2.1/16")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h3, err = n.AddHost("h3",
 		o.Interface("veth0", sw,
-			o.AddressIPv4(10, 0, 3, 1, 16)),
+			o.AddressIP("10.0.3.1/16")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}

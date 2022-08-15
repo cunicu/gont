@@ -328,8 +328,8 @@
 							h2, _ := n.AddHost("h2")
 
 							n.AddLink(
-								o.Interface("eth0", h1, o.AddressIPv4(10, 0, 0, 1, 24)),
-								o.Interface("eth0", h2, o.AddressIPv4(10, 0, 0, 2, 24)),
+								o.Interface("eth0", h1, o.AddressIP("10.0.0.1/24")),
+								o.Interface("eth0", h2, o.AddressIP("10.0.0.2/24")),
 							)
 
 							h1.Ping(h2)
@@ -364,9 +364,9 @@
 							sw, _ := n.AddSwitch("sw")
 
 							h1, _ := n.AddHost("h1", o.Interface("eth0", sw,
-							                    o.AddressIPv4(10, 0, 0, 1, 24)))
+							                    o.AddressIP("10.0.0.1/24")))
 							h2, _ := n.AddHost("h2", o.Interface("eth0", sw,
-							                    o.AddressIPv4(10, 0, 0, 2, 24)))
+							                    o.AddressIP("10.0.0.2/24")))
 
 							h1.Ping(h2)
 						</code></pre>
@@ -379,13 +379,13 @@
 							sw2, _ := n.AddSwitch("sw2")
 
 							h1, _ := n.AddHost("h1", o.Interface("eth0", sw1,
-							                    o.AddressIPv4(10, 0, 0, 2, 24)))
+							                    o.AddressIP("10.0.0.2/24")))
 							h2, _ := n.AddHost("h2", o.Interface("eth0", sw2,
-							                    o.AddressIPv4(10, 0, 1, 2, 24)))
+							                    o.AddressIP("10.0.1.2/24")))
 
 							n.AddRouter("r1",
-								o.Interface("eth0", sw, o.AddressIPv4(10, 0, 0, 1, 24)),
-								o.Interface("eth1", sw, o.AddressIPv4(10, 0, 1, 1, 24))
+								o.Interface("eth0", sw, o.AddressIP("10.0.0.1/24")),
+								o.Interface("eth1", sw, o.AddressIP("10.0.1.1/24"))
 							)
 
 							h1.Ping(h2)
@@ -399,15 +399,15 @@
 							sw2, _ := n.AddSwitch("sw2")
 
 							h1, _ := n.AddHost("h1", o.Interface("eth0", sw1,
-							                    o.AddressIPv4(10, 0, 0, 2, 24)))
+							                    o.AddressIP("10.0.0.2/24")))
 							h2, _ := n.AddHost("h2", o.Interface("eth0", sw2,
-							                    o.AddressIPv4(10, 0, 1, 2, 24)))
+							                    o.AddressIP("10.0.1.2/24")))
 
 							n.AddNAT("n1",
 								o.Interface("eth0", sw, o.SouthBound,
-								             o.AddressIPv4(10, 0, 0, 1, 24)),
+								             o.AddressIP("10.0.0.1/24")),
 								o.Interface("eth1", sw, o.NorthBound,
-								             o.AddressIPv4(10, 0, 1, 1, 24))
+								             o.AddressIP("10.0.1.1/24"))
 							)
 
 							h1.Ping(h2)
@@ -428,18 +428,18 @@
 
 								n.AddRouter(rtrName,
 									o.Interface("eth0", lastSwitch,
-									             o.AddressIPv4(10, 0, 0, 1, 24)),
+									             o.AddressIP("10.0.0.1/24")),
 									o.Interface("eth1", newSwitch,
-									             o.AddressIPv4(10, 0, 1, 1, 24))
+									             o.AddressIP("10.0.1.1/24"))
 								)
 
 								lastSwitch = newSwitch
 							}
 
 							h1, _ := n.AddHost("h1", o.Interface("eth0", firstSwitch,
-							                    o.AddressIPv4(10, 0, 0, 2, 24)))
+							                    o.AddressIP("10.0.0.2/24")))
 							h2, _ := n.AddHost("h2", o.Interface("eth0", lastSwitch, 
-							                    o.AddressIPv4(10, 0, 1, 2, 24)))
+							                    o.AddressIP("10.0.1.2/24")))
 							
 							h1.Ping(h2)
 						</code></pre>

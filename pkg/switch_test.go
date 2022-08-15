@@ -34,14 +34,14 @@ func TestPingCascadedSwitches(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		o.Interface("veth0", sw1,
-			o.AddressIPv4(10, 0, 0, 1, 24)),
+			o.AddressIP("10.0.0.1/24")),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
 		o.Interface("veth0", sw2,
-			o.AddressIPv4(10, 0, 0, 2, 24)),
+			o.AddressIP("10.0.0.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
 	}
