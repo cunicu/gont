@@ -47,7 +47,7 @@ func TestGetMyIP(t *testing.T) {
 		o.Interface("veth0", nat, o.SouthBound,
 			o.AddressIP("fc::1:1/112")),
 	); err != nil {
-		t.Fail()
+		t.Fatalf("Failed to add link: %s", err)
 	}
 
 	if err := n.AddLink(
@@ -56,27 +56,27 @@ func TestGetMyIP(t *testing.T) {
 		o.Interface("veth1", nat, o.NorthBound,
 			o.AddressIP("fc::2:1/112")),
 	); err != nil {
-		t.Fail()
+		t.Fatalf("Failed to add link: %s", err)
 	}
 
 	if err := client.AddDefaultRoute(net.ParseIP("fc::1:1")); err != nil {
-		t.Fail()
+		t.Fatalf("Failed to setup default route: %s", err)
 	}
 
 	out, _, err := client.Run("curl", "-s", "--connect-timeout", 1000, "http://server:8080")
 	if err != nil {
-		t.Errorf("Request failed: %s", err)
+		t.Fatalf("Request failed: %s", err)
 	}
 
 	hostPort := string(out)
 
 	ip, _, err := net.SplitHostPort(hostPort)
 	if err != nil {
-		t.Errorf("Failed to split host:port: %s", err)
+		t.Fatalf("Failed to split host:port: %s", err)
 	}
 
 	if ip != "fc::2:1" {
-		t.Fail()
+		t.Fatalf("Got wrong IP: %s", ip)
 	}
 }
 
