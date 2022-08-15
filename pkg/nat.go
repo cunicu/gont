@@ -2,17 +2,11 @@ package gont
 
 import (
 	"fmt"
-	"net"
 
 	nft "github.com/google/nftables"
-	"go.uber.org/zap"
-)
-
-var (
-	families = []nft.TableFamily{
-		nft.TableFamilyIPv4,
-		nft.TableFamilyIPv6,
-	}
+	"github.com/google/nftables/binaryutil"
+	"github.com/google/nftables/expr"
+	"golang.org/x/sys/unix"
 )
 
 type NATOption interface {
@@ -22,7 +16,10 @@ type NATOption interface {
 type NAT struct {
 	*Router
 
-	families map[nft.TableFamily]*natFamily
+	Table       *nft.Table
+	Input       *nft.Chain
+	Forward     *nft.Chain
+	PostRouting *nft.Chain
 }
 
 func (n *NAT) Apply(i *Interface) {
@@ -37,20 +34,23 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 
 	nat := &NAT{
 		Router: rtr,
+	}
 
-		families: map[nft.TableFamily]*natFamily{},
+	// Apply NAT options
+	for _, o := range opts {
+		switch opt := o.(type) {
+		case NATOption:
+			opt.Apply(nat)
+		}
+	}
+
+	if err := nat.setupTable(nat.nftConn); err != nil {
+		return nil, fmt.Errorf("failed to setup nftables table: %w", err)
 	}
 
 	n.Register(nat)
 
-	// Apply NAT options
-	for _, opt := range opts {
-		if nopt, ok := opt.(NATOption); ok {
-			nopt.Apply(nat)
-		}
-	}
-
-	return nat, nat.setup()
+	return nat, nil
 }
 
 func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
@@ -66,11 +66,9 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 
 	nat := &NAT{
 		Router: rtr,
-
-		families: map[nft.TableFamily]*natFamily{},
 	}
 
-	// Apply NAT options
+	// Apply NAT and BaseNode options
 	for _, o := range opts {
 		switch opt := o.(type) {
 		case NATOption:
@@ -84,8 +82,8 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 		return nil, err
 	}
 
-	if err := nat.setup(); err != nil {
-		return nil, err
+	if err := nat.setupTable(n.HostNode.nftConn); err != nil {
+		return nil, fmt.Errorf("failed to setup nftables table: %w", err)
 	}
 
 	n.Register(host)
@@ -93,93 +91,183 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 	return nat, nil
 }
 
-func (n *NAT) setup() error {
-	var sbGroup uint32 = uint32(DeviceGroupSouthBound)
+/* Setup the table
+ *
+ * $ nft list table inet gont-nat
+ * table inet gont-nat {
+ * 	chain input {
+ * 		type filter hook input priority filter; policy drop;
+ * 	}
+ *
+ * 	chain forward {
+ * 		type filter hook forward priority filter; policy drop;
+ * 		iifgroup "south-bound" accept
+ * 		ct state established,related accept
+ * 	}
+ *
+ * 	chain snat {
+ * 		type nat hook postrouting priority srcnat; policy accept;
+ * 		oifgroup "north-bound" masquerade
+ * 	}
+ * }
+ */
+func (n *NAT) setupTable(c *nft.Conn) error {
+	chainPolicyDrop := nft.ChainPolicyDrop
 
-	for _, g := range families {
-		f := newNATFamily(g)
-
-		if err := f.SetupTable(n.nftConn); err != nil {
-			return err
-		}
-		if err := f.SetupSet(n.nftConn); err != nil {
-			return err
-		}
-		if err := f.SetupChains(n.nftConn, sbGroup); err != nil {
-			return err
-		}
-
-		n.families[g] = f
+	// Delete any old table
+	t := &nft.Table{
+		Family: nft.TableFamilyINet,
+		Name:   "gont-nat",
 	}
 
-	for _, i := range n.Interfaces {
-		if err := n.updateIPSetInterface(i); err != nil {
-			return err
-		}
-	}
+	c.DelTable(t)
+	c.Flush()
+	// We ignore the error here, as DelTable might fail if there is no old table existing
 
-	if err := n.nftConn.Flush(); err != nil {
-		return fmt.Errorf("failed setup nftables: %w", err)
-	}
+	n.Table = c.AddTable(t)
 
-	return nil
-}
+	// Input chain
+	n.Input = c.AddChain(&nft.Chain{
+		Name:     "input",
+		Table:    n.Table,
+		Type:     nft.ChainTypeFilter,
+		Hooknum:  nft.ChainHookInput,
+		Priority: nft.ChainPriorityFilter,
 
-func (n *NAT) updateIPSetInterface(i *Interface) error {
-	if i.LinkAttrs.Group == uint32(DeviceGroupSouthBound) {
-		for _, addr := range i.Addresses {
-			f := n.families[nft.TableFamilyIPv4]
-			if addr.IP.To4() == nil {
-				f = n.families[nft.TableFamilyIPv6]
-			}
+		// Drop policy is crucial here as it avoid ICMP port-unreachable
+		// messages during UDP hole punching.
+		// See: https://www.spinics.net/lists/netfilter/msg58226.html
+		Policy: &chainPolicyDrop,
+	})
 
-			n.logger.Info("Adding address to nftables set",
-				zap.String("set", f.Set.Name),
-				zap.String("addr", addr.String()),
-			)
+	// icmp6 accept
+	c.AddRule(&nft.Rule{
+		Table: n.Table,
+		Chain: n.Input,
+		Exprs: []expr.Any{
+			&expr.Meta{
+				Key:      expr.MetaKeyL4PROTO,
+				Register: 1,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: 1,
+				Data: binaryutil.NativeEndian.PutUint16(
+					unix.IPPROTO_ICMPV6,
+				),
+			},
+			&expr.Verdict{
+				Kind: expr.VerdictAccept,
+			},
+		},
+	})
 
-			netw := net.IPNet{
-				IP:   addr.IP.Mask(addr.Mask),
-				Mask: addr.Mask,
-			}
+	// icmp accept
+	c.AddRule(&nft.Rule{
+		Table: n.Table,
+		Chain: n.Input,
+		Exprs: []expr.Any{
+			&expr.Meta{
+				Key:      expr.MetaKeyL4PROTO,
+				Register: 1,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: 1,
+				Data: binaryutil.NativeEndian.PutUint16(
+					unix.IPPROTO_ICMP,
+				),
+			},
+			&expr.Verdict{
+				Kind: expr.VerdictAccept,
+			},
+		},
+	})
 
-			if err := f.AddNetwork(n.nftConn, netw); err != nil {
-				return err
-			}
-		}
-	}
+	// Forward chain
+	n.Forward = c.AddChain(&nft.Chain{
+		Name:     "forward",
+		Table:    n.Table,
+		Type:     nft.ChainTypeFilter,
+		Hooknum:  nft.ChainHookForward,
+		Priority: nft.ChainPriorityFilter,
+		Policy:   &chainPolicyDrop,
+	})
 
-	return nil
-}
+	c.AddRule(&nft.Rule{
+		Table: n.Table,
+		Chain: n.Forward,
+		Exprs: []expr.Any{
+			&expr.Meta{
+				Key:      expr.MetaKeyIIFGROUP,
+				Register: 1,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: 1,
+				Data: binaryutil.NativeEndian.PutUint32(
+					uint32(DeviceGroupSouthBound),
+				),
+			},
+			&expr.Verdict{
+				Kind: expr.VerdictAccept,
+			},
+		},
+	})
 
-func (n *NAT) ConfigureInterface(i *Interface) error {
-	if err := n.updateIPSetInterface(i); err != nil {
-		return err
-	}
+	c.AddRule(&nft.Rule{
+		Table: n.Table,
+		Chain: n.Forward,
+		Exprs: []expr.Any{
+			&expr.Ct{
+				Register: 1,
+				Key:      expr.CtKeySTATE,
+			},
+			&expr.Bitwise{
+				SourceRegister: 1,
+				DestRegister:   1,
+				Len:            4,
+				Mask:           binaryutil.NativeEndian.PutUint32(expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED),
+				Xor:            binaryutil.NativeEndian.PutUint32(0),
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpNeq,
+				Register: 1,
+				Data:     []byte{0, 0, 0, 0},
+			},
+			&expr.Verdict{
+				Kind: expr.VerdictAccept,
+			},
+		},
+	})
 
-	if err := n.nftConn.Flush(); err != nil {
-		return err
-	}
+	// Postrouting chain
+	n.PostRouting = c.AddChain(&nft.Chain{
+		Name:     "snat",
+		Table:    n.Table,
+		Type:     nft.ChainTypeNAT,
+		Hooknum:  nft.ChainHookPostrouting,
+		Priority: nft.ChainPriorityNATSource,
+	})
 
-	return n.Router.ConfigureInterface(i)
-}
+	c.AddRule(&nft.Rule{
+		Table: n.Table,
+		Chain: n.PostRouting,
+		Exprs: []expr.Any{
+			&expr.Meta{
+				Key:      expr.MetaKeyOIFGROUP,
+				Register: 1,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: 1,
+				Data: binaryutil.NativeEndian.PutUint32(
+					uint32(DeviceGroupNorthBound),
+				),
+			},
+			&expr.Masq{},
+		},
+	})
 
-func ipNetNextRange(netw net.IPNet) (net.IP, net.IP) {
-	start := netw.IP
-	ones, _ := netw.Mask.Size()
-
-	bp := ones / 8
-	bm := ones % 8
-
-	if bm == 0 {
-		bp--
-		bm = 8
-	}
-
-	end := make(net.IP, len(start))
-	copy(end, start)
-
-	end[bp] = end[bp] + 1<<(8-bm)
-
-	return start, end
+	return c.Flush()
 }
