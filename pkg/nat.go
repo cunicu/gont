@@ -20,6 +20,13 @@ type NAT struct {
 	Input       *nft.Chain
 	Forward     *nft.Chain
 	PostRouting *nft.Chain
+
+	// Options
+	Persistent    bool
+	Random        bool
+	FullyRandom   bool
+	SourcePortMin int
+	SourcePortMax int
 }
 
 func (n *NAT) Apply(i *Interface) {
@@ -250,23 +257,56 @@ func (n *NAT) setupTable(c *nft.Conn) error {
 		Priority: nft.ChainPriorityNATSource,
 	})
 
+	masqExprs := []expr.Any{
+		&expr.Meta{
+			Key:      expr.MetaKeyOIFGROUP,
+			Register: 1,
+		},
+		&expr.Cmp{
+			Op:       expr.CmpOpEq,
+			Register: 1,
+			Data: binaryutil.NativeEndian.PutUint32(
+				uint32(DeviceGroupNorthBound),
+			),
+		},
+	}
+
+	if n.SourcePortMax > 0 && n.SourcePortMin > 0 {
+		masqExprs = append(masqExprs,
+			&expr.Immediate{
+				Register: 1,
+				Data: binaryutil.BigEndian.PutUint16(
+					uint16(n.SourcePortMin),
+				),
+			},
+			&expr.Immediate{
+				Register: 2,
+				Data: binaryutil.BigEndian.PutUint16(
+					uint16(n.SourcePortMax),
+				),
+			},
+			&expr.Masq{
+				Random:      n.Random,
+				FullyRandom: n.Random,
+				Persistent:  n.Persistent,
+				RegProtoMin: 1,
+				RegProtoMax: 2,
+				ToPorts:     true,
+			})
+	} else {
+		masqExprs = append(masqExprs,
+			&expr.Masq{
+				Random:      n.Random,
+				FullyRandom: n.Random,
+				Persistent:  n.Persistent,
+			},
+		)
+	}
+
 	c.AddRule(&nft.Rule{
 		Table: n.Table,
 		Chain: n.PostRouting,
-		Exprs: []expr.Any{
-			&expr.Meta{
-				Key:      expr.MetaKeyOIFGROUP,
-				Register: 1,
-			},
-			&expr.Cmp{
-				Op:       expr.CmpOpEq,
-				Register: 1,
-				Data: binaryutil.NativeEndian.PutUint32(
-					uint32(DeviceGroupNorthBound),
-				),
-			},
-			&expr.Masq{},
-		},
+		Exprs: masqExprs,
 	})
 
 	return c.Flush()
