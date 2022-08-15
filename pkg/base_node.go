@@ -1,6 +1,7 @@
 package gont
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -75,6 +76,14 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 
 		if err := os.MkdirAll(path, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create directory: %w", err)
+		}
+
+		// Create non-existing empty dirs
+		// TODO: Should we cleanup in Close()?
+		if _, err := os.Stat(ed); err != nil && errors.Is(err, os.ErrNotExist) {
+			if err := os.MkdirAll(ed, 0755); err != nil {
+				return nil, fmt.Errorf("failed to create directory '%s': %w", ed, err)
+			}
 		}
 
 		// Directories containing a hidden .mount file will be bind mounted
