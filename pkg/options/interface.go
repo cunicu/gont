@@ -1,6 +1,7 @@
 package options
 
 import (
+	"fmt"
 	"net"
 
 	g "github.com/stv0g/gont/pkg"
@@ -21,7 +22,10 @@ func AddressIPv4(a, b, c, d byte, m int) Address {
 }
 
 func AddressIP(str string) Address {
-	ip, n, _ := net.ParseCIDR(str)
+	ip, n, err := net.ParseCIDR(str)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse IP address '%s': %w", str, err))
+	}
 
 	return Address{
 		IP:   ip,
