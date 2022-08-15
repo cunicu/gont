@@ -209,7 +209,6 @@ func (n *Network) Register(m Node) {
 	n.NodesLock.Lock()
 	defer n.NodesLock.Unlock()
 
-	// TODO handle name collisions
-
+	// TODO: Handle name collisions
 	n.Nodes[m.Name()] = m
 }
