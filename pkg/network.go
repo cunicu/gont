@@ -25,6 +25,8 @@ type Network struct {
 	Nodes     map[string]Node
 	NodesLock sync.RWMutex
 
+	hostsFileLock sync.Mutex
+
 	HostNode *Host
 	BasePath string
 

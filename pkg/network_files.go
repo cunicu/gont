@@ -12,12 +12,15 @@ var (
 	IPv4loopback = net.IPv4(127, 0, 0, 1)
 )
 
-// GenerateHostsFile writes the addresses and hostnames of all nodes
+// GenerateHostsFile writes the addresses and host names of all nodes
 // into a file located at /run/gont/<network>/files/etc/hosts
 //
 // Processes started via BaseNode.Run or BaseNode.Start, will see
 // this file bind mounted at /etc/hosts
 func (n *Network) GenerateHostsFile() error {
+	n.hostsFileLock.Lock()
+	defer n.hostsFileLock.Unlock()
+
 	fn := filepath.Join(n.BasePath, "files", "etc", "hosts")
 	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
 		return err
@@ -54,7 +57,7 @@ func (n *Network) GenerateHostsFile() error {
 		}
 	}
 
-	for _, n := range n.Nodes {
+	for _, n := range n.nodes {
 		if n, ok := n.(*Host); ok {
 			for _, i := range n.Interfaces {
 				if i.IsLoopback() {
@@ -73,7 +76,11 @@ func (n *Network) GenerateHostsFile() error {
 		fmt.Fprintf(f, "%s %s\n", addr, strings.Join(names, " "))
 	}
 
-	return f.Sync()
+	if err := f.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (n *Network) GenerateConfigFiles() error {
