@@ -1,6 +1,7 @@
 package filters
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/google/nftables/expr"
@@ -59,4 +60,36 @@ func Source(netw *net.IPNet) Statement {
 
 func Destination(netw *net.IPNet) Statement {
 	return network(dirDestination, netw)
+}
+
+func SourceIP(netws string) Statement {
+	_, netw, err := net.ParseCIDR(netws)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse CIDR: %w", err))
+	}
+
+	return Source(netw)
+}
+
+func DestinationIP(netws string) Statement {
+	_, netw, err := net.ParseCIDR(netws)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse CIDR: %w", err))
+	}
+
+	return Destination(netw)
+}
+
+func SourceIPv4(a, b, c, d byte, m int) Statement {
+	return Source(&net.IPNet{
+		IP:   net.IPv4(a, b, c, d),
+		Mask: net.CIDRMask(m, 32),
+	})
+}
+
+func DestinationIPv4(a, b, c, d byte, m int) Statement {
+	return Destination(&net.IPNet{
+		IP:   net.IPv4(a, b, c, d),
+		Mask: net.CIDRMask(m, 32),
+	})
 }
