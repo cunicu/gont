@@ -38,12 +38,11 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 		return errors.New("nodes are belonging to different networks")
 	}
 
+	// Create Veth pair
 	n.logger.Info("Adding new veth pair",
 		zap.Any("left", l),
 		zap.Any("right", r),
 	)
-
-	// Create Veth pair
 
 	// For some unknown reason we cant create the peer interface
 	// directly in the target namespace. So we create it in the same
@@ -100,7 +99,7 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 
 	// Configure interface (link state, attaching to bridge, adding addresses)
 	for _, i := range []*Interface{l, r} {
-		if err := i.Configure(); err != nil {
+		if err := i.Node.ConfigureInterface(i); err != nil {
 			return fmt.Errorf("failed to configure endpoint: %w", err)
 		}
 	}

@@ -64,7 +64,3 @@ func (i Interface) String() string {
 func (i Interface) IsLoopback() bool {
 	return i.Name == loopbackInterfaceName
 }
-
-func (i *Interface) Configure() error {
-	return i.Node.ConfigureInterface(i)
-}

@@ -22,8 +22,8 @@ type NetworkOption interface {
 type Network struct {
 	Name string
 
-	Nodes     map[string]Node
-	NodesLock sync.RWMutex
+	nodes     map[string]Node
+	nodesLock sync.RWMutex
 
 	hostsFileLock sync.Mutex
 
@@ -79,8 +79,8 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 	n := &Network{
 		Name:      name,
 		BasePath:  basePath,
-		Nodes:     map[string]Node{},
-		NodesLock: sync.RWMutex{},
+		nodes:     map[string]Node{},
+		nodesLock: sync.RWMutex{},
 		NSPrefix:  "gont-",
 		Captures:  []*Capture{},
 		logger:    zap.L().Named("network").With(zap.String("network", name)),
@@ -128,10 +128,28 @@ func (n *Network) String() string {
 	return n.Name
 }
 
+func (n *Network) Nodes() []Node {
+	n.nodesLock.RLock()
+	defer n.nodesLock.RUnlock()
+
+	nodes := []Node{}
+
+	for _, node := range n.nodes {
+		if host, ok := node.(*Host); ok {
+			nodes = append(nodes, host)
+		}
+	}
+
+	return nodes
+}
+
 func (n *Network) Hosts() []*Host {
+	n.nodesLock.RLock()
+	defer n.nodesLock.RUnlock()
+
 	hosts := []*Host{}
 
-	for _, node := range n.Nodes {
+	for _, node := range n.nodes {
 		if host, ok := node.(*Host); ok {
 			hosts = append(hosts, host)
 		}
@@ -141,9 +159,12 @@ func (n *Network) Hosts() []*Host {
 }
 
 func (n *Network) Switches() []*Switch {
+	n.nodesLock.RLock()
+	defer n.nodesLock.RUnlock()
+
 	switches := []*Switch{}
 
-	for _, node := range n.Nodes {
+	for _, node := range n.nodes {
 		if sw, ok := node.(*Switch); ok {
 			switches = append(switches, sw)
 		}
@@ -153,9 +174,12 @@ func (n *Network) Switches() []*Switch {
 }
 
 func (n *Network) Routers() []*Router {
+	n.nodesLock.RLock()
+	defer n.nodesLock.RUnlock()
+
 	routers := []*Router{}
 
-	for _, node := range n.Nodes {
+	for _, node := range n.nodes {
 		if router, ok := node.(*Router); ok {
 			routers = append(routers, router)
 		}
@@ -165,15 +189,15 @@ func (n *Network) Routers() []*Router {
 }
 
 func (n *Network) Teardown() error {
-	n.NodesLock.Lock()
-	defer n.NodesLock.Unlock()
+	n.nodesLock.Lock()
+	defer n.nodesLock.Unlock()
 
-	for name, node := range n.Nodes {
+	for name, node := range n.nodes {
 		if err := node.Teardown(); err != nil {
 			return err
 		}
 
-		delete(n.Nodes, name)
+		delete(n.nodes, name)
 	}
 
 	if n.BasePath != "" {
@@ -190,12 +214,12 @@ func (n *Network) Close() error {
 		}
 	}
 
-	for name, node := range n.Nodes {
+	for name, node := range n.nodes {
 		if err := node.Close(); err != nil {
 			return err
 		}
 
-		delete(n.Nodes, name)
+		delete(n.nodes, name)
 	}
 
 	for _, c := range n.Captures {
@@ -208,9 +232,9 @@ func (n *Network) Close() error {
 }
 
 func (n *Network) Register(m Node) {
-	n.NodesLock.Lock()
-	defer n.NodesLock.Unlock()
+	n.nodesLock.Lock()
+	defer n.nodesLock.Unlock()
 
 	// TODO: Handle name collisions
-	n.Nodes[m.Name()] = m
+	n.nodes[m.Name()] = m
 }
