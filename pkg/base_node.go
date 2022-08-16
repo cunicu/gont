@@ -186,6 +186,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 	logger := n.logger.With(zap.Any("intf", i))
 	logger.Info("Configuring interface")
 
+	// Set MTU
 	if i.LinkAttrs.MTU != 0 {
 		logger.Info("Setting interface MTU",
 			zap.Int("mtu", i.LinkAttrs.MTU),
@@ -195,6 +196,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		}
 	}
 
+	// Set L2 (MAC) address
 	if i.LinkAttrs.HardwareAddr != nil {
 		logger.Info("Setting interface MAC address",
 			zap.Any("mac", i.LinkAttrs.HardwareAddr),
@@ -204,6 +206,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		}
 	}
 
+	// Set transmit queue length
 	if i.LinkAttrs.TxQLen > 0 {
 		logger.Info("Setting interface transmit queue length",
 			zap.Int("txqlen", i.LinkAttrs.TxQLen),
@@ -213,6 +216,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		}
 	}
 
+	// Set interface group
 	if i.LinkAttrs.Group != 0 {
 		logger.Info("Setting interface group",
 			zap.Uint32("group", i.LinkAttrs.Group),
@@ -222,6 +226,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		}
 	}
 
+	// Setup netem Qdisc
 	var pHandle uint32 = nl.HANDLE_ROOT
 	if i.Flags&WithQdiscNetem != 0 {
 		attr := nl.QdiscAttrs{
@@ -239,6 +244,8 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 
 		pHandle = netem.Handle
 	}
+
+	// Setup tbf Qdisc
 	if i.Flags&WithQdiscTbf != 0 {
 		i.Tbf.LinkIndex = i.Link.Attrs().Index
 		i.Tbf.Limit = 0x7000
@@ -257,7 +264,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 		}
 	}
 
-	logger.Info("Setting interface up")
+	// Setting link up
 	if err := n.nlHandle.LinkSetUp(i.Link); err != nil {
 		return err
 	}

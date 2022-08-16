@@ -99,7 +99,7 @@ func (ns *Namespace) Enter() (func(), error) {
 		return nil, err
 	}
 
-	ns.logger.Debug("Entered namespace")
+	// ns.logger.Debug("Entered namespace")
 
 	return func() {
 		// Restore original netns namespace
@@ -107,7 +107,7 @@ func (ns *Namespace) Enter() (func(), error) {
 			panic(err)
 		}
 
-		ns.logger.Debug("Left namespace")
+		// ns.logger.Debug("Left namespace")
 
 		runtime.UnlockOSThread()
 	}, nil
