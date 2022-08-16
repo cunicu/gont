@@ -55,13 +55,13 @@ func (c *Capture) createHandle(name string) (handle, error) {
 	}, nil
 }
 
-func (h pcapgoHandle) Stats() (stats, error) {
+func (h pcapgoHandle) Stats() (CaptureStats, error) {
 	s, err := h.EthernetHandle.Stats()
 	if err != nil {
-		return stats{}, err
+		return CaptureStats{}, err
 	}
 
-	return stats{
+	return CaptureStats{
 		PacketsReceived: int(s.Packets),
 		PacketsDropped:  int(s.Drops),
 	}, nil
