@@ -9,12 +9,6 @@ import (
 	nl "github.com/vishvananda/netlink"
 )
 
-type Forwarding bool
-
-func (b Forwarding) Apply(h *g.Host) {
-	h.Forwarding = bool(b)
-}
-
 func Route(network net.IPNet, gw net.IP) g.Route {
 	return g.Route{
 		Route: nl.Route{

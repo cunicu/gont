@@ -21,7 +21,6 @@ type Host struct {
 	// Options
 	FilterRules []*FilterRule
 	Routes      []*nl.Route
-	Forwarding  bool
 }
 
 // Options
@@ -71,12 +70,7 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		}
 	}
 
-	if host.Forwarding {
-		if err := host.EnableForwarding(); err != nil {
-			return nil, fmt.Errorf("failed to enable forwarding: %w", err)
-		}
-	}
-
+	// Setup nftables filters
 	if host.Filter, err = NewFilter(host.nftConn); err != nil {
 		return nil, fmt.Errorf("failed to setup nftables: %w", err)
 	}
