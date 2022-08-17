@@ -63,7 +63,7 @@ func Destination(netw *net.IPNet) Statement {
 }
 
 func SourceIP(fmts string, args ...any) Statement {
-	str := fmt.Sprintf(fmts, args)
+	str := fmt.Sprintf(fmts, args...)
 
 	_, netw, err := net.ParseCIDR(str)
 	if err != nil {
@@ -74,7 +74,7 @@ func SourceIP(fmts string, args ...any) Statement {
 }
 
 func DestinationIP(fmts string, args ...any) Statement {
-	str := fmt.Sprintf(fmts, args)
+	str := fmt.Sprintf(fmts, args...)
 
 	_, netw, err := net.ParseCIDR(str)
 	if err != nil {
