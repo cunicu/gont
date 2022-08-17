@@ -1,6 +1,7 @@
 package options
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/google/nftables/expr"
@@ -22,7 +23,9 @@ func DefaultGatewayIPv4(a, b, c, d byte) g.Route {
 	return Route(g.DefaultIPv4Mask, net.IPv4(a, b, c, d))
 }
 
-func DefaultGatewayIP(str string) g.Route {
+func DefaultGatewayIP(fmts string, args ...any) g.Route {
+	str := fmt.Sprintf(fmts, args...)
+
 	gw := net.ParseIP(str)
 	isV4 := gw.To4() != nil
 

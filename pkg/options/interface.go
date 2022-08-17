@@ -21,7 +21,9 @@ func AddressIPv4(a, b, c, d byte, m int) Address {
 	}
 }
 
-func AddressIP(str string) Address {
+func AddressIP(fmts string, args ...any) Address {
+	str := fmt.Sprintf(fmts, args...)
+
 	ip, n, err := net.ParseCIDR(str)
 	if err != nil {
 		panic(fmt.Errorf("failed to parse IP address '%s': %w", str, err))

@@ -62,8 +62,10 @@ func Destination(netw *net.IPNet) Statement {
 	return network(dirDestination, netw)
 }
 
-func SourceIP(netws string) Statement {
-	_, netw, err := net.ParseCIDR(netws)
+func SourceIP(fmts string, args ...any) Statement {
+	str := fmt.Sprintf(fmts, args)
+
+	_, netw, err := net.ParseCIDR(str)
 	if err != nil {
 		panic(fmt.Errorf("failed to parse CIDR: %w", err))
 	}
@@ -71,8 +73,10 @@ func SourceIP(netws string) Statement {
 	return Source(netw)
 }
 
-func DestinationIP(netws string) Statement {
-	_, netw, err := net.ParseCIDR(netws)
+func DestinationIP(fmts string, args ...any) Statement {
+	str := fmt.Sprintf(fmts, args)
+
+	_, netw, err := net.ParseCIDR(str)
 	if err != nil {
 		panic(fmt.Errorf("failed to parse CIDR: %w", err))
 	}
