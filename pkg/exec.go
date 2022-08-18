@@ -40,42 +40,42 @@ func Exec(network, node string, args []string) error {
 
 	// Setup UTS and mount namespaces
 	if err := syscall.Unshare(syscall.CLONE_NEWUTS | syscall.CLONE_NEWNS); err != nil {
-		panic(err)
+		return fmt.Errorf("failed to unshare namespaces: %w", err)
 	}
 
 	// Setup node hostname
 	hostname := fmt.Sprintf("%s.%s%s", node, network, gontNetworkSuffix)
 	if err := syscall.Sethostname([]byte(hostname)); err != nil {
-		panic(err)
+		return fmt.Errorf("failed to set hostname: %w", err)
 	}
 
 	// Setup bind mounts
 	if err := syscall.Mount("none", "/", "", syscall.MS_REC|syscall.MS_PRIVATE, ""); err != nil {
-		panic(fmt.Errorf("failed to make root mount point private: %w", err))
+		return fmt.Errorf("failed to make root mount point private: %w", err)
 	}
 
 	if err := setupBindMounts(networkDir); err != nil {
-		panic(fmt.Errorf("failed setup network bind mounts: %w", err))
+		return fmt.Errorf("failed setup network bind mounts: %w", err)
 	}
 
 	if err := setupBindMounts(nodeDir); err != nil {
-		panic(fmt.Errorf("failed setup node bind mounts: %w", err))
+		return fmt.Errorf("failed setup node bind mounts: %w", err)
 	}
 
 	// Switch network namespace
 	netNsHandle := filepath.Join(nodeDir, "ns", "net")
 	netNsFd, err := syscall.Open(netNsHandle, os.O_RDONLY, 0644)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to open netns: %w", err)
 	}
 
 	if err := unix.Setns(netNsFd, syscall.CLONE_NEWNET); err != nil {
-		panic(err)
+		return fmt.Errorf("failed to switch to netns: %w", err)
 	}
 
 	// Run program
 	if err := execvpe.Execvpe(args[0], args, os.Environ()); err != nil {
-		panic(err)
+		return fmt.Errorf("failed exec: %w", err)
 	}
 
 	return nil

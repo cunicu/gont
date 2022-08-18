@@ -26,6 +26,8 @@ func maybeScriptExecute(argv0 string, argv []string, envp []string) error {
 // Execvpe searches the executable binary or a shell script in the currently configured
 // path using a custom environment
 func Execvpe(argv0 string, argv []string, envp []string) error {
+	var err error
+
 	// We check the simple case first.
 	if argv0 == "" {
 		return syscall.ENOENT
@@ -49,10 +51,8 @@ func Execvpe(argv0 string, argv []string, envp []string) error {
 
 	gotEacces := false
 	for _, p := range strings.Split(path, ":") {
-
 		argv0 := filepath.Join(p, argv0)
-		err := syscall.Exec(argv0, argv, envp)
-		if err == syscall.ENOEXEC {
+		if err = syscall.Exec(argv0, argv, envp); err == syscall.ENOEXEC {
 			err = maybeScriptExecute(argv0, argv, envp)
 		}
 
@@ -93,5 +93,5 @@ func Execvpe(argv0 string, argv []string, envp []string) error {
 		return syscall.EACCES
 	}
 
-	return nil
+	return err
 }
