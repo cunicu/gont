@@ -26,3 +26,6 @@ require (
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.65 // indirect
 )
+
+// Temporary, until https://github.com/google/gopacket/pull/1042 is merged
+replace github.com/google/gopacket => github.com/stv0g/gopacket v0.0.0-20220819110231-82599fdade4a

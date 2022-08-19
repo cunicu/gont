@@ -315,6 +315,10 @@ func (c *Capture) writePackets() {
 	}
 }
 
+func (c *Capture) WriteDecryptionSecret(typ uint32, payload []byte) error {
+	return c.writer.WriteDecryptionSecretsBlock(typ, payload)
+}
+
 func (ci *CaptureInterface) readPackets(queue *prque.PriorityQueue, filter CaptureFilterPacketFunc) {
 	src := gopacket.NewPacketSource(ci.Handle, ci.Handle.LinkType())
 
