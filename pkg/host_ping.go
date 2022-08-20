@@ -10,11 +10,11 @@ import (
 )
 
 func (h *Host) Ping(o *Host) (*ping.Statistics, error) {
-	return h.PingWithOptions(o, "ip", 1, 2*time.Second, time.Second, true)
+	return h.PingWithOptions(o, "ip", 1, 5*time.Second, time.Second, true)
 }
 
 func (h *Host) PingWithNetwork(o *Host, net string) (*ping.Statistics, error) {
-	return h.PingWithOptions(o, net, 1, 2*time.Second, time.Second, true)
+	return h.PingWithOptions(o, net, 1, 5*time.Second, time.Second, true)
 }
 
 func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Duration, intv time.Duration, output bool) (*ping.Statistics, error) {
@@ -78,8 +78,7 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 		return nil, err
 	}
 
-	lost := p.PacketsSent - p.PacketsRecv
-	if lost > 0 {
+	if lost := p.PacketsSent - p.PacketsRecv; lost > 0 {
 		err = fmt.Errorf("lost %d packets", lost)
 	}
 

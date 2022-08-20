@@ -1,6 +1,7 @@
 package gont
 
 import (
+	"fmt"
 	"runtime"
 	"syscall"
 
@@ -77,12 +78,13 @@ func (ns *Namespace) Close() error {
 }
 
 func (ns *Namespace) RunFunc(cb Callback) error {
-	exit, _ := ns.Enter()
+	exit, err := ns.Enter()
+	if err != nil {
+		return fmt.Errorf("failed to enter namespace: %w", err)
+	}
 	defer exit()
 
-	errCb := cb()
-
-	return errCb
+	return cb()
 }
 
 func (ns *Namespace) Enter() (func(), error) {
@@ -104,7 +106,11 @@ func (ns *Namespace) Enter() (func(), error) {
 	return func() {
 		// Restore original netns namespace
 		if err := unix.Setns(curNetNs, syscall.CLONE_NEWNET); err != nil {
-			panic(err)
+			panic(fmt.Errorf("failed to switch back to original netns: %w", err))
+		}
+
+		if err := syscall.Close(curNetNs); err != nil {
+			panic(fmt.Errorf("failed to close netns descriptor: %w", err))
 		}
 
 		// ns.logger.Debug("Left namespace")
