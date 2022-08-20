@@ -81,8 +81,7 @@ type Capture struct {
 	Channel  chan CapturePacket
 	Callback CaptureCallbackFunc
 
-	writer       *pcapgo.NgWriter
-	filterInstrs []bpf.RawInstruction
+	writer *pcapgo.NgWriter
 
 	stop chan any
 
