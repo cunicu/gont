@@ -18,7 +18,7 @@ import (
 func NetworkNames() []string {
 	names := []string{}
 
-	nets, err := ioutil.ReadDir(varDir)
+	nets, err := os.ReadDir(varDir)
 	if err != nil {
 		return names
 	}
@@ -39,7 +39,7 @@ func NodeNames(network string) []string {
 
 	nodesDir := path.Join(varDir, network, "nodes")
 
-	nets, err := ioutil.ReadDir(nodesDir)
+	nets, err := os.ReadDir(nodesDir)
 	if err != nil {
 		return names
 	}

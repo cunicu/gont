@@ -2,7 +2,7 @@ package gont_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	g "github.com/stv0g/gont/pkg"
@@ -120,7 +120,7 @@ func TestStart(t *testing.T) {
 	}
 
 	var out []byte
-	if out, err = ioutil.ReadAll(stdout); err != nil {
+	if out, err = io.ReadAll(stdout); err != nil {
 		t.Errorf("Failed to read all: %s", err)
 	}
 
