@@ -133,120 +133,124 @@ func (n *NAT) setupTable(c *nft.Conn) error {
 
 	n.Table = c.AddTable(t)
 
-	// Input chain
-	n.Input = c.AddChain(&nft.Chain{
-		Name:     "input",
-		Table:    n.Table,
-		Type:     nft.ChainTypeFilter,
-		Hooknum:  nft.ChainHookInput,
-		Priority: nft.ChainPriorityFilter,
+	// We do not install input & forward chains for a HostNAT
+	if n.Host != n.network.HostNode {
 
-		// Drop policy is crucial here as it avoid ICMP port-unreachable
-		// messages during UDP hole punching.
-		// See: https://www.spinics.net/lists/netfilter/msg58226.html
-		Policy: &chainPolicyDrop,
-	})
+		// Input chain
+		n.Input = c.AddChain(&nft.Chain{
+			Name:     "input",
+			Table:    n.Table,
+			Type:     nft.ChainTypeFilter,
+			Hooknum:  nft.ChainHookInput,
+			Priority: nft.ChainPriorityFilter,
 
-	// icmp6 accept
-	c.AddRule(&nft.Rule{
-		Table: n.Table,
-		Chain: n.Input,
-		Exprs: []expr.Any{
-			&expr.Meta{
-				Key:      expr.MetaKeyL4PROTO,
-				Register: 1,
-			},
-			&expr.Cmp{
-				Op:       expr.CmpOpEq,
-				Register: 1,
-				Data: binaryutil.NativeEndian.PutUint16(
-					unix.IPPROTO_ICMPV6,
-				),
-			},
-			&expr.Verdict{
-				Kind: expr.VerdictAccept,
-			},
-		},
-	})
+			// Drop policy is crucial here as it avoid ICMP port-unreachable
+			// messages during UDP hole punching.
+			// See: https://www.spinics.net/lists/netfilter/msg58226.html
+			Policy: &chainPolicyDrop,
+		})
 
-	// icmp accept
-	c.AddRule(&nft.Rule{
-		Table: n.Table,
-		Chain: n.Input,
-		Exprs: []expr.Any{
-			&expr.Meta{
-				Key:      expr.MetaKeyL4PROTO,
-				Register: 1,
+		// icmp6 accept
+		c.AddRule(&nft.Rule{
+			Table: n.Table,
+			Chain: n.Input,
+			Exprs: []expr.Any{
+				&expr.Meta{
+					Key:      expr.MetaKeyL4PROTO,
+					Register: 1,
+				},
+				&expr.Cmp{
+					Op:       expr.CmpOpEq,
+					Register: 1,
+					Data: binaryutil.NativeEndian.PutUint16(
+						unix.IPPROTO_ICMPV6,
+					),
+				},
+				&expr.Verdict{
+					Kind: expr.VerdictAccept,
+				},
 			},
-			&expr.Cmp{
-				Op:       expr.CmpOpEq,
-				Register: 1,
-				Data: binaryutil.NativeEndian.PutUint16(
-					unix.IPPROTO_ICMP,
-				),
-			},
-			&expr.Verdict{
-				Kind: expr.VerdictAccept,
-			},
-		},
-	})
+		})
 
-	// Forward chain
-	n.Forward = c.AddChain(&nft.Chain{
-		Name:     "forward",
-		Table:    n.Table,
-		Type:     nft.ChainTypeFilter,
-		Hooknum:  nft.ChainHookForward,
-		Priority: nft.ChainPriorityFilter,
-		Policy:   &chainPolicyDrop,
-	})
+		// icmp accept
+		c.AddRule(&nft.Rule{
+			Table: n.Table,
+			Chain: n.Input,
+			Exprs: []expr.Any{
+				&expr.Meta{
+					Key:      expr.MetaKeyL4PROTO,
+					Register: 1,
+				},
+				&expr.Cmp{
+					Op:       expr.CmpOpEq,
+					Register: 1,
+					Data: binaryutil.NativeEndian.PutUint16(
+						unix.IPPROTO_ICMP,
+					),
+				},
+				&expr.Verdict{
+					Kind: expr.VerdictAccept,
+				},
+			},
+		})
 
-	c.AddRule(&nft.Rule{
-		Table: n.Table,
-		Chain: n.Forward,
-		Exprs: []expr.Any{
-			&expr.Meta{
-				Key:      expr.MetaKeyIIFGROUP,
-				Register: 1,
-			},
-			&expr.Cmp{
-				Op:       expr.CmpOpEq,
-				Register: 1,
-				Data: binaryutil.NativeEndian.PutUint32(
-					uint32(DeviceGroupSouthBound),
-				),
-			},
-			&expr.Verdict{
-				Kind: expr.VerdictAccept,
-			},
-		},
-	})
+		// Forward chain
+		n.Forward = c.AddChain(&nft.Chain{
+			Name:     "forward",
+			Table:    n.Table,
+			Type:     nft.ChainTypeFilter,
+			Hooknum:  nft.ChainHookForward,
+			Priority: nft.ChainPriorityFilter,
+			Policy:   &chainPolicyDrop,
+		})
 
-	c.AddRule(&nft.Rule{
-		Table: n.Table,
-		Chain: n.Forward,
-		Exprs: []expr.Any{
-			&expr.Ct{
-				Register: 1,
-				Key:      expr.CtKeySTATE,
+		c.AddRule(&nft.Rule{
+			Table: n.Table,
+			Chain: n.Forward,
+			Exprs: []expr.Any{
+				&expr.Meta{
+					Key:      expr.MetaKeyIIFGROUP,
+					Register: 1,
+				},
+				&expr.Cmp{
+					Op:       expr.CmpOpEq,
+					Register: 1,
+					Data: binaryutil.NativeEndian.PutUint32(
+						uint32(DeviceGroupSouthBound),
+					),
+				},
+				&expr.Verdict{
+					Kind: expr.VerdictAccept,
+				},
 			},
-			&expr.Bitwise{
-				SourceRegister: 1,
-				DestRegister:   1,
-				Len:            4,
-				Mask:           binaryutil.NativeEndian.PutUint32(expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED),
-				Xor:            binaryutil.NativeEndian.PutUint32(0),
+		})
+
+		c.AddRule(&nft.Rule{
+			Table: n.Table,
+			Chain: n.Forward,
+			Exprs: []expr.Any{
+				&expr.Ct{
+					Register: 1,
+					Key:      expr.CtKeySTATE,
+				},
+				&expr.Bitwise{
+					SourceRegister: 1,
+					DestRegister:   1,
+					Len:            4,
+					Mask:           binaryutil.NativeEndian.PutUint32(expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED),
+					Xor:            binaryutil.NativeEndian.PutUint32(0),
+				},
+				&expr.Cmp{
+					Op:       expr.CmpOpNeq,
+					Register: 1,
+					Data:     []byte{0, 0, 0, 0},
+				},
+				&expr.Verdict{
+					Kind: expr.VerdictAccept,
+				},
 			},
-			&expr.Cmp{
-				Op:       expr.CmpOpNeq,
-				Register: 1,
-				Data:     []byte{0, 0, 0, 0},
-			},
-			&expr.Verdict{
-				Kind: expr.VerdictAccept,
-			},
-		},
-	})
+		})
+	}
 
 	// Postrouting chain
 	n.PostRouting = c.AddChain(&nft.Chain{
