@@ -54,7 +54,7 @@ Have a look at the unit tests for usage examples:
 -   [Links](pkg/link_test.go)
 -   [Firewall Rules](pkg/filter_test.go)
 -   [Packet tracing](pkg/capture_test.go)
-    - [With TLS decryption](pkt/capture_keylog_test.go)
+    - [With TLS decryption](pkg/capture_keylog_test.go)
 
 ## Prerequisites
 
