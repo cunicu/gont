@@ -21,18 +21,21 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
 
 ## Features
 
--   L3 Routers
--   L2 Switches
--   L3 NAT Routers
--   L3 NAT to host networks
--   Hostname resolution for test nodes (using /etc/hosts)
+-   Various common network nodes:
+    -   Standard host
+    -   Layer-3 Routers
+    -   Layer-2 Switches
+    -   Layer-3 NAT Routers
+    -   Layer-3 NAT to host networks
+
+-   Hostname resolution for test nodes (/etc/hosts overlay)
 -   Execution of sub-processes, Go code & functions in the network namespace of test nodes
--   Support for multiple simultaneous and isolated networks
+-   Simultaneous setup of multiple isolated networks
 -   Ideal for Golang unit tests
 -   Can run in workflows powered by GitHub's runners
 -   Lean code thanks to [functional options](https://sagikazarmark.hu/blog/functional-options-on-steroids/)
 -   Full IPv6 support
--   Per link network emulation and bandwidth limiting via for netem and tbf qdiscs
+-   Per link network emulation and bandwidth limiting via for [Netem](https://man7.org/linux/man-pages/man8/tc-netem.8.html) and [TBF](https://man7.org/linux/man-pages/man8/tc-tbf.8.html) queuing disciplines
 -   Use of existing network namespaces as nodes
 -   Configuration of per-host nftables firewall rules
 -   Built-in Ping & Traceroute diagnostic tools
