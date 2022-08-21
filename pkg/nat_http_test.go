@@ -1,9 +1,19 @@
 package gont_test
 
 import (
+	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"fmt"
+	"math/big"
 	"net"
 	"net/http"
 	"testing"
+	"time"
 
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
@@ -63,7 +73,7 @@ func TestGetMyIP(t *testing.T) {
 		t.Fatalf("Failed to setup default route: %s", err)
 	}
 
-	out, _, err := client.Run("curl", "-s", "--connect-timeout", 1000, "http://server:8080")
+	out, _, err := client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server")
 	if err != nil {
 		t.Fatalf("Request failed: %s", err)
 	}
@@ -81,9 +91,8 @@ func TestGetMyIP(t *testing.T) {
 }
 
 type HTTPServer struct {
-	g.Host
-
-	listener net.Listener
+	*g.Host
+	http.Server
 }
 
 func AddWebServer(n *g.Network, name string) (*HTTPServer, error) {
@@ -92,15 +101,33 @@ func AddWebServer(n *g.Network, name string) (*HTTPServer, error) {
 		return nil, err
 	}
 
+	pub, priv, err := GenerateKeys(name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate keys: %w", err)
+	}
+
+	cert, err := tls.X509KeyPair(pub, priv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create x509 keypair: %w", err)
+	}
+
 	s := &HTTPServer{
-		Host: *h,
+		Host: h,
+	}
+	s.Server = http.Server{
+		TLSConfig: &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			CipherSuites: []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, // force PFS
+		},
+		Handler: s,
 	}
 
-	if err := s.ListenTCP(8080); err != nil {
-		return nil, err
+	listener, err := s.ListenTCP(443)
+	if err != nil {
+		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
 
-	go http.Serve(s.listener, s)
+	go s.ServeTLS(listener, "", "")
 
 	return s, nil
 }
@@ -110,14 +137,76 @@ func (h *HTTPServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(req.RemoteAddr))
 }
 
-func (h *HTTPServer) ListenTCP(port int) error {
+func (h *HTTPServer) ListenTCP(port int) (net.Listener, error) {
 	laddr := &net.TCPAddr{
 		Port: port,
 	}
 
-	return h.RunFunc(func() error {
-		var err error
-		h.listener, err = net.ListenTCP("tcp", laddr)
+	var err error
+	var listener net.Listener
+	return listener, h.RunFunc(func() error {
+		listener, err = net.ListenTCP("tcp", laddr)
 		return err
 	})
+}
+
+func GenerateKeys(host string) ([]byte, []byte, error) {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate private key: %w", err)
+	}
+
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
+	}
+
+	notBefore := time.Now()
+	notAfter := notBefore.Add(time.Hour)
+
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{"Acme Co"},
+		},
+		NotBefore: notBefore,
+		NotAfter:  notAfter,
+
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	if ip := net.ParseIP(host); ip != nil {
+		template.IPAddresses = append(template.IPAddresses, ip)
+	} else {
+		template.DNSNames = append(template.DNSNames, host)
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
+	}
+
+	// Create public key
+	pubBuf := new(bytes.Buffer)
+	err = pem.Encode(pubBuf, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to write data to cert.pem: %w", err)
+	}
+
+	// Create private key
+	privBuf := new(bytes.Buffer)
+	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to marshal private key: %w", err)
+	}
+
+	err = pem.Encode(privBuf, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to write data to key.pem: %w", err)
+	}
+
+	return pubBuf.Bytes(), privBuf.Bytes(), nil
 }
