@@ -37,6 +37,7 @@ type BaseNode struct {
 	ExistingDockerContainer string
 	LogToDebug              bool
 	EmptyDirs               []string
+	Env                     map[string]any
 
 	logger *zap.Logger
 }
@@ -56,6 +57,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		name:     name,
 		network:  n,
 		BasePath: basePath,
+		Env:      map[string]any{},
 		logger:   zap.L().Named("node").With(zap.String("node", name)),
 	}
 

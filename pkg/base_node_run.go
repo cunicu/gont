@@ -38,6 +38,11 @@ func (n *BaseNode) CommandWith(name string, env []string, dir string, args ...st
 		}
 	}
 
+	for k, v := range n.Env {
+		env := fmt.Sprintf("%s=%v", k, v)
+		c.Env = append(c.Env, env)
+	}
+
 	c.Env = append(c.Env, env...)
 	c.Dir = dir
 

@@ -49,3 +49,13 @@ type EmptyDir string
 func (ed EmptyDir) Apply(n *g.BaseNode) {
 	n.EmptyDirs = append(n.EmptyDirs, string(ed))
 }
+
+// Extra environment variable for processes started in the nodes network namespace
+type ExtraEnv struct {
+	Name  string
+	Value any
+}
+
+func (ev ExtraEnv) Apply(n *g.BaseNode) {
+	n.Env[ev.Name] = ev.Value
+}
