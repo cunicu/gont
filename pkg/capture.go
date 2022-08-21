@@ -68,6 +68,7 @@ type Capture struct {
 	Promiscuous   bool
 	Comment       string
 	Timeout       time.Duration
+	LogKeys       bool
 
 	// Filter options
 	FilterInterface    CaptureFilterInterfaceFunc

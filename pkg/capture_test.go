@@ -86,13 +86,13 @@ func TestCaptureNetwork(t *testing.T) {
 		copt.Comment("Some random comment which will be included in the capture file"),
 	)
 
-	opts := gopt.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
-		gopt.CaptureAll(
-			copt.ToFilename("all.pcapng"), // We can create a file
-		),
-	)
-
-	if n, err = g.NewNetwork(*nname, opts...); err != nil {
+	if n, err = g.NewNetwork(*nname,
+		gopt.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
+			gopt.CaptureAll(
+				copt.ToFilename("all.pcapng"), // We can create a file
+			),
+		)...,
+	); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}
 

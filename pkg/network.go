@@ -1,8 +1,10 @@
 package gont
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"sync"
 	"syscall"
 
@@ -35,7 +37,8 @@ type Network struct {
 	NSPrefix   string
 	Captures   []*Capture
 
-	logger *zap.Logger
+	keyLogPipes []*os.File
+	logger      *zap.Logger
 }
 
 func HostNode(n *Network) *Host {
@@ -216,15 +219,21 @@ func (n *Network) Close() error {
 
 	for name, node := range n.nodes {
 		if err := node.Close(); err != nil {
-			return err
+			return fmt.Errorf("failed to close node '%s': %w", name, err)
 		}
 
 		delete(n.nodes, name)
 	}
 
+	for _, p := range n.keyLogPipes {
+		if err := p.Close(); err != nil {
+			return fmt.Errorf("failed to close keylog pipe: %w", err)
+		}
+	}
+
 	for _, c := range n.Captures {
 		if err := c.Close(); err != nil {
-			return err
+			return fmt.Errorf("failed to close packet capture: %w", err)
 		}
 	}
 
@@ -237,4 +246,39 @@ func (n *Network) Register(m Node) {
 
 	// TODO: Handle name collisions
 	n.nodes[m.Name()] = m
+}
+
+func (n *Network) KeyLogPipe(secretsType uint32) (*os.File, error) {
+	captureWithKeys := []*Capture{}
+	for _, c := range n.Captures {
+		if c.LogKeys {
+			captureWithKeys = append(captureWithKeys, c)
+		}
+	}
+
+	if len(captureWithKeys) == 0 {
+		return nil, nil
+	}
+
+	rd, wr, err := os.Pipe()
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		b := &bytes.Buffer{}
+
+		if _, err := io.Copy(b, rd); err != nil && !errors.Is(err, os.ErrClosed) {
+			n.logger.Error("Failed to read key log data", zap.Error(err))
+			return
+		}
+
+		for _, c := range captureWithKeys {
+			c.WriteDecryptionSecret(secretsType, b.Bytes())
+		}
+	}()
+
+	n.keyLogPipes = append(n.keyLogPipes, rd)
+
+	return wr, nil
 }

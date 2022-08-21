@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/google/gopacket/pcapgo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapio"
 )
@@ -134,6 +135,21 @@ func (n *BaseNode) StartWith(cmd string, env []string, dir string, args ...any) 
 
 	if stderr, err = c.StderrPipe(); err != nil {
 		return nil, nil, nil, err
+	}
+
+	// Add some IPC pipes to capture decryption secrets
+	for envName, secretsType := range map[string]uint32{
+		"SSLKEYLOGFILE": pcapgo.DSB_SECRETS_TYPE_TLS,
+		"WG_KEYLOGFILE": pcapgo.DSB_SECRETS_TYPE_WIREGUARD,
+	} {
+		if pipe, err := n.network.KeyLogPipe(secretsType); err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to open TLS key log pipe: %w", err)
+		} else if pipe != nil {
+			fd := len(c.ExtraFiles) + 3
+
+			c.ExtraFiles = append(c.ExtraFiles, pipe)
+			c.Env = append(c.Env, fmt.Sprintf("%s=/proc/self/fd/%d", envName, fd))
+		}
 	}
 
 	logger := n.logger.With(

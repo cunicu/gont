@@ -91,3 +91,17 @@ type Callback g.CaptureCallbackFunc
 func (cb Callback) Apply(c *g.Capture) {
 	c.Callback = g.CaptureCallbackFunc(cb)
 }
+
+// LogKeys captures encryption keys from applications started via Gont and embeds them into PCAPng files
+//
+// This is achieved by passing the SSLKEYLOGFILE environment variable to each process started via Run().
+// The environment variable points to a pipe from which Gont reads session secrets and embeds them into
+// PCAPng files.
+//
+// Aside from SSLKEYLOGFILE, also WG_KEYLOGFILE is supported for capturing session secrets from
+// wireguard-go
+type LogKeys bool
+
+func (lk LogKeys) Apply(c *g.Capture) {
+	c.LogKeys = bool(lk)
+}

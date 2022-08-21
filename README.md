@@ -37,6 +37,8 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
 -   Configuration of per-host nftables firewall rules
 -   Built-in Ping & Traceroute diagnostic tools
 -   Built-in packet tracing with [PCAPng](https://wiki.wireshark.org/Development/PcapNg) output
+    - Automatic decryption of captured trafic using Wireshark/thark by including session secrets in PCAPng file
+    - Automatic instrumentation of sub-processes using [`SSLKEYLOGFILE` environment variable](https://everything.curl.dev/usingcurl/tls/sslkeylogfile)
 
 ## Examples
 
