@@ -10,8 +10,16 @@ import (
 	nl "github.com/vishvananda/netlink"
 )
 
-func Route(network net.IPNet, gw net.IP) g.Route {
-	return g.Route{
+type Route struct {
+	nl.Route
+}
+
+func (r Route) Apply(h *g.Host) {
+	h.Routes = append(h.Routes, &r.Route)
+}
+
+func RouteNet(network net.IPNet, gw net.IP) Route {
+	return Route{
 		Route: nl.Route{
 			Dst: &network,
 			Gw:  gw,
@@ -19,21 +27,21 @@ func Route(network net.IPNet, gw net.IP) g.Route {
 	}
 }
 
-func DefaultGatewayIPv4(a, b, c, d byte) g.Route {
-	return Route(g.DefaultIPv4Mask, net.IPv4(a, b, c, d))
+func DefaultGatewayIPv4(a, b, c, d byte) Route {
+	return RouteNet(g.DefaultIPv4Mask, net.IPv4(a, b, c, d))
 }
 
-func DefaultGatewayIP(fmts string, args ...any) g.Route {
+func DefaultGatewayIP(fmts string, args ...any) Route {
 	str := fmt.Sprintf(fmts, args...)
 
 	gw := net.ParseIP(str)
 	isV4 := gw.To4() != nil
 
 	if isV4 {
-		return Route(g.DefaultIPv4Mask, gw)
+		return RouteNet(g.DefaultIPv4Mask, gw)
 	}
 
-	return Route(g.DefaultIPv6Mask, gw)
+	return RouteNet(g.DefaultIPv6Mask, gw)
 }
 
 func Filter(h g.FilterHook, stmts ...filters.Statement) g.FilterRule {
