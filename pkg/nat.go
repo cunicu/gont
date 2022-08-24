@@ -162,9 +162,7 @@ func (n *NAT) setupTable(c *nft.Conn) error {
 				&expr.Cmp{
 					Op:       expr.CmpOpEq,
 					Register: 1,
-					Data: binaryutil.NativeEndian.PutUint16(
-						unix.IPPROTO_ICMPV6,
-					),
+					Data:     []byte{unix.IPPROTO_ICMPV6},
 				},
 				&expr.Verdict{
 					Kind: expr.VerdictAccept,
@@ -184,9 +182,7 @@ func (n *NAT) setupTable(c *nft.Conn) error {
 				&expr.Cmp{
 					Op:       expr.CmpOpEq,
 					Register: 1,
-					Data: binaryutil.NativeEndian.PutUint16(
-						unix.IPPROTO_ICMP,
-					),
+					Data:     []byte{unix.IPPROTO_ICMP},
 				},
 				&expr.Verdict{
 					Kind: expr.VerdictAccept,
