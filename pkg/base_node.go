@@ -347,29 +347,6 @@ func (n *BaseNode) EnableForwarding() error {
 	return n.WriteProcFS("/proc/sys/net/ipv6/conf/all/forwarding", "1")
 }
 
-// LinkAddAddress adds a network layer address to a link identified by its name.
-func (n *BaseNode) LinkAddAddress(name string, addr net.IPNet) error {
-	link, err := n.nlHandle.LinkByName(name)
-	if err != nil {
-		return err
-	}
-
-	nlAddr := &nl.Addr{
-		IPNet: &addr,
-	}
-
-	n.logger.Info("Adding new address to interface",
-		zap.String("intf", fmt.Sprintf("%s/%s", n, name)),
-		zap.String("addr", addr.String()),
-	)
-
-	if err := n.nlHandle.AddrAdd(link, nlAddr); err != nil {
-		return err
-	}
-
-	return err
-}
-
 // AddRoute adds a route to the node.
 func (n *BaseNode) AddRoute(r *nl.Route) error {
 	n.logger.Info("Add route",

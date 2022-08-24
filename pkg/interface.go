@@ -64,3 +64,23 @@ func (i Interface) String() string {
 func (i Interface) IsLoopback() bool {
 	return i.Name == loopbackInterfaceName
 }
+
+func (i *Interface) AddAddress(a *net.IPNet) error {
+	return i.Node.NetlinkHandle().AddrAdd(i.Link, &nl.Addr{
+		IPNet: a,
+	})
+}
+
+func (i *Interface) DeleteAddress(a *net.IPNet) error {
+	return i.Node.NetlinkHandle().AddrDel(i.Link, &nl.Addr{
+		IPNet: a,
+	})
+}
+
+func (i *Interface) SetUp() error {
+	return i.Node.NetlinkHandle().LinkSetUp(i.Link)
+}
+
+func (i *Interface) SetDown() error {
+	return i.Node.NetlinkHandle().LinkSetDown(i.Link)
+}
