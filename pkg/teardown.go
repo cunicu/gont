@@ -18,7 +18,7 @@ import (
 func NetworkNames() []string {
 	names := []string{}
 
-	nets, err := os.ReadDir(varDir)
+	nets, err := os.ReadDir(baseVarDir)
 	if err != nil {
 		return names
 	}
@@ -37,7 +37,7 @@ func NetworkNames() []string {
 func NodeNames(network string) []string {
 	names := []string{}
 
-	nodesDir := path.Join(varDir, network, "nodes")
+	nodesDir := path.Join(baseVarDir, network, "nodes")
 
 	nets, err := os.ReadDir(nodesDir)
 	if err != nil {
@@ -85,10 +85,11 @@ func TeardownAllNetworks() error {
 }
 
 func TeardownNetwork(network string) error {
-	networkDir := filepath.Join(varDir, network)
-	nodesDir := filepath.Join(networkDir, "nodes")
+	networkVarPath := filepath.Join(baseVarDir, network)
+	networkTmpPath := filepath.Join(baseTmpDir, network)
+	nodesVarPath := filepath.Join(networkVarPath, "nodes")
 
-	fis, err := ioutil.ReadDir(nodesDir)
+	fis, err := ioutil.ReadDir(nodesVarPath)
 	if err != nil {
 		return fmt.Errorf("failed to read nodes dir: %w", err)
 	}
@@ -104,7 +105,11 @@ func TeardownNetwork(network string) error {
 		}
 	}
 
-	if err := os.RemoveAll(networkDir); err != nil {
+	if err := os.RemoveAll(networkVarPath); err != nil {
+		return fmt.Errorf("failed to delete network dir: %w", err)
+	}
+
+	if err := os.RemoveAll(networkTmpPath); err != nil {
 		return fmt.Errorf("failed to delete network dir: %w", err)
 	}
 
@@ -112,8 +117,8 @@ func TeardownNetwork(network string) error {
 }
 
 func TeardownNode(network, node string) error {
-	nodeDir := filepath.Join(varDir, network, "nodes", node)
-	nsMount := filepath.Join(nodeDir, "ns", "net")
+	nodePath := filepath.Join(baseVarDir, network, "nodes", node)
+	nsMount := filepath.Join(nodePath, "ns", "net")
 
 	netNsName := fmt.Sprintf("gont-%s-%s", network, node)
 
@@ -129,7 +134,7 @@ func TeardownNode(network, node string) error {
 		return fmt.Errorf("failed to delete named network namespace: %w", err)
 	}
 
-	if err := os.RemoveAll(nodeDir); err != nil {
+	if err := os.RemoveAll(nodePath); err != nil {
 		return fmt.Errorf("failed to delete node dir: %w", err)
 	}
 

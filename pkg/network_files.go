@@ -22,7 +22,7 @@ func (n *Network) GenerateHostsFile() error {
 	n.hostsFileLock.Lock()
 	defer n.hostsFileLock.Unlock()
 
-	fn := filepath.Join(n.BasePath, "files", "etc", "hosts")
+	fn := filepath.Join(n.VarPath, "files", "etc", "hosts")
 	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (n *Network) GenerateConfigFiles() error {
 }
 
 func (n *Network) GenerateIProute2Files() error {
-	fn := filepath.Join(n.BasePath, "files/etc/iproute2/group")
+	fn := filepath.Join(n.VarPath, "files/etc/iproute2/group")
 	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
 		return err
 	}

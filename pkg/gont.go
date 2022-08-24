@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	hostsFile = "/etc/hosts"
-	netnsDir  = "/var/run/netns/"
-	varDir    = "/var/run/gont"
+	hostsFile  = "/etc/hosts"
+	netnsDir   = "/var/run/netns/"
+	baseVarDir = "/var/run/gont"
+	baseTmpDir = "/tmp/gont"
 
 	loopbackInterfaceName = "lo"
 	bridgeInterfaceName   = "br"

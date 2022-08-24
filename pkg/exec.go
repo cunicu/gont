@@ -35,7 +35,7 @@ func init() {
 }
 
 func Exec(network, node string, args []string) error {
-	networkDir := filepath.Join(varDir, network)
+	networkDir := filepath.Join(baseVarDir, network)
 	nodeDir := filepath.Join(networkDir, "nodes", node)
 
 	// Setup UTS and mount namespaces

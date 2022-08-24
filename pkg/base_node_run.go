@@ -201,7 +201,7 @@ func (n *BaseNode) StartWith(cmd string, env []string, dir string, args ...any) 
 }
 
 func (n *BaseNode) StartGo(script string, args ...any) (io.Reader, io.Reader, *exec.Cmd, error) {
-	tmp := filepath.Join(n.network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
+	tmp := filepath.Join(n.network.VarPath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
 
 	if out, _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script); err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to compile Go code: %w\n%s", err, string(out))
@@ -211,7 +211,7 @@ func (n *BaseNode) StartGo(script string, args ...any) (io.Reader, io.Reader, *e
 }
 
 func (n *BaseNode) RunGo(script string, args ...any) ([]byte, *exec.Cmd, error) {
-	tmp := filepath.Join(n.network.BasePath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
+	tmp := filepath.Join(n.network.TmpPath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
 
 	if _, _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script); err != nil {
 		return nil, nil, fmt.Errorf("failed to compile Go code: %w", err)

@@ -30,7 +30,8 @@ type Network struct {
 	hostsFileLock sync.Mutex
 
 	HostNode *Host
-	BasePath string
+	VarPath  string
+	TmpPath  string
 
 	// Options
 	Persistent bool
@@ -77,11 +78,13 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		name = GenerateNetworkName()
 	}
 
-	basePath := filepath.Join(varDir, name)
+	varPath := filepath.Join(baseVarDir, name)
+	tmpPath := filepath.Join(baseTmpDir, name)
 
 	n := &Network{
 		Name:      name,
-		BasePath:  basePath,
+		VarPath:   varPath,
+		TmpPath:   tmpPath,
 		nodes:     map[string]Node{},
 		nodesLock: sync.RWMutex{},
 		NSPrefix:  "gont-",
@@ -96,12 +99,12 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 		}
 	}
 
-	if stat, err := os.Stat(basePath); err == nil && stat.IsDir() {
+	if stat, err := os.Stat(varPath); err == nil && stat.IsDir() {
 		return nil, syscall.EEXIST
 	}
 
 	for _, path := range []string{"files", "nodes"} {
-		path = filepath.Join(basePath, path)
+		path = filepath.Join(varPath, path)
 		if err := os.MkdirAll(path, 0644); err != nil {
 			return nil, err
 		}
@@ -203,8 +206,16 @@ func (n *Network) Teardown() error {
 		delete(n.nodes, name)
 	}
 
-	if n.BasePath != "" {
-		os.RemoveAll(n.BasePath)
+	if n.VarPath != "" {
+		if err := os.RemoveAll(n.VarPath); err != nil {
+			return fmt.Errorf("failed to delete network var dir: %w", err)
+		}
+	}
+
+	if n.TmpPath != "" {
+		if err := os.RemoveAll(n.VarPath); err != nil {
+			return fmt.Errorf("failed to delete network tmp dir: %w", err)
+		}
 	}
 
 	return nil

@@ -45,7 +45,7 @@ type BaseNode struct {
 func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 	var err error
 
-	basePath := filepath.Join(n.BasePath, "nodes", name)
+	basePath := filepath.Join(n.VarPath, "nodes", name)
 	for _, path := range []string{"ns", "files"} {
 		path = filepath.Join(basePath, path)
 		if err := os.MkdirAll(path, 0755); err != nil {
