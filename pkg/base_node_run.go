@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/google/gopacket/pcapgo"
+	"github.com/gopacket/gopacket/pcapgo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapio"
 )

@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	github.com/go-ping/ping v1.1.0
-	github.com/google/gopacket v1.1.19
 	github.com/google/nftables v0.0.0-20220808154552-2eca00135732
+	github.com/gopacket/gopacket v0.0.0-20220825100013-b6a42f7f20c5
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	go.uber.org/zap v1.22.0
@@ -26,6 +26,3 @@ require (
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.65 // indirect
 )
-
-// Temporary, until https://github.com/google/gopacket/pull/1042 is merged
-replace github.com/google/gopacket => github.com/stv0g/gopacket v0.0.0-20220819110231-82599fdade4a

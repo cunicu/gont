@@ -5,8 +5,8 @@ package gont
 import (
 	"fmt"
 
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcapgo"
+	"github.com/gopacket/gopacket/layers"
+	"github.com/gopacket/gopacket/pcapgo"
 	"golang.org/x/net/bpf"
 )
 
