@@ -13,7 +13,7 @@ Gont is a package to create realistic virtual network, running real kernel, swit
 
 Gont is heavily inspired by [Mininet](https://mininet.org).
 It allows the user to build virtual network topologies using Go code.
-Under to hood the network is then constructed using Linux virtual bridges and network namespaces.
+Under the hood the network is then constructed using Linux virtual bridges and network namespaces.
 
 ## Getting started
 
