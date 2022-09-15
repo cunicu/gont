@@ -399,7 +399,7 @@
 					</section>
 
 					<section>
-						<h3>Lets add a switch</h3>
+						<h3>Lets add a L2 switch</h3>
 						<pre><code class="language-go" data-trim>
 							sw, _ := n.AddSwitch("sw")
 
@@ -415,7 +415,7 @@
 					</section>
 
 					<section>
-						<h3>How about a router?</h3>
+						<h3>How about a L3 router?</h3>
 						<pre><code class="language-go" data-trim>
 							sw1, _ := n.AddSwitch("sw1")
 							sw2, _ := n.AddSwitch("sw2")
@@ -435,7 +435,7 @@
 					</section>
 
 					<section>
-						<h3>Lets do some evil NATing</h3>
+						<h3>Lets do some evil NATing 😈</h3>
 						<pre><code class="language-go" data-trim>
 							sw1, _ := n.AddSwitch("sw1")
 							sw2, _ := n.AddSwitch("sw2")
@@ -488,14 +488,20 @@
 
 					<section>
 						<h3>Add some firewall rules for a host</h3>
-						<pre><code class=" language-go" data-trim>
+						<pre><code class="language-go" data-trim>
+							import fo "github.com/stv0g/gont/options/filter"
+
+							...
+
 							_, src, _ := net.ParseCIDR("10.0.0.1/32")
 
-							h1, _ := n.AddHost("h1", o.Filter(g.FilterInput,
-												fo.Source(src),
-												fo.Protocol(unix.AF_INET),
-												fo.TransportProtocol(unix.IPPROTO_TCP),
-												fo.SourcePortRange(0, 1024)))
+							h1, _ := n.AddHost("h1",
+												o.Filter(
+													g.FilterInput,
+														fo.Source(src),
+														fo.Protocol(unix.AF_INET),
+														fo.TransportProtocol(unix.IPPROTO_TCP),
+														fo.SourcePortRange(0, 1024)))
 						</code></pre>
 					</section>
 
