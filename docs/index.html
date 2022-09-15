@@ -500,6 +500,29 @@
 					</section>
 
 					<section>
+						<h3>Network Emulation</h3>
+						<pre><code class="language-go" data-trim>
+							import tco "github.com/stv0g/gont/options/tc"
+
+							...
+
+							n.AddLink(
+								o.Interface("eth0", h1,
+									o.WithNetem(
+										tco.Latency(50 * time.Millisecond),
+										tco.Jitter(5 * time.Millisecond),
+										tco.Loss(0.1),
+									),
+									o.AddressIP("10.0.0.1/24")),
+								o.Interface("eth0", h2,
+									o.AddressIP("10.0.0.2/24")),
+							)
+
+							h1.Ping(h2)
+						</code></pre>
+					</section>
+
+					<section>
 						<h3>A topology factory (WIP)</h3>
 						<pre><code class="language-go" data-trim>
 							createHost := func(pos int) (*g.Host. error) {
