@@ -487,6 +487,42 @@
 				</section>
 				<section>
 					<section>
+						<h2>Debugging</h2>
+						<p>Gont comes with great features to support you in debugging highly decentralized applications.</p>
+					</section>
+					<section>
+						<h3>Packet captures</h3>
+						<ul>
+							<li>Write to packets to...</li>
+							<ul>
+								<li><a href="https://github.com/pcapng/pcapng">PCAPng</a> file(s)</li>
+								<li>Go channels</li>
+								<li>.. or handle them with callback functions.</li>
+							</ul>
+						</ul>
+					</section>
+					<section>
+						<h4>Filtering</h4>
+						<p>Captured network traffic can be filtered by:</p>
+						<ul>
+							<li>selected Gont nodes and interfaces</li>
+							<li>eBPF filter programs</li>
+							<li><a href="https://www.tcpdump.org/manpages/pcap-filter.7.html">pcap-filter(7)</a> expressions</li>
+							<li>as last resort: via Go callback functions (⚠ slow!)</li>
+						</ul>
+					</section>
+					<section>
+						<h4>Session key logging</h4>
+						<p>Most transport layer encryption protocols today provide <a href="https://en.wikipedia.org/wiki/Forward_secrecy">perfect forward secrecy</a> by using short-lived ephemeral session keys.</p>
+						<p>Gont offers a feature to log these session keys into a PCAPng file to enable a decryption of upper layer protocols with a dissector tool like Wireshark.</p>
+					</section>
+					<section>
+						<h4>Example</h4>
+						<img src="images/session-key-logging.png" />
+					</section>
+				</section>
+				<section>
+					<section>
 						<h2>CLI utility</h2>
 					</section>
 					<section>
