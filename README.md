@@ -58,6 +58,7 @@ Have a look at the unit tests for usage examples:
 
 ## Prerequisites
 
+-   Go version 1.19 or later
 -   `traceroute` (for testing)
 -   `libpcap` (for compiling BPF filter expressions of packet tracing feature)
 
