@@ -521,17 +521,13 @@
 
 								Supported &lt;commands&gt; are:
 							   
-								  identify                                   return the network and node name if gontc
-								                                             is executed within a network namespace
-								  shell [&lt;network&gt;/]&lt;node&gt;       get an interactive shell inside &lt;node&gt;
-								  exec [&lt;network&gt;/]&lt;node&gt; &lt;command&gt; [args]   executes a &lt;command&gt; in the
-								                                             namespace of &lt;node&gt; with optional [args]
-								  list [&lt;network&gt;]                           list all active Gont networks or nodes
-								                                             of a given network
-								  clean [&lt;network&gt;]                          removes the all or just the
-								                                             specified Gont network
-								  help                                       show this usage information
-								  version                                    shows the version of Gont
+								  identify                               return the network and node name if gontc is executed within a network namespace
+								  shell [&lt;net&gt;]/&lt;node&gt;                   get an interactive shell inside &lt;node&gt;
+								  exec  [&lt;net&gt;]/&lt;node&gt; &lt;command&gt; [args]  executes a &lt;command&gt; in the namespace of &lt;node&gt; with optional [args]
+								  list  [&lt;net&gt;]                          list all active Gont networks or nodes of a given network
+								  clean [&lt;net&gt;]                          removes the all or just the specified Gont network
+								  help                                   show this usage information
+								  version                                shows the version of Gont
 							   
 							   Example:
 							   
@@ -549,7 +545,7 @@
 					<section>
 						<h3>Gont ...</h3>
 						<ul>
-							<li>can be used in Go unit-tests
+							<li>can be used in Go unit &amp; integration-tests
 								<ul>
 									<li>on Github-powered CI runners</li>
 								</ul>
