@@ -317,11 +317,16 @@
 				</section>
 				<section>
 					<section>
-						<h2>Examples: show my some code!</h2>
+						<h2>Examples: show me some code!</h2>
 					</section>
 					<section>
 						<h3>Two directly connected hosts</h3>
 						<pre><code class="language-go" data-trim>
+							import g "github.com/stv0g/gont/pkg"
+							import o "github.com/stv0g/gont/pkg/options"
+
+							...
+
 							n, _ := g.NewNetwork("mynet")
 
 							h1, _ := n.AddHost("h1")
@@ -334,6 +339,7 @@
 
 							h1.Ping(h2)
 						</code></pre>
+						<p style="font-size: smaller;">(We use <code>g</code> and <code>o</code> throughout these examples as import aliases)</p>
 					</section>
 
 					<section>
