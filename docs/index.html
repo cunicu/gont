@@ -346,21 +346,35 @@
 						<h3>Running things inside a node</h3>
 						<pre><code class="language-go" data-trim>
 							// Run a simple process synchronously
-							h1.Run("ping", "h2")
+							out, cmd, err := h1.Run("ping", "h2")
 
 							// And asynchronously
-							_, _, e, _ := h1.Start("ping", "h2")
+							stdout, stderr, cmd, err := h1.Start("ping", "h2")
 							
 							time.Sleep(5 * time.Second)
 
-							e.Process.Kill()
-							e.Wait()
+							err = cmd.Process.Signal(os.Interrupt)
+							cmd.Wait()
+						</code></pre>
+						<p style="font-size: smaller;">The <code>g.Node</code> type implements an API similar to the one provided by Go's <code>exec</code> package.</p>
+					</section>
 
+					<section>
+						<h3>Running Go code in subprocess or even within in the same process</h3>
+						<pre><code class="language-go" data-trim>
 							// Call a function inside a network namespace
+							// of host 'h1' but still in the same process
+							// so you can use channels and access global vars`
 							h1.RunFunc(func() {
 								r := http.Get("http://h2:8080")
 								io.Copy(os.Stdout, r.Body)
 							})
+
+							// Compile and run Go code as a subprocess
+							out, cmd, err := h1.RunGo("test/prog.go", "arg1")
+
+							// Or also asynchronously
+							stdout, stderr, cmd, err := h1.StartGo("test/prog.go", "arg1")
 						</code></pre>
 					</section>
 
@@ -369,8 +383,10 @@
 						<pre><code class="language-go" data-trim>
 							sw, _ := n.AddSwitch("sw")
 
-							h1, _ := n.AddHost("h1", o.Interface("eth0", sw,
+							h1, _ := n.AddHost("h1",
+								o.Interface("eth0", sw,
 							                    o.AddressIP("10.0.0.1/24")))
+
 							h2, _ := n.AddHost("h2", o.Interface("eth0", sw,
 							                    o.AddressIP("10.0.0.2/24")))
 
@@ -413,8 +429,7 @@
 								o.Interface("eth0", sw, o.SouthBound,
 								             o.AddressIP("10.0.0.1/24")),
 								o.Interface("eth1", sw, o.NorthBound,
-								             o.AddressIP("10.0.1.1/24"))
-							)
+								             o.AddressIP("10.0.1.1/24")))
 
 							h1.Ping(h2)
 						</code></pre>
