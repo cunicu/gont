@@ -35,6 +35,10 @@
 			.col{
 				flex: 1;
 			}
+
+			ul.inline-list li {
+				display:inline;
+			}
 		</style>
 	</head>
 	<body>
@@ -318,6 +322,22 @@
 				<section>
 					<section>
 						<h2>Examples: show me some code!</h2>
+						<p style="font-size: 70%;">
+							⚠️ Please note that these example are show just for demonstration purposes and might not compile.
+						</p>
+						<p style="font-size: 70%;">
+							Have a look at the following code for full fledged test/example code:
+						</p>
+						<ul class="inline-list" style="font-size: 60%; text-align: center;">
+							<li><a href="https://github.com/stv0g/gont/blob/master/pkg/ping_test.go">Ping</a>,</li>
+							<li><a href="https://github.com/stv0g/gont/blob/master/pkg/run_test.go">Run</a>,</li>
+							<li><a href="https://github.com/stv0g/gont/blob/master/pkg/nat_test.go">NAT</a>,</li>
+							<li><a href="https://github.com/stv0g/gont/blob/master/pkg/switch_test.go">Switch</a>,</li>
+							<li><a href="https://github.com/stv0g/gont/blob/master/pkg/link_test.go">Links</a>,</li>
+							<li><a href="https://github.com/stv0g/gont/blob/master/pkg/filter_test.go">Firewall Rules</a>,</li>
+							<li><a href="https://github.com/stv0g/gont/blob/master/pkg/capture_test.go">Packet Tracing</a>,</li>
+							<li><a href="https://github.com/stv0g/gont/blob/master/pkg/capture_keylog_test.go">Tracing with TLS decryption</a></li>
+						</ul>
 					</section>
 					<section>
 						<h3>Two directly connected hosts</h3>
