@@ -47,8 +47,8 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
 
 Have a look at the unit tests for usage examples:
 
--   [Simple](pkg/simple_test.go)
--   [Run](pkg/node_test.go)
+-   [Ping](pkg/ping_test.go)
+-   [Run](pkg/run_test.go)
 -   [NAT](pkg/nat_test.go)
 -   [Switch](pkg/switch_test.go)
 -   [Links](pkg/link_test.go)
