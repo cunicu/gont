@@ -40,22 +40,26 @@ type Event struct {
 	Data      any       `cbor:"data,omitempty" json:"data,omitempty"`
 }
 
-func (t *Event) WriteTo(wr io.Writer) (int64, error) {
-	return 0, em.NewEncoder(wr).Encode(t)
+func (e Event) Time() time.Time {
+	return e.Timestamp
 }
 
-func (t *Event) ReadFrom(rd io.Reader) (int64, error) {
-	return 0, dm.NewDecoder(rd).Decode(t)
+func (e *Event) WriteTo(wr io.Writer) (int64, error) {
+	return 0, em.NewEncoder(wr).Encode(e)
 }
 
-func (t *Event) Log(wr io.Writer) error {
-	return json.NewEncoder(wr).Encode(t)
+func (e *Event) ReadFrom(rd io.Reader) (int64, error) {
+	return 0, dm.NewDecoder(rd).Decode(e)
 }
 
-func (t *Event) Marshal() ([]byte, error) {
-	return em.Marshal(t)
+func (e *Event) Log(wr io.Writer) error {
+	return json.NewEncoder(wr).Encode(e)
 }
 
-func (t *Event) Unmarshal(b []byte) error {
-	return dm.Unmarshal(b, t)
+func (e *Event) Marshal() ([]byte, error) {
+	return em.Marshal(e)
+}
+
+func (e *Event) Unmarshal(b []byte) error {
+	return dm.Unmarshal(b, e)
 }

@@ -81,16 +81,12 @@ type Capture struct {
 	Pipenames []string
 	Listeners []string
 
-	writer *pcapgo.NgWriter
-
-	stop chan any
-
-	queue *prque.PriorityQueue
-	count atomic.Uint64
-
+	writer     *pcapgo.NgWriter
+	stop       chan any
+	queue      *prque.PriorityQueue
+	count      atomic.Uint64
 	interfaces []*captureInterface
-
-	logger *zap.Logger
+	logger     *zap.Logger
 }
 
 func (c *Capture) Apply(i *Interface) {

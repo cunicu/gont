@@ -10,8 +10,6 @@ type CapturePacket struct {
 	gopacket.CaptureInfo
 	Data []byte
 
-	Decoded gopacket.Packet
-
 	Interface *captureInterface
 }
 
