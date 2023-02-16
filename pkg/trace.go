@@ -7,8 +7,6 @@ import (
 
 	"github.com/stv0g/gont/pkg/trace"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zapio"
 )
 
 type TracepointCallbackFunc func(tp trace.Event)
@@ -76,13 +74,6 @@ func (t *Tracer) Pipe() (*os.File, error) {
 					continue
 				}
 			}
-
-			// TODO: Remove
-			wr := &zapio.Writer{
-				Log:   zap.L(),
-				Level: zapcore.InfoLevel,
-			}
-			tp.Log(wr)
 
 			for _, file := range files {
 				tp.Log(file)
