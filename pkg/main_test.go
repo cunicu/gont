@@ -15,10 +15,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var globalNetworkOptions = []g.Option{}
-var nname = flag.String("name", "", "Network name")
-var persist = flag.Bool("persist", false, "Do not teardown networks after test")
-var capture = flag.String("capture", "", "Capture network traffic to PCAPng file")
+var (
+	globalNetworkOptions = []g.Option{}
+	nname                = flag.String("name", "", "Network name")
+	persist              = flag.Bool("persist", false, "Do not teardown networks after test")
+	capture              = flag.String("capture", "", "Capture network traffic to PCAPng file")
+)
 
 func setupLogging() *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()

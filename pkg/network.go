@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
-	"syscall"
-
 	"os"
 	"path/filepath"
+	"sync"
+	"syscall"
 
 	nft "github.com/google/nftables"
 	"github.com/vishvananda/netlink"
@@ -106,7 +105,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 
 	for _, path := range []string{"files", "nodes"} {
 		path = filepath.Join(varPath, path)
-		if err := os.MkdirAll(path, 0644); err != nil {
+		if err := os.MkdirAll(path, 0o644); err != nil {
 			return nil, err
 		}
 	}

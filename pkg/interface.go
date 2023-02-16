@@ -34,8 +34,7 @@ type Interface struct {
 	Name string
 	Node Node
 
-	Link nl.Link
-
+	Link  nl.Link
 	Flags int
 
 	// Options

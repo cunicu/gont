@@ -71,7 +71,7 @@ func (n *BaseNode) RunWith(cmd string, env []string, dir string, args ...any) ([
 		}
 	}
 
-	rlogger := n.logger.With(
+	logger := n.logger.With(
 		zap.Any("node", n),
 		zap.String("cmd", cmd),
 		zap.Any("cmd_args", args),
@@ -81,9 +81,9 @@ func (n *BaseNode) RunWith(cmd string, env []string, dir string, args ...any) ([
 	)
 
 	if c.ProcessState.Success() {
-		rlogger.Info("Process terminated successfully")
+		logger.Info("Process terminated successfully")
 	} else {
-		rlogger.Error("Process terminated with error code")
+		logger.Error("Process terminated with error code")
 	}
 
 	return buf, c, err
@@ -97,42 +97,7 @@ func (n *BaseNode) StartWith(cmd string, env []string, dir string, args ...any) 
 	var err error
 	var stdout, stderr io.Reader
 
-	strargs := []string{}
-	for _, arg := range args {
-		var strarg string
-		switch arg := arg.(type) {
-		case Node:
-			strarg = arg.Name()
-		case fmt.Stringer:
-			strarg = arg.String()
-		case string:
-			strarg = arg
-		case int:
-			strarg = strconv.FormatInt(int64(arg), 10)
-		case uint:
-			strarg = strconv.FormatUint(uint64(arg), 10)
-		case int32:
-			strarg = strconv.FormatInt(int64(arg), 10)
-		case uint32:
-			strarg = strconv.FormatUint(uint64(arg), 10)
-		case int64:
-			strarg = strconv.FormatInt(arg, 10)
-		case uint64:
-			strarg = strconv.FormatUint(arg, 10)
-		case float32:
-			strarg = strconv.FormatFloat(float64(arg), 'f', -1, 32)
-		case float64:
-			strarg = strconv.FormatFloat(arg, 'f', -1, 64)
-		case bool:
-			strarg = strconv.FormatBool(arg)
-		default:
-			return nil, nil, nil, fmt.Errorf("invalid argument: %v", arg)
-		}
-
-		strargs = append(strargs, strarg)
-	}
-
-	c := n.CommandWith(cmd, env, dir, strargs...)
+	c := n.CommandWith(cmd, env, dir, stringArgs(args)...)
 
 	if stdout, err = c.StdoutPipe(); err != nil {
 		return nil, nil, nil, err
@@ -172,7 +137,7 @@ func (n *BaseNode) StartWith(cmd string, env []string, dir string, args ...any) 
 
 	logger := n.logger.With(
 		zap.String("cmd", cmd),
-		zap.Any("cmd_args", strargs),
+		zap.Any("cmd_args", c.Args),
 	)
 
 	if err = c.Start(); err != nil {
@@ -231,6 +196,45 @@ func (n *BaseNode) RunGo(script string, args ...any) ([]byte, *exec.Cmd, error) 
 	}
 
 	return n.Run(tmp, args...)
+}
+
+func stringArgs(args []any) []string {
+	strArgs := []string{}
+	for _, arg := range args {
+		var strArg string
+		switch arg := arg.(type) {
+		case Node:
+			strArg = arg.Name()
+		case fmt.Stringer:
+			strArg = arg.String()
+		case string:
+			strArg = arg
+		case int:
+			strArg = strconv.FormatInt(int64(arg), 10)
+		case uint:
+			strArg = strconv.FormatUint(uint64(arg), 10)
+		case int32:
+			strArg = strconv.FormatInt(int64(arg), 10)
+		case uint32:
+			strArg = strconv.FormatUint(uint64(arg), 10)
+		case int64:
+			strArg = strconv.FormatInt(arg, 10)
+		case uint64:
+			strArg = strconv.FormatUint(arg, 10)
+		case float32:
+			strArg = strconv.FormatFloat(float64(arg), 'f', -1, 32)
+		case float64:
+			strArg = strconv.FormatFloat(arg, 'f', -1, 64)
+		case bool:
+			strArg = strconv.FormatBool(arg)
+		default:
+			strArg = fmt.Sprintf("%v", arg)
+		}
+
+		strArgs = append(strArgs, strArg)
+	}
+
+	return strArgs
 }
 
 func extraEnvFile(c *exec.Cmd, envName string, f *os.File) {
