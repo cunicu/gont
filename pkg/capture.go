@@ -54,23 +54,6 @@ type captureStats struct {
 	PacketsDropped  uint64
 }
 
-type CapturePacket struct {
-	gopacket.CaptureInfo
-	Data []byte
-
-	Decoded gopacket.Packet
-
-	Interface *captureInterface
-}
-
-func (p CapturePacket) Time() time.Time {
-	return p.Timestamp
-}
-
-func (p CapturePacket) Decode(dOpts gopacket.DecodeOptions) gopacket.Packet {
-	return gopacket.NewPacket(p.Data, p.Interface.pcapInterface.LinkType, dOpts)
-}
-
 type CaptureOption interface {
 	Apply(n *Capture)
 }
@@ -121,93 +104,8 @@ func NewCapture() *Capture {
 
 		stop:   make(chan any),
 		queue:  prque.New(),
-		logger: zap.L().Named("pcap"),
+		logger: zap.L().Named("capture"),
 	}
-}
-
-func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
-	var err error
-	var hdl PacketSource
-
-	if err := i.Node.RunFunc(func() error {
-		hdl, err = c.createPCAPHandle(i.Name)
-		return err
-	}); err != nil {
-		return nil, fmt.Errorf("failed to get PCAP handle: %w", err)
-	}
-
-	ci := &captureInterface{
-		Interface: i,
-		source:    hdl,
-		pcapInterface: pcapgo.NgInterface{
-			Name:        fmt.Sprintf("%s/%s", i.Node.Name(), i.Name),
-			Filter:      c.FilterExpression,
-			LinkType:    hdl.LinkType(),
-			SnapLength:  uint32(c.CaptureLength),
-			OS:          "Linux",
-			Description: "Linux veth pair",
-			Comment:     fmt.Sprintf("Gont Network: '%s'", i.Node.Network().Name),
-		},
-		logger: c.logger.With(zap.String("intf", i.Name)),
-	}
-
-	if c.writer == nil {
-		if c.writer, err = c.createWriter(ci); err != nil {
-			return nil, err
-		}
-
-		go c.writePackets()
-	} else {
-		if ci.pcapInterfaceIndex, err = c.writer.AddInterface(ci.pcapInterface); err != nil {
-			return nil, fmt.Errorf("failed to add interface: %w", err)
-		}
-	}
-
-	ci.StartTime = time.Now()
-
-	c.interfaces = append(c.interfaces, ci)
-
-	go c.readPackets(ci)
-
-	return ci, nil
-}
-
-func (c *Capture) startTrace() (*captureInterface, *tracepointPacketSource, error) {
-	var err error
-
-	tps := newTracepointPacketSource()
-
-	ci := &captureInterface{
-		pcapInterface: pcapgo.NgInterface{
-			Name:        "tracer",
-			LinkType:    LinkTypeTrace,
-			SnapLength:  uint32(c.CaptureLength),
-			OS:          "Debug",
-			Description: "Trace output",
-		},
-		source: tps,
-		logger: c.logger.With(zap.String("intf", "tracer")),
-	}
-
-	if c.writer == nil {
-		if c.writer, err = c.createWriter(ci); err != nil {
-			return nil, nil, err
-		}
-
-		go c.writePackets()
-	} else {
-		if ci.pcapInterfaceIndex, err = c.writer.AddInterface(ci.pcapInterface); err != nil {
-			return nil, nil, fmt.Errorf("failed to add interface: %w", err)
-		}
-	}
-
-	ci.StartTime = time.Now()
-
-	c.interfaces = append(c.interfaces, ci)
-
-	go c.readPackets(ci)
-
-	return ci, tps, nil
 }
 
 // Count returns the total number of captured packets
@@ -453,4 +351,89 @@ func (c *Capture) readPackets(ci *captureInterface) {
 			c.queue.Push(cp)
 		}
 	}
+}
+
+func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
+	var err error
+	var hdl PacketSource
+
+	if err := i.Node.RunFunc(func() error {
+		hdl, err = c.createPCAPHandle(i.Name)
+		return err
+	}); err != nil {
+		return nil, fmt.Errorf("failed to get PCAP handle: %w", err)
+	}
+
+	ci := &captureInterface{
+		Interface: i,
+		source:    hdl,
+		pcapInterface: pcapgo.NgInterface{
+			Name:        fmt.Sprintf("%s/%s", i.Node.Name(), i.Name),
+			Filter:      c.FilterExpression,
+			LinkType:    hdl.LinkType(),
+			SnapLength:  uint32(c.CaptureLength),
+			OS:          "Linux",
+			Description: "Linux veth pair",
+			Comment:     fmt.Sprintf("Gont Network: '%s'", i.Node.Network().Name),
+		},
+		logger: c.logger.With(zap.String("intf", i.Name)),
+	}
+
+	if c.writer == nil {
+		if c.writer, err = c.createWriter(ci); err != nil {
+			return nil, err
+		}
+
+		go c.writePackets()
+	} else {
+		if ci.pcapInterfaceIndex, err = c.writer.AddInterface(ci.pcapInterface); err != nil {
+			return nil, fmt.Errorf("failed to add interface: %w", err)
+		}
+	}
+
+	ci.StartTime = time.Now()
+
+	c.interfaces = append(c.interfaces, ci)
+
+	go c.readPackets(ci)
+
+	return ci, nil
+}
+
+func (c *Capture) startTrace() (*captureInterface, *tracepointPacketSource, error) {
+	var err error
+
+	tps := newTracepointPacketSource()
+
+	ci := &captureInterface{
+		pcapInterface: pcapgo.NgInterface{
+			Name:        "tracer",
+			LinkType:    LinkTypeTrace,
+			SnapLength:  uint32(c.CaptureLength),
+			OS:          "Debug",
+			Description: "Trace output",
+		},
+		source: tps,
+		logger: c.logger.With(zap.String("intf", "tracer")),
+	}
+
+	if c.writer == nil {
+		if c.writer, err = c.createWriter(ci); err != nil {
+			return nil, nil, err
+		}
+
+		go c.writePackets()
+	} else {
+		if ci.pcapInterfaceIndex, err = c.writer.AddInterface(ci.pcapInterface); err != nil {
+			return nil, nil, fmt.Errorf("failed to add interface: %w", err)
+		}
+	}
+
+	ci.StartTime = time.Now()
+
+	c.interfaces = append(c.interfaces, ci)
+
+	go c.readPackets(ci)
+
+	return ci, tps, nil
 }
