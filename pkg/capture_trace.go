@@ -5,6 +5,7 @@ import (
 
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
+	"github.com/stv0g/gont/pkg/trace"
 )
 
 const (
@@ -15,13 +16,13 @@ const (
 var _ PacketSource = (*tracepointPacketSource)(nil)
 
 type tracepointPacketSource struct {
-	tracepoints chan Tracepoint
+	tracepoints chan trace.Event
 	count       uint64
 }
 
 func newTracepointPacketSource() *tracepointPacketSource {
 	return &tracepointPacketSource{
-		tracepoints: make(chan Tracepoint),
+		tracepoints: make(chan trace.Event),
 	}
 }
 
@@ -32,7 +33,7 @@ func (tps *tracepointPacketSource) ReadPacketData() (data []byte, ci gopacket.Ca
 		return nil, gopacket.CaptureInfo{}, io.EOF
 	}
 
-	return tp.SerializePacket()
+	return SerializePacket(&tp)
 }
 
 func (tps *tracepointPacketSource) Stats() (captureStats, error) {
@@ -47,7 +48,7 @@ func (tps *tracepointPacketSource) LinkType() layers.LinkType {
 	return LinkTypeTrace
 }
 
-func (tps *tracepointPacketSource) SourceTracepoint(tp Tracepoint) {
+func (tps *tracepointPacketSource) SourceTracepoint(tp trace.Event) {
 	tps.tracepoints <- tp
 }
 
@@ -56,8 +57,8 @@ func (tps *tracepointPacketSource) Close() error {
 	return nil
 }
 
-func (t *Tracepoint) SerializePacket() (data []byte, ci gopacket.CaptureInfo, err error) {
-	buf, err := em.Marshal(t)
+func SerializePacket(t *trace.Event) (data []byte, ci gopacket.CaptureInfo, err error) {
+	buf, err := t.Marshal()
 	if err != nil {
 		return nil, gopacket.CaptureInfo{}, err
 	}

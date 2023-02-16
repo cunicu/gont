@@ -4,6 +4,7 @@ import (
 	"os"
 
 	g "github.com/stv0g/gont/pkg"
+	"github.com/stv0g/gont/pkg/trace"
 )
 
 // File writes all captured packets to a file handle
@@ -27,13 +28,13 @@ func (fn Filename) Apply(c *g.Tracer) {
 func ToFilename(fn string) Filename { return Filename(fn) }
 
 // Channel sends all captured packets to the provided channel.
-type Channel chan g.Tracepoint
+type Channel chan trace.Event
 
 func (d Channel) Apply(t *g.Tracer) {
 	t.Channels = append(t.Channels, d)
 }
 
-func ToChannel(ch chan g.Tracepoint) Channel { return Channel(ch) }
+func ToChannel(ch chan trace.Event) Channel { return Channel(ch) }
 
 // Callback provides a custom callback function which is called for each captured packet
 type Callback g.TracepointCallbackFunc

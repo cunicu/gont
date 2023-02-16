@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	g "github.com/stv0g/gont/pkg"
 )
 
 // The following functions are intended to by used used for instrumentation of Go code
@@ -85,7 +83,7 @@ func trace(data any, msg string) error {
 	runtime.Callers(3, pc)
 	f := runtime.FuncForPC(pc[0])
 
-	t := g.Tracepoint{
+	t := Event{
 		Type:      "tracepoint",
 		PID:       os.Getpid(),
 		Timestamp: time.Now(),
@@ -96,7 +94,8 @@ func trace(data any, msg string) error {
 	t.Function = f.Name()
 	t.File, t.Line = f.FileLine(pc[0])
 
-	return t.WriteTo(traceWriter)
+	_, err := t.WriteTo(traceWriter)
+	return err
 }
 
 func PrintWithData(data any, msg string) error {

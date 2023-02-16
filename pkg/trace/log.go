@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	g "github.com/stv0g/gont/pkg"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -52,7 +51,7 @@ func (c *traceCore) Write(e zapcore.Entry, fields []zapcore.Field) error {
 		f.AddTo(enc)
 	}
 
-	t := g.Tracepoint{
+	t := Event{
 		Type:      "log",
 		PID:       os.Getpid(),
 		Timestamp: time.Now(),
@@ -65,7 +64,8 @@ func (c *traceCore) Write(e zapcore.Entry, fields []zapcore.Field) error {
 		Data:      enc.Fields,
 	}
 
-	return t.WriteTo(traceWriter)
+	_, err := t.WriteTo(traceWriter)
+	return err
 }
 
 func (c *traceCore) Sync() error {

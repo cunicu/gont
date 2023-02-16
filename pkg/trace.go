@@ -1,35 +1,17 @@
 package gont
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"os"
-	"reflect"
-	"time"
 
-	"github.com/fxamacker/cbor/v2"
+	"github.com/stv0g/gont/pkg/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zapio"
 )
 
-var (
-	dm cbor.DecMode
-	em cbor.EncMode
-)
-
-func init() {
-	dm, _ = cbor.DecOptions{
-		DefaultMapType: reflect.TypeOf(map[string]any{}),
-	}.DecMode()
-
-	em, _ = cbor.EncOptions{
-		Time: cbor.TimeUnixMicro,
-	}.EncMode()
-}
-
-type TracepointCallbackFunc func(tp Tracepoint)
+type TracepointCallbackFunc func(tp trace.Event)
 
 // Options
 
@@ -45,7 +27,7 @@ type Tracer struct {
 	// Output options
 	Files     []*os.File
 	Filenames []string
-	Channels  []chan Tracepoint
+	Channels  []chan trace.Event
 	Callbacks []TracepointCallbackFunc
 	Captures  []*Capture
 }
@@ -85,8 +67,8 @@ func (t *Tracer) Pipe() (*os.File, error) {
 
 	go func() {
 		for {
-			tp := Tracepoint{}
-			if err := tp.ReadFrom(rd); err != nil {
+			tp := trace.Event{}
+			if _, err := tp.ReadFrom(rd); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
 				} else {
@@ -131,30 +113,4 @@ func (t *Tracer) Pipe() (*os.File, error) {
 	}()
 
 	return wr, nil
-}
-
-type Tracepoint struct {
-	Timestamp time.Time `cbor:"time" json:"time"`
-	Type      string    `cbor:"type" json:"type"`
-	Level     uint8     `cbor:"lvl,omitempty" json:"lvl,omitempty"`
-	Message   string    `cbor:"msg,omitempty" json:"msg,omitempty"`
-	Source    string    `cbor:"src,omitempty" json:"src,omitempty"`
-	PID       int       `cbor:"pid,omitempty" json:"pid,omitempty"`
-	Function  string    `cbor:"func,omitempty" json:"func,omitempty"`
-	File      string    `cbor:"file,omitempty" json:"file,omitempty"`
-	Line      int       `cbor:"line,omitempty" json:"line,omitempty"`
-	Args      []any     `cbor:"args,omitempty" json:"args,omitempty"`
-	Data      any       `cbor:"data,omitempty" json:"data,omitempty"`
-}
-
-func (t *Tracepoint) WriteTo(wr io.Writer) error {
-	return em.NewEncoder(wr).Encode(t)
-}
-
-func (t *Tracepoint) ReadFrom(rd io.Reader) error {
-	return dm.NewDecoder(rd).Decode(t)
-}
-
-func (t *Tracepoint) Log(wr io.Writer) error {
-	return json.NewEncoder(wr).Encode(t)
 }
