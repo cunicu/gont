@@ -28,3 +28,15 @@ func (c CaptureNetwork) Apply(n *g.Network) {
 func CaptureAll(opts ...g.CaptureOption) CaptureNetwork {
 	return CaptureNetwork{Capture(opts...)}
 }
+
+type TraceNetwork struct {
+	*g.Tracer
+}
+
+func (t TraceNetwork) Apply(n *g.Network) {
+	n.Tracer = t.Tracer
+}
+
+func TraceAll(opts ...g.TraceOption) TraceNetwork {
+	return TraceNetwork{Trace(opts...)}
+}

@@ -172,6 +172,44 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 	return ci, nil
 }
 
+func (c *Capture) startTrace() (*captureInterface, *tracepointPacketSource, error) {
+	var err error
+
+	tps := newTracepointPacketSource()
+
+	ci := &captureInterface{
+		pcapInterface: pcapgo.NgInterface{
+			Name:        "tracer",
+			LinkType:    LinkTypeTrace,
+			SnapLength:  uint32(c.CaptureLength),
+			OS:          "Debug",
+			Description: "Trace output",
+		},
+		source: tps,
+		logger: c.logger.With(zap.String("intf", "tracer")),
+	}
+
+	if c.writer == nil {
+		if c.writer, err = c.createWriter(ci); err != nil {
+			return nil, nil, err
+		}
+
+		go c.writePackets()
+	} else {
+		if ci.pcapInterfaceIndex, err = c.writer.AddInterface(ci.pcapInterface); err != nil {
+			return nil, nil, fmt.Errorf("failed to add interface: %w", err)
+		}
+	}
+
+	ci.StartTime = time.Now()
+
+	c.interfaces = append(c.interfaces, ci)
+
+	go c.readPackets(ci)
+
+	return ci, tps, nil
+}
+
 // Count returns the total number of captured packets
 func (c *Capture) Count() uint64 {
 	return uint64(c.count.Load())

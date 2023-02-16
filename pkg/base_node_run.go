@@ -148,12 +148,25 @@ func (n *BaseNode) StartWith(cmd string, env []string, dir string, args ...any) 
 		"WG_KEYLOGFILE": pcapgo.DSB_SECRETS_TYPE_WIREGUARD,
 	} {
 		if pipe, err := n.network.KeyLogPipe(secretsType); err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to open TLS key log pipe: %w", err)
+			return nil, nil, nil, fmt.Errorf("failed to open key log pipe: %w", err)
 		} else if pipe != nil {
-			fd := len(c.ExtraFiles) + 3
+			extraEnvFile(c, envName, pipe)
+		}
+	}
 
-			c.ExtraFiles = append(c.ExtraFiles, pipe)
-			c.Env = append(c.Env, fmt.Sprintf("%s=/proc/self/fd/%d", envName, fd))
+	// Add tracing pipe
+	var tracer *Tracer
+	if t := n.Tracer; t != nil {
+		tracer = t
+	} else if t := n.network.Tracer; t != nil {
+		tracer = t
+	}
+
+	if tracer != nil {
+		if pipe, err := tracer.Pipe(); err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to create tracing pipe: %w", err)
+		} else if pipe != nil {
+			extraEnvFile(c, "GONT_TRACEFILE", pipe)
 		}
 	}
 
@@ -218,4 +231,10 @@ func (n *BaseNode) RunGo(script string, args ...any) ([]byte, *exec.Cmd, error) 
 	}
 
 	return n.Run(tmp, args...)
+}
+
+func extraEnvFile(c *exec.Cmd, envName string, f *os.File) {
+	fd := len(c.ExtraFiles) + 3
+	c.ExtraFiles = append(c.ExtraFiles, f)
+	c.Env = append(c.Env, fmt.Sprintf("%s=/proc/self/fd/%d", envName, fd))
 }

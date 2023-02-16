@@ -59,3 +59,13 @@ type ExtraEnv struct {
 func (ev ExtraEnv) Apply(n *g.BaseNode) {
 	n.Env[ev.Name] = ev.Value
 }
+
+func Trace(opts ...g.TraceOption) *g.Tracer {
+	t := &g.Tracer{}
+
+	for _, o := range opts {
+		o.Apply(t)
+	}
+
+	return t
+}

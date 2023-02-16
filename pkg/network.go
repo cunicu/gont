@@ -37,6 +37,7 @@ type Network struct {
 	Persistent bool
 	NSPrefix   string
 	Captures   []*Capture
+	Tracer     *Tracer
 
 	keyLogPipes []*os.File
 	logger      *zap.Logger
@@ -244,6 +245,12 @@ func (n *Network) Close() error {
 
 	for _, c := range n.Captures {
 		if err := c.Close(); err != nil {
+			return fmt.Errorf("failed to close packet capture: %w", err)
+		}
+	}
+
+	if t := n.Tracer; t != nil {
+		if err := t.Close(); err != nil {
 			return fmt.Errorf("failed to close packet capture: %w", err)
 		}
 	}

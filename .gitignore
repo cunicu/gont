@@ -1,3 +1,4 @@
 gontc
 .vscode/
 *.pcapng
+test/tracee/tracee
