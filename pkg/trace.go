@@ -28,6 +28,14 @@ type Tracer struct {
 	Channels  []chan trace.Event
 	Callbacks []TracepointCallbackFunc
 	Captures  []*Capture
+
+	logger *zap.Logger
+}
+
+func NewTracer() *Tracer {
+	return &Tracer{
+		logger: zap.L().Named("tracer"),
+	}
 }
 
 func (t *Tracer) Close() error {
@@ -50,7 +58,7 @@ func (t *Tracer) Pipe() (*os.File, error) {
 		files = append(files, f)
 	}
 
-	zap.L().Info("Opened pipe files")
+	t.logger.Debug("Opened pipe files")
 
 	// Captures
 	tpss := []*tracepointPacketSource{}
@@ -70,7 +78,7 @@ func (t *Tracer) Pipe() (*os.File, error) {
 				if errors.Is(err, io.EOF) {
 					break
 				} else {
-					zap.L().Warn("Failed to read tracepoint from log", zap.Error(err))
+					t.logger.Warn("Failed to read tracepoint from log", zap.Error(err))
 					continue
 				}
 			}
@@ -100,7 +108,7 @@ func (t *Tracer) Pipe() (*os.File, error) {
 			file.Close()
 		}
 
-		zap.L().Info("Closed pipe files")
+		t.logger.Debug("Closed pipe files")
 	}()
 
 	return wr, nil

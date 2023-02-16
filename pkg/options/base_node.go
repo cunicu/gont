@@ -61,7 +61,7 @@ func (ev ExtraEnv) Apply(n *g.BaseNode) {
 }
 
 func Trace(opts ...g.TraceOption) *g.Tracer {
-	t := &g.Tracer{}
+	t := g.NewTracer()
 
 	for _, o := range opts {
 		o.Apply(t)
