@@ -77,7 +77,11 @@ function trace.dissector(buffer, pinfo, tree)
         subtree:add(trace.fields.line, dec.line)
     end
     if dec.data ~= nil then
-        build_tree(trace.fields.data, dec.data, subtree) 
+        if type(dec.data) == "table" then
+            build_tree(trace.fields.data, dec.data, subtree) 
+        else
+            subtree:add(trace.fields.data, dec.data)
+        end
     end
 end
 
