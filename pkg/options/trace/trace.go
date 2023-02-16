@@ -37,10 +37,10 @@ func (d Channel) Apply(t *g.Tracer) {
 func ToChannel(ch chan trace.Event) Channel { return Channel(ch) }
 
 // Callback provides a custom callback function which is called for each captured packet
-type Callback g.TracepointCallbackFunc
+type Callback trace.EventCallback
 
 func (cb Callback) Apply(t *g.Tracer) {
-	t.Callbacks = append(t.Callbacks, g.TracepointCallbackFunc(cb))
+	t.Callbacks = append(t.Callbacks, trace.EventCallback(cb))
 }
 
 // Capture will write Tracepoints as fake packets to the capture

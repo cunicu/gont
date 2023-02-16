@@ -14,12 +14,13 @@ import (
 // which is started by gont.Node.{Start,StartWith,Run}
 
 var (
-	traceWriter io.Writer
-	traceFile   *os.File
+	eventCallback EventCallback
+	eventWriter   io.Writer
+	eventFile     *os.File
 )
 
 func Start(bufsize int) error {
-	if traceWriter != nil {
+	if eventWriter != nil {
 		return fmt.Errorf("tracing already enabled")
 	}
 
@@ -29,33 +30,37 @@ func Start(bufsize int) error {
 	}
 
 	var err error
-	if traceFile, err = os.OpenFile(traceFileName, os.O_WRONLY|os.O_APPEND, 0o300); err != nil {
+	if eventFile, err = os.OpenFile(traceFileName, os.O_WRONLY|os.O_APPEND, 0o300); err != nil {
 		return err
 	}
 
 	if bufsize > 0 {
-		traceWriter = bufio.NewWriterSize(traceWriter, bufsize)
+		eventWriter = bufio.NewWriterSize(eventWriter, bufsize)
 	} else {
-		traceWriter = traceFile
+		eventWriter = eventFile
 	}
 
 	return nil
 }
 
+func StartWithCallback(cb EventCallback) {
+	eventCallback = cb
+}
+
 func Stop() error {
-	if traceWriter == nil {
+	if eventWriter == nil {
 		return fmt.Errorf("tracing not running")
 	}
 
-	if bufferedTraceWriter, ok := traceWriter.(*bufio.Writer); ok {
+	if bufferedTraceWriter, ok := eventWriter.(*bufio.Writer); ok {
 		bufferedTraceWriter.Flush()
 	}
 
-	if err := traceFile.Close(); err != nil {
+	if err := eventFile.Close(); err != nil {
 		return fmt.Errorf("failed to close trace file: %w", err)
 	}
 
-	traceWriter = nil
+	eventWriter = nil
 
 	return nil
 }
@@ -75,7 +80,7 @@ func With(cb func() error, bufsize int) error {
 }
 
 func trace(data any, msg string) error {
-	if traceWriter == nil {
+	if eventWriter == nil && eventCallback == nil {
 		return nil
 	}
 
@@ -83,7 +88,7 @@ func trace(data any, msg string) error {
 	runtime.Callers(3, pc)
 	f := runtime.FuncForPC(pc[0])
 
-	t := Event{
+	e := Event{
 		Type:      "tracepoint",
 		PID:       os.Getpid(),
 		Timestamp: time.Now(),
@@ -91,11 +96,20 @@ func trace(data any, msg string) error {
 		Data:      data,
 	}
 
-	t.Function = f.Name()
-	t.File, t.Line = f.FileLine(pc[0])
+	e.Function = f.Name()
+	e.File, e.Line = f.FileLine(pc[0])
 
-	_, err := t.WriteTo(traceWriter)
-	return err
+	if eventCallback != nil {
+		eventCallback(e)
+	}
+
+	if eventWriter != nil {
+		if _, err := e.WriteTo(eventWriter); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func PrintWithData(data any, msg string) error {

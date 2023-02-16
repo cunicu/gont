@@ -8,6 +8,7 @@ import (
 	gopt "github.com/stv0g/gont/pkg/options"
 	copt "github.com/stv0g/gont/pkg/options/capture"
 	topt "github.com/stv0g/gont/pkg/options/trace"
+	"github.com/stv0g/gont/pkg/trace"
 )
 
 var captureSocketAddr = flag.String("trace-socket", "tcp:[::1]:42125", "Listen address for capture socket")
@@ -28,6 +29,10 @@ func TestTracer(t *testing.T) {
 		topt.ToCapture(c1.Capture),
 	)
 
+	if err := t1.StartLocal(); err != nil {
+		t.Fatalf("Failed to start: %s", err)
+	}
+
 	if n, err = g.NewNetwork(*nname,
 		gopt.Customize(globalNetworkOptions,
 			t1, c1,
@@ -47,5 +52,7 @@ func TestTracer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to run tracee: %s", err)
 		}
+
+		trace.PrintfWithData(i, "Hello from test process")
 	}
 }

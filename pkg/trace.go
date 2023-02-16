@@ -2,14 +2,13 @@ package gont
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
 	"github.com/stv0g/gont/pkg/trace"
 	"go.uber.org/zap"
 )
-
-type TracepointCallbackFunc func(tp trace.Event)
 
 // Options
 
@@ -26,8 +25,14 @@ type Tracer struct {
 	Files     []*os.File
 	Filenames []string
 	Channels  []chan trace.Event
-	Callbacks []TracepointCallbackFunc
+	Callbacks []trace.EventCallback
 	Captures  []*Capture
+
+	// Outputs
+	files         []*os.File
+	packetSources []*traceEventPacketSource
+
+	started bool
 
 	logger *zap.Logger
 }
@@ -38,43 +43,75 @@ func NewTracer() *Tracer {
 	}
 }
 
+func (t *Tracer) Start() error {
+	// Filenames
+	for _, fn := range t.Filenames {
+		f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+		if err != nil {
+			return fmt.Errorf("failed to open file: %w", err)
+		}
+		t.files = append(t.files, f)
+	}
+
+	// Captures
+	for _, c := range t.Captures {
+		_, ps, err := c.startTrace()
+		if err != nil {
+			return fmt.Errorf("failed to start capturing traces: %w", err)
+		}
+
+		t.packetSources = append(t.packetSources, ps)
+	}
+
+	t.started = true
+
+	return nil
+}
+
+func (t *Tracer) StartLocal() error {
+	if !t.started {
+		if err := t.Start(); err != nil {
+			return err
+		}
+	}
+
+	trace.StartWithCallback(t.newEvent)
+
+	return nil
+}
+
 func (t *Tracer) Close() error {
+	for _, tps := range t.packetSources {
+		if err := tps.Close(); err != nil {
+			return err
+		}
+	}
+
+	for _, file := range t.files {
+		if err := file.Close(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (t *Tracer) Pipe() (*os.File, error) {
+	if !t.started {
+		if err := t.Start(); err != nil {
+			return nil, err
+		}
+	}
+
 	rd, wr, err := os.Pipe()
 	if err != nil {
 		return nil, err
 	}
 
-	// Filenames
-	files := []*os.File{}
-	for _, fn := range t.Filenames {
-		f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, f)
-	}
-
-	t.logger.Debug("Opened pipe files")
-
-	// Captures
-	tpss := []*tracepointPacketSource{}
-	for _, c := range t.Captures {
-		_, tps, err := c.startTrace()
-		if err != nil {
-			return nil, err
-		}
-
-		tpss = append(tpss, tps)
-	}
-
 	go func() {
 		for {
-			tp := trace.Event{}
-			if _, err := tp.ReadFrom(rd); err != nil {
+			e := trace.Event{}
+			if _, err := e.ReadFrom(rd); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
 				} else {
@@ -83,33 +120,27 @@ func (t *Tracer) Pipe() (*os.File, error) {
 				}
 			}
 
-			for _, file := range files {
-				tp.Log(file)
-			}
-
-			for _, ch := range t.Channels {
-				ch <- tp
-			}
-
-			for _, cb := range t.Callbacks {
-				cb(tp)
-			}
-
-			for _, tps := range tpss {
-				tps.SourceTracepoint(tp)
-			}
+			t.newEvent(e)
 		}
-
-		for _, tps := range tpss {
-			tps.Close()
-		}
-
-		for _, file := range files {
-			file.Close()
-		}
-
-		t.logger.Debug("Closed pipe files")
 	}()
 
 	return wr, nil
+}
+
+func (t *Tracer) newEvent(e trace.Event) {
+	for _, file := range t.files {
+		e.Log(file)
+	}
+
+	for _, ch := range t.Channels {
+		ch <- e
+	}
+
+	for _, cb := range t.Callbacks {
+		cb(e)
+	}
+
+	for _, ps := range t.packetSources {
+		ps.SourceTracepoint(e)
+	}
 }

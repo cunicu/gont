@@ -13,20 +13,20 @@ const (
 	LinkTypeTrace = LinkTypeUser0
 )
 
-var _ PacketSource = (*tracepointPacketSource)(nil)
+var _ PacketSource = (*traceEventPacketSource)(nil)
 
-type tracepointPacketSource struct {
+type traceEventPacketSource struct {
 	tracepoints chan trace.Event
 	count       uint64
 }
 
-func newTracepointPacketSource() *tracepointPacketSource {
-	return &tracepointPacketSource{
+func newTracepointPacketSource() *traceEventPacketSource {
+	return &traceEventPacketSource{
 		tracepoints: make(chan trace.Event),
 	}
 }
 
-func (tps *tracepointPacketSource) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
+func (tps *traceEventPacketSource) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	tps.count++
 	tp, ok := <-tps.tracepoints
 	if !ok {
@@ -36,23 +36,23 @@ func (tps *tracepointPacketSource) ReadPacketData() (data []byte, ci gopacket.Ca
 	return SerializePacket(&tp)
 }
 
-func (tps *tracepointPacketSource) Stats() (captureStats, error) {
+func (tps *traceEventPacketSource) Stats() (captureStats, error) {
 	return captureStats{
 		PacketsReceived: tps.count,
 	}, nil
 }
 
-func (tps *tracepointPacketSource) LinkType() layers.LinkType {
+func (tps *traceEventPacketSource) LinkType() layers.LinkType {
 	// TODO: Register our own DLT value?
 	// https://www.tcpdump.org/linktypes.html
 	return LinkTypeTrace
 }
 
-func (tps *tracepointPacketSource) SourceTracepoint(tp trace.Event) {
+func (tps *traceEventPacketSource) SourceTracepoint(tp trace.Event) {
 	tps.tracepoints <- tp
 }
 
-func (tps *tracepointPacketSource) Close() error {
+func (tps *traceEventPacketSource) Close() error {
 	close(tps.tracepoints)
 	return nil
 }

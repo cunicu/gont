@@ -24,6 +24,8 @@ func init() {
 	}.EncMode()
 }
 
+type EventCallback func(e Event)
+
 type Event struct {
 	Timestamp time.Time `cbor:"time" json:"time"`
 	Type      string    `cbor:"type" json:"type"`

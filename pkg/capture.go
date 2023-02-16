@@ -233,22 +233,28 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 
 	// Filenames
 	for _, filename := range c.Filenames {
-		tpl, err := template.New("filename").Parse(filename)
-		if err != nil {
-			return nil, fmt.Errorf("invalid filename template: %w", err)
-		}
+		if i.Interface != nil {
+			b := &bytes.Buffer{}
 
-		var fn bytes.Buffer
-		if err := tpl.Execute(&fn, filenameTemplate{
-			Network:   i.Node.Network().Name,
-			Host:      i.Node.Name(),
-			Interface: i.Name,
-		}); err != nil {
-			return nil, fmt.Errorf("failed to execute filename template: %w", err)
+			tpl, err := template.New("filename").Parse(filename)
+			if err != nil {
+				return nil, fmt.Errorf("invalid filename template: %w", err)
+			}
+
+			if err := tpl.Execute(b, filenameTemplate{
+				Network:   i.Node.Network().Name,
+				Host:      i.Node.Name(),
+				Interface: i.Name,
+			}); err != nil {
+				return nil, fmt.Errorf("failed to execute filename template: %w", err)
+			}
+
+			filename = b.String()
 		}
 
 		var file *os.File
-		if file, err = os.OpenFile(fn.String(), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755); err != nil {
+		var err error
+		if file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755); err != nil {
 			return nil, fmt.Errorf("failed to open file: %w", err)
 		}
 
@@ -308,7 +314,11 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 
 	comment := c.Comment
 	if comment == "" {
-		comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.Node.Network().Name)
+		if i.Interface == nil {
+			comment = fmt.Sprintf("Captured with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)")
+		} else {
+			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.Node.Network().Name)
+		}
 	}
 
 	opts := pcapgo.NgWriterOptions{
@@ -400,7 +410,7 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 	return ci, nil
 }
 
-func (c *Capture) startTrace() (*captureInterface, *tracepointPacketSource, error) {
+func (c *Capture) startTrace() (*captureInterface, *traceEventPacketSource, error) {
 	var err error
 
 	tps := newTracepointPacketSource()
