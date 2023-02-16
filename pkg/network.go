@@ -260,14 +260,14 @@ func (n *Network) Register(m Node) {
 }
 
 func (n *Network) KeyLogPipe(secretsType uint32) (*os.File, error) {
-	captureWithKeys := []*Capture{}
+	capturesWithKeys := []*Capture{}
 	for _, c := range n.Captures {
 		if c.LogKeys {
-			captureWithKeys = append(captureWithKeys, c)
+			capturesWithKeys = append(capturesWithKeys, c)
 		}
 	}
 
-	if len(captureWithKeys) == 0 {
+	if len(capturesWithKeys) == 0 {
 		return nil, nil
 	}
 
@@ -284,8 +284,8 @@ func (n *Network) KeyLogPipe(secretsType uint32) (*os.File, error) {
 			return
 		}
 
-		for _, c := range captureWithKeys {
-			c.WriteDecryptionSecret(secretsType, b.Bytes())
+		for _, c := range capturesWithKeys {
+			c.writeDecryptionSecret(secretsType, b.Bytes())
 		}
 	}()
 

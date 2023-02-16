@@ -34,8 +34,10 @@ func TestCaptureNetwork(t *testing.T) {
 	go func() {
 		logger := zap.L().Named("channel")
 		for p := range ch {
+			pp := p.Decode(gopacket.DecodeOptions{})
+
 			layers := []string{}
-			for _, layer := range p.Layers() {
+			for _, layer := range pp.Layers() {
 				layers = append(layers, layer.LayerType().String())
 			}
 
@@ -75,7 +77,8 @@ func TestCaptureNetwork(t *testing.T) {
 			return strings.HasPrefix(i.Name, "veth")
 		}),
 		copt.FilterPackets(func(p *g.CapturePacket) bool {
-			if layer := p.Layer(layers.LayerTypeICMPv6); layer != nil {
+			pp := p.Decode(gopacket.DecodeOptions{})
+			if layer := pp.Layer(layers.LayerTypeICMPv6); layer != nil {
 				typec := layer.(*layers.ICMPv6).TypeCode.Type()
 
 				return typec == layers.ICMPv6TypeEchoRequest || typec == layers.ICMPv6TypeEchoReply
@@ -123,12 +126,21 @@ func TestCaptureNetwork(t *testing.T) {
 		t.Fatalf("Failed to ping: %s", err)
 	}
 
+	// Read-back PCAP file
 	// We need to wait some time until PCAP has captured the packets
 	time.Sleep(1 * time.Second)
 
-	rd, err := c1.Reader()
+	if err := c1.Flush(); err != nil {
+		t.Fatalf("Failed to flush capture: %s", err)
+	}
+
+	if _, err := tmpPCAP.Seek(0, 0); err != nil {
+		t.Fatalf("Failed to rewind file: %s", err)
+	}
+
+	rd, err := pcapgo.NewNgReader(tmpPCAP, pcapgo.DefaultNgReaderOptions)
 	if err != nil {
-		t.Fatalf("Failed to get reader for PCAPng file: %s", err)
+		t.Fatalf("Failed to read PCAPng file: %s", err)
 	}
 
 	h1veth0 := h1.Interface("veth0")

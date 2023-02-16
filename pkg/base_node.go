@@ -278,7 +278,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 
 	for _, c := range allCaptures {
 		if c != nil && (c.FilterInterface == nil || c.FilterInterface(i)) {
-			if err := c.Start(i); err != nil {
+			if _, err := c.startInterface(i); err != nil {
 				return fmt.Errorf("failed to capture interface: %w", err)
 			}
 		}
@@ -295,10 +295,8 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 
 func (n *BaseNode) Close() error {
 	for _, i := range n.Interfaces {
-		for _, c := range i.Captures {
-			if err := c.Close(); err != nil {
-				return fmt.Errorf("failed to close capture: %w", err)
-			}
+		if err := i.Close(); err != nil {
+			return err
 		}
 	}
 

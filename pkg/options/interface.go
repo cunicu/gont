@@ -35,13 +35,11 @@ func AddressIP(fmts string, args ...any) Address {
 	}
 }
 
-func Capture(opts ...g.Option) *g.Capture {
+func Capture(opts ...g.CaptureOption) *g.Capture {
 	c := g.NewCapture()
 
 	for _, o := range opts {
-		if o, ok := o.(g.CaptureOption); ok {
-			o.Apply(c)
-		}
+		o.Apply(c)
 	}
 
 	return c

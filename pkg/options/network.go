@@ -25,6 +25,6 @@ func (c CaptureNetwork) Apply(n *g.Network) {
 	n.Captures = append(n.Captures, c.Capture)
 }
 
-func CaptureAll(opts ...g.Option) CaptureNetwork {
+func CaptureAll(opts ...g.CaptureOption) CaptureNetwork {
 	return CaptureNetwork{Capture(opts...)}
 }

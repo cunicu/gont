@@ -12,11 +12,11 @@ import (
 
 const CGoPCAP = false
 
-type pcapgoHandle struct {
+type pcapgoPacketSource struct {
 	*pcapgo.EthernetHandle
 }
 
-func (c *Capture) createHandle(name string) (handle, error) {
+func (c *Capture) createPCAPHandle(name string) (handle, error) {
 	hdl, err := pcapgo.NewEthernetHandle(name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open PCAP handle: %w", err)
@@ -50,12 +50,12 @@ func (c *Capture) createHandle(name string) (handle, error) {
 		}
 	}
 
-	return pcapgoHandle{
+	return pcapgoPacketSource{
 		EthernetHandle: hdl,
 	}, nil
 }
 
-func (h pcapgoHandle) Stats() (CaptureStats, error) {
+func (h pcapgoPacketSource) Stats() (CaptureStats, error) {
 	s, err := h.EthernetHandle.Stats()
 	if err != nil {
 		return CaptureStats{}, err
@@ -67,6 +67,6 @@ func (h pcapgoHandle) Stats() (CaptureStats, error) {
 	}, nil
 }
 
-func (h pcapgoHandle) LinkType() layers.LinkType {
+func (h pcapgoPacketSource) LinkType() layers.LinkType {
 	return layers.LinkTypeEthernet
 }

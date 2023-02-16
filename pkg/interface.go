@@ -84,3 +84,13 @@ func (i *Interface) SetUp() error {
 func (i *Interface) SetDown() error {
 	return i.Node.NetlinkHandle().LinkSetDown(i.Link)
 }
+
+func (i *Interface) Close() error {
+	for _, c := range i.Captures {
+		if err := c.Close(); err != nil {
+			return fmt.Errorf("failed to close capture: %w", err)
+		}
+	}
+
+	return nil
+}

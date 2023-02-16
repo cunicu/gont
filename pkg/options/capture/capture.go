@@ -56,22 +56,22 @@ func (d Comment) Apply(c *g.Capture) {
 	c.Comment = string(d)
 }
 
-// File writes all captured packets to a file handle
+// File writes all captured packets to a PCAPng file handle
 type File struct {
 	*os.File
 }
 
 func (f File) Apply(c *g.Capture) {
-	c.File = f.File
+	c.Files = append(c.Files, f.File)
 }
 
-func ToFile(f *os.File) File { return File{File: f} }
+func ToFile(f *os.File) File { return File{f} }
 
 // Filename writes all captured packets to a PCAPng file
 type Filename string
 
 func (fn Filename) Apply(c *g.Capture) {
-	c.Filename = string(fn)
+	c.Filenames = append(c.Filenames, string(fn))
 }
 
 func ToFilename(fn string) Filename { return Filename(fn) }
@@ -80,7 +80,7 @@ func ToFilename(fn string) Filename { return Filename(fn) }
 type Channel chan g.CapturePacket
 
 func (d Channel) Apply(c *g.Capture) {
-	c.Channel = d
+	c.Channels = append(c.Channels, d)
 }
 
 func ToChannel(ch chan g.CapturePacket) Channel { return Channel(ch) }
@@ -89,7 +89,7 @@ func ToChannel(ch chan g.CapturePacket) Channel { return Channel(ch) }
 type Callback g.CaptureCallbackFunc
 
 func (cb Callback) Apply(c *g.Capture) {
-	c.Callback = g.CaptureCallbackFunc(cb)
+	c.Callbacks = append(c.Callbacks, g.CaptureCallbackFunc(cb))
 }
 
 // LogKeys captures encryption keys from applications started via Gont and embeds them into PCAPng files
