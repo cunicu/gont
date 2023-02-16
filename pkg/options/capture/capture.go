@@ -76,6 +76,29 @@ func (fn Filename) Apply(c *g.Capture) {
 
 func ToFilename(fn string) Filename { return Filename(fn) }
 
+// Pipename writes all captured packets to a PCAPng file
+type Pipename string
+
+func (pn Pipename) Apply(c *g.Capture) {
+	c.Pipenames = append(c.Pipenames, string(pn))
+
+	// Flush to pipe after each packet
+	c.FlushEach = 1
+}
+
+func ToNewPipe(pn string) Pipename { return Pipename(pn) }
+
+// Listener opens a UNIX, UDP or TCP socket to which you can connect with WireShark
+// See: https://wiki.wireshark.org/CaptureSetup/Pipes.md#tcp-socket
+type Listener string
+
+func (s Listener) Apply(c *g.Capture) {
+	c.Listeners = append(c.Listeners, string(s))
+
+	// Flush to pipe after each packet
+	c.FlushEach = 1
+}
+
 // Channel sends all captured packets to the provided channel.
 type Channel chan g.CapturePacket
 

@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"sync/atomic"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -94,6 +95,8 @@ type Capture struct {
 	Filenames []string
 	Channels  []chan CapturePacket
 	Callbacks []CaptureCallbackFunc
+	Pipenames []string
+	Listeners []string
 
 	writer *pcapgo.NgWriter
 
@@ -314,6 +317,55 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 		}
 
 		wrs = append(wrs, file)
+	}
+
+	// Pipenames
+	for _, pipename := range c.Pipenames {
+		logger := c.logger.With(zap.String("path", pipename))
+
+		if stat, err := os.Stat(pipename); err != nil {
+			if os.IsNotExist(err) {
+				logger.Debug("Pipe does not exist yet. Creating..")
+				if err := syscall.Mkfifo(pipename, 0o644); err != nil {
+					return nil, fmt.Errorf("failed to create fifo: %w", err)
+				}
+			} else {
+				return nil, fmt.Errorf("failed to stat pipe %s: %w", pipename, err)
+			}
+		} else if stat.Mode()&os.ModeNamedPipe == 0 {
+			logger.Debug("Non-pipe exists. Removing before recreating")
+			if err := os.RemoveAll(pipename); err != nil {
+				return nil, fmt.Errorf("failed to delete: %w", err)
+			}
+			if err := syscall.Mkfifo(pipename, 0o644); err != nil {
+				return nil, fmt.Errorf("failed to create fifo: %w", err)
+			}
+		}
+
+		logger.Info("Opening named pipe. Waiting for a reader...")
+
+		fifo, err := os.OpenFile("/var/run/pcap", os.O_WRONLY, 0o300)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open fifo: %w", err)
+		}
+
+		logger.Info("Reader opened remote site of the fifo. Continuing execution")
+
+		wrs = append(wrs, fifo)
+	}
+
+	// Listeners
+	for _, lAddr := range c.Listeners {
+		listener, err := newCaptureListener(lAddr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to creater listener: %w", err)
+		}
+
+		// Wait for first connection before proceeding
+		c.logger.Info("Opened listener. Waiting for a reader...", zap.String("addr", lAddr))
+		<-listener.Conns
+
+		wrs = append(wrs, listener)
 	}
 
 	wr := io.MultiWriter(wrs...)
