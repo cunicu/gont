@@ -14,16 +14,20 @@ import (
 	"go.uber.org/zap/zapio"
 )
 
-func (n *BaseNode) Command(name string, args ...string) *exec.Cmd {
-	return n.CommandWith(name, nil, "", args...)
-}
-
-func (n *BaseNode) CommandWith(name string, env []string, dir string, args ...string) *exec.Cmd {
+func (n *BaseNode) Command(name string, args ...any) *exec.Cmd {
 	// Actual namespace switching is done similar to Docker's reexec
 	// in a forked version of ourself by passing all required details
 	// in environment variables.
 
-	c := exec.Command(name, args...)
+	strArgs, nonStrArgs := stringifyArgs(args)
+
+	c := exec.Command(name, strArgs...)
+
+	for _, arg := range nonStrArgs {
+		if arg, ok := arg.(CmdOption); ok {
+			arg.Apply(c)
+		}
+	}
 
 	if !n.NsHandle.Equal(n.network.HostNode.NsHandle) {
 		if n.ExistingDockerContainer == "" {
@@ -34,7 +38,7 @@ func (n *BaseNode) CommandWith(name string, env []string, dir string, args ...st
 				"GONT_NETWORK="+n.network.Name)
 		} else {
 			c.Path = "/usr/bin/docker"
-			c.Args = append([]string{"docker", "exec", n.ExistingDockerContainer, name}, args...)
+			c.Args = append([]string{"docker", "exec", n.ExistingDockerContainer, name}, strArgs...)
 		}
 	}
 
@@ -43,18 +47,11 @@ func (n *BaseNode) CommandWith(name string, env []string, dir string, args ...st
 		c.Env = append(c.Env, env)
 	}
 
-	c.Env = append(c.Env, env...)
-	c.Dir = dir
-
 	return c
 }
 
 func (n *BaseNode) Run(cmd string, args ...any) ([]byte, *exec.Cmd, error) {
-	return n.RunWith(cmd, nil, "", args...)
-}
-
-func (n *BaseNode) RunWith(cmd string, env []string, dir string, args ...any) ([]byte, *exec.Cmd, error) {
-	stdout, stderr, c, err := n.StartWith(cmd, env, dir, args...)
+	stdout, stderr, c, err := n.Start(cmd, args...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -90,14 +87,10 @@ func (n *BaseNode) RunWith(cmd string, env []string, dir string, args ...any) ([
 }
 
 func (n *BaseNode) Start(cmd string, args ...any) (io.Reader, io.Reader, *exec.Cmd, error) {
-	return n.StartWith(cmd, nil, "", args...)
-}
-
-func (n *BaseNode) StartWith(cmd string, env []string, dir string, args ...any) (io.Reader, io.Reader, *exec.Cmd, error) {
 	var err error
 	var stdout, stderr io.Reader
 
-	c := n.CommandWith(cmd, env, dir, stringArgs(args)...)
+	c := n.Command(cmd, args...)
 
 	if stdout, err = c.StdoutPipe(); err != nil {
 		return nil, nil, nil, err
@@ -198,43 +191,42 @@ func (n *BaseNode) RunGo(script string, args ...any) ([]byte, *exec.Cmd, error) 
 	return n.Run(tmp, args...)
 }
 
-func stringArgs(args []any) []string {
+func stringifyArgs(args []any) ([]string, []any) {
 	strArgs := []string{}
+	nonStrArgs := []any{}
+
 	for _, arg := range args {
-		var strArg string
 		switch arg := arg.(type) {
 		case Node:
-			strArg = arg.Name()
+			strArgs = append(strArgs, arg.Name())
 		case fmt.Stringer:
-			strArg = arg.String()
+			strArgs = append(strArgs, arg.String())
 		case string:
-			strArg = arg
+			strArgs = append(strArgs, arg)
 		case int:
-			strArg = strconv.FormatInt(int64(arg), 10)
+			strArgs = append(strArgs, strconv.FormatInt(int64(arg), 10))
 		case uint:
-			strArg = strconv.FormatUint(uint64(arg), 10)
+			strArgs = append(strArgs, strconv.FormatUint(uint64(arg), 10))
 		case int32:
-			strArg = strconv.FormatInt(int64(arg), 10)
+			strArgs = append(strArgs, strconv.FormatInt(int64(arg), 10))
 		case uint32:
-			strArg = strconv.FormatUint(uint64(arg), 10)
+			strArgs = append(strArgs, strconv.FormatUint(uint64(arg), 10))
 		case int64:
-			strArg = strconv.FormatInt(arg, 10)
+			strArgs = append(strArgs, strconv.FormatInt(arg, 10))
 		case uint64:
-			strArg = strconv.FormatUint(arg, 10)
+			strArgs = append(strArgs, strconv.FormatUint(arg, 10))
 		case float32:
-			strArg = strconv.FormatFloat(float64(arg), 'f', -1, 32)
+			strArgs = append(strArgs, strconv.FormatFloat(float64(arg), 'f', -1, 32))
 		case float64:
-			strArg = strconv.FormatFloat(arg, 'f', -1, 64)
+			strArgs = append(strArgs, strconv.FormatFloat(arg, 'f', -1, 64))
 		case bool:
-			strArg = strconv.FormatBool(arg)
+			strArgs = append(strArgs, strconv.FormatBool(arg))
 		default:
-			strArg = fmt.Sprintf("%v", arg)
+			nonStrArgs = append(nonStrArgs, arg)
 		}
-
-		strArgs = append(strArgs, strArg)
 	}
 
-	return strArgs
+	return strArgs, nonStrArgs
 }
 
 func extraEnvFile(c *exec.Cmd, envName string, f *os.File) {
