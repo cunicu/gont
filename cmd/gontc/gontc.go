@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 // gontc is a command line interface for inspecting and managing networks created by Gont
 package main
 
@@ -110,7 +113,6 @@ func main() {
 			for _, name := range g.NetworkNames() {
 				fmt.Println(name)
 			}
-
 		}
 
 	case "identify":

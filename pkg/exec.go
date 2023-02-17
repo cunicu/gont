@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -64,7 +67,7 @@ func Exec(network, node string, args []string) error {
 
 	// Switch network namespace
 	netNsHandle := filepath.Join(nodeDir, "ns", "net")
-	netNsFd, err := syscall.Open(netNsHandle, os.O_RDONLY, 0644)
+	netNsFd, err := syscall.Open(netNsHandle, os.O_RDONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open netns: %w", err)
 	}

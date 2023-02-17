@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014-2015 Kim Alvefur
+// SPDX-License-Identifier: MIT
+
 cbor = require('cbor')
 
 trace = Proto('trace', 'Gont Tracing Protocol')

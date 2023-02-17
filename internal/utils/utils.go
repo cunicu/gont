@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package utils
 
 import (
@@ -6,7 +9,7 @@ import (
 )
 
 func Touch(path string) error {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL, 0444)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL, 0o444)
 	if err != nil {
 		return err
 	}

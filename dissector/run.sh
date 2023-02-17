@@ -1,4 +1,7 @@
 #/bin/sh
+# SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+# SPDX-License-Identifier: Apache-2.0
+
 set -e
 
 GONT_PATH=${GONT_PATH:-$(pwd)}

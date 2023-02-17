@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package utils
 
 import (
@@ -6,7 +9,6 @@ import (
 )
 
 func ReadVCSInfos() (bool, string, bool, time.Time) {
-
 	if info, ok := debug.ReadBuildInfo(); ok {
 		rev := "unknown"
 		dirty := false

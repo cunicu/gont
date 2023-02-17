@@ -1,5 +1,7 @@
 -- Concise Binary Object Representation (CBOR)
 -- RFC 7049
+-- SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+-- SPDX-License-Identifier: Apache-2.0
 
 local function softreq(pkg, field)
 	local ok, mod = pcall(require, pkg);
