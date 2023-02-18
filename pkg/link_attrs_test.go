@@ -32,13 +32,13 @@ func TestLinkAttrs(t *testing.T) {
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", h1,
+		g.NewInterface("veth0", h1,
 			o.AddressIP("10.0.0.1/24"),
 			o.AddressIP("fc::1/64"),
 			o.MTU(1000),
 			o.Group(1234),
 			o.AddressMACBytes([]byte{0, 0, 0, 0, 0, 1})),
-		o.Interface("veth0", h2,
+		g.NewInterface("veth0", h2,
 			o.AddressIP("10.0.0.2/24"),
 			o.AddressIP("fc::2/64"),
 			o.Group(5678),

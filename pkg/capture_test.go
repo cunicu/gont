@@ -68,7 +68,7 @@ func TestCaptureNetwork(t *testing.T) {
 	// 	bpf.RetConstant{Val: 0},                                                 // 8
 	// }
 
-	c1 := gopt.CaptureAll(
+	c1 := g.NewCapture(
 		copt.ToFile(tmpPCAP),
 		copt.ToChannel(ch),
 		copt.Callback(cb),
@@ -94,7 +94,7 @@ func TestCaptureNetwork(t *testing.T) {
 
 	if n, err = g.NewNetwork(*nname,
 		gopt.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
-			gopt.CaptureAll(
+			g.NewCapture(
 				copt.ToFilename("all.pcapng"), // We can create a file
 			),
 		)...,
@@ -107,7 +107,7 @@ func TestCaptureNetwork(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		gopt.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			gopt.AddressIP("fc::1/64"),
 			gopt.Capture(
 				copt.Filename("{{ .Host }}_{{ .Interface }}.pcapng"),
@@ -118,7 +118,7 @@ func TestCaptureNetwork(t *testing.T) {
 	}
 
 	if h2, err = n.AddHost("h2",
-		gopt.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			gopt.AddressIP("fc::2/64"),
 		),
 	); err != nil {

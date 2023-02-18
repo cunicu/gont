@@ -18,7 +18,7 @@ import (
 // Options
 
 type TraceOption interface {
-	Apply(n *Tracer)
+	Apply(t *Tracer)
 }
 
 func (c *Tracer) Apply(n *BaseNode) {
@@ -43,12 +43,18 @@ type Tracer struct {
 	logger  *zap.Logger
 }
 
-func NewTracer() *Tracer {
-	return &Tracer{
+func NewTracer(opts ...TraceOption) *Tracer {
+	t := &Tracer{
 		stop:   make(chan any),
 		queue:  prque.New(),
 		logger: zap.L().Named("tracer"),
 	}
+
+	for _, opt := range opts {
+		opt.Apply(t)
+	}
+
+	return t
 }
 
 func (t *Tracer) Start() error {

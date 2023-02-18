@@ -32,7 +32,7 @@ func TestCaptureKeyLog(t *testing.T) {
 		t.Fatalf("Failed to open temporary file: %s", err)
 	}
 
-	c1 := gopt.CaptureAll(
+	c1 := g.NewCapture(
 		copt.ToFile(tmpPCAP),
 		copt.LogKeys(true),
 		copt.Comment("This PCAPng file contains TLS decryption secrets"),
@@ -40,7 +40,7 @@ func TestCaptureKeyLog(t *testing.T) {
 
 	if n, err = g.NewNetwork(*nname,
 		gopt.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
-			gopt.CaptureAll(
+			g.NewCapture(
 				copt.ToFilename("all.pcapng"), // We can create a file
 			),
 		)...,
@@ -57,9 +57,9 @@ func TestCaptureKeyLog(t *testing.T) {
 	}
 
 	if err := n.AddLink(
-		gopt.Interface("veth0", client,
+		g.NewInterface("veth0", client,
 			gopt.AddressIP("fc::1:2/112")),
-		gopt.Interface("veth0", server,
+		g.NewInterface("veth0", server,
 			gopt.AddressIP("fc::1:1/112")),
 	); err != nil {
 		t.Fatalf("Failed to add link: %s", err)

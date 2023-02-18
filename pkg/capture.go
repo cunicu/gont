@@ -96,8 +96,8 @@ func (c *Capture) Apply(i *Interface) {
 	i.Captures = append(i.Captures, c)
 }
 
-func NewCapture() *Capture {
-	return &Capture{
+func NewCapture(opts ...CaptureOption) *Capture {
+	c := &Capture{
 		// Default options
 		CaptureLength: 1600,
 
@@ -105,6 +105,12 @@ func NewCapture() *Capture {
 		queue:  prque.New(),
 		logger: zap.L().Named("capture"),
 	}
+
+	for _, opt := range opts {
+		opt.Apply(c)
+	}
+
+	return c
 }
 
 // Count returns the total number of captured packets

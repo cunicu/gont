@@ -37,9 +37,9 @@ func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", h1, ne,
+		g.NewInterface("veth0", h1, ne,
 			o.AddressIP("10.0.0.1/24")),
-		o.Interface("veth0", h2,
+		g.NewInterface("veth0", h2,
 			o.AddressIP("10.0.0.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to connect hosts: %s", err)

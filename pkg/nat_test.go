@@ -38,7 +38,7 @@ func TestPingNATIPv4(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		o.DefaultGatewayIP("10.0.1.1"),
-		o.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.1.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
@@ -46,16 +46,16 @@ func TestPingNATIPv4(t *testing.T) {
 
 	if h2, err = n.AddHost("h2",
 		o.DefaultGatewayIP("10.0.2.1"),
-		o.Interface("veth0", sw2,
+		g.NewInterface("veth0", sw2,
 			o.AddressIP("10.0.2.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err = n.AddNAT("nat1",
-		o.Interface("veth0", sw1, o.SouthBound,
+		g.NewInterface("veth0", sw1, o.SouthBound,
 			o.AddressIP("10.0.1.1/24")),
-		o.Interface("veth1", sw2, o.NorthBound,
+		g.NewInterface("veth1", sw2, o.NorthBound,
 			o.AddressIP("10.0.2.1/24")),
 	); err != nil {
 		t.Fatalf("Failed to create nat: %s", err)
@@ -98,7 +98,7 @@ func TestPingNATIPv6(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		o.DefaultGatewayIP("fc::1:1"),
-		o.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			o.AddressIP("fc::1:2/112")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
@@ -106,16 +106,16 @@ func TestPingNATIPv6(t *testing.T) {
 
 	if h2, err = n.AddHost("h2",
 		o.DefaultGatewayIP("fc::2:1"),
-		o.Interface("veth0", sw2,
+		g.NewInterface("veth0", sw2,
 			o.AddressIP("fc::2:2/112")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err = n.AddNAT("nat1",
-		o.Interface("veth0", sw1, o.SouthBound,
+		g.NewInterface("veth0", sw1, o.SouthBound,
 			o.AddressIP("fc::1:1/112")),
-		o.Interface("veth1", sw2, o.NorthBound,
+		g.NewInterface("veth1", sw2, o.NorthBound,
 			o.AddressIP("fc::2:1/112")),
 	); err != nil {
 		t.Fatalf("Failed to create nat: %s", err)
@@ -162,7 +162,7 @@ func TestPingDoubleNAT(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		o.DefaultGatewayIP("10.0.1.1"),
-		o.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.1.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
@@ -170,7 +170,7 @@ func TestPingDoubleNAT(t *testing.T) {
 
 	if h2, err = n.AddHost("h2",
 		o.DefaultGatewayIP("10.0.2.1"),
-		o.Interface("veth0", sw3,
+		g.NewInterface("veth0", sw3,
 			o.AddressIP("10.0.2.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
@@ -178,18 +178,18 @@ func TestPingDoubleNAT(t *testing.T) {
 
 	if _, err = n.AddNAT("nat1",
 		o.DefaultGatewayIP("10.0.3.1"),
-		o.Interface("veth1", sw1, o.SouthBound,
+		g.NewInterface("veth1", sw1, o.SouthBound,
 			o.AddressIP("10.0.1.1/24")),
-		o.Interface("veth0", sw2, o.NorthBound,
+		g.NewInterface("veth0", sw2, o.NorthBound,
 			o.AddressIP("10.0.3.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to create NAT router: %s", err)
 	}
 
 	if _, err = n.AddNAT("nat2",
-		o.Interface("veth1", sw2, o.SouthBound,
+		g.NewInterface("veth1", sw2, o.SouthBound,
 			o.AddressIP("10.0.3.1/24")),
-		o.Interface("veth0", sw3, o.NorthBound,
+		g.NewInterface("veth0", sw3, o.NorthBound,
 			o.AddressIP("10.0.2.1/24")),
 	); err != nil {
 		t.Fatalf("Failed to create NAT router: %s", err)
@@ -234,14 +234,14 @@ func TestPingHostNAT(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		o.DefaultGatewayIP("10.0.0.1"),
-		o.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.0.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err := n.AddHostNAT("n1",
-		o.Interface("veth0", sw1, o.SouthBound,
+		g.NewInterface("veth0", sw1, o.SouthBound,
 			o.AddressIP("10.0.0.1/24")),
 	); err != nil {
 		t.Fatalf("Failed to create host NAT: %s", err)

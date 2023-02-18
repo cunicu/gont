@@ -33,6 +33,10 @@ type InterfaceOption interface {
 	Apply(n *Interface)
 }
 
+func (i *Interface) Apply(n *BaseNode) {
+	n.ConfiguredInterfaces = append(n.ConfiguredInterfaces, i)
+}
+
 type Interface struct {
 	Name string
 	Node Node
@@ -49,10 +53,22 @@ type Interface struct {
 	Captures  []*Capture
 }
 
-// Options
+func NewInterface(name string, opts ...Option) *Interface {
+	i := &Interface{
+		Name:     name,
+		Captures: []*Capture{},
+	}
 
-func (i *Interface) Apply(n *BaseNode) {
-	n.ConfiguredInterfaces = append(n.ConfiguredInterfaces, i)
+	for _, o := range opts {
+		switch opt := o.(type) {
+		case InterfaceOption:
+			opt.Apply(i)
+		case LinkOption:
+			opt.Apply(&i.LinkAttrs)
+		}
+	}
+
+	return i
 }
 
 func (i Interface) String() string {

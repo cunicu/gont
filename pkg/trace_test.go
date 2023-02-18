@@ -23,13 +23,13 @@ func TestTracer(t *testing.T) {
 		h1  *g.Host
 	)
 
-	c1 := gopt.CaptureAll(
+	c1 := gopt.Capture(
 		copt.Listener(*captureSocketAddr),
 	)
 
-	t1 := gopt.TraceAll(
+	t1 := g.NewTracer(
 		topt.ToFilename("trace.log"),
-		topt.ToCapture(c1.Capture),
+		topt.ToCapture(c1),
 	)
 
 	if err := t1.StartLocal(); err != nil {

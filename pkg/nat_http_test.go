@@ -55,18 +55,18 @@ func TestGetMyIP(t *testing.T) {
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", client,
+		g.NewInterface("veth0", client,
 			o.AddressIP("fc::1:2/112")),
-		o.Interface("veth0", nat, o.SouthBound,
+		g.NewInterface("veth0", nat, o.SouthBound,
 			o.AddressIP("fc::1:1/112")),
 	); err != nil {
 		t.Fatalf("Failed to add link: %s", err)
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", server,
+		g.NewInterface("veth0", server,
 			o.AddressIP("fc::2:2/112")),
-		o.Interface("veth1", nat, o.NorthBound,
+		g.NewInterface("veth1", nat, o.NorthBound,
 			o.AddressIP("fc::2:1/112")),
 	); err != nil {
 		t.Fatalf("Failed to add link: %s", err)

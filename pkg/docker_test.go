@@ -34,7 +34,7 @@ func TestDocker(t *testing.T) {
 
 	// h1 is a normal Gont node
 	if h1, err = n.AddHost("h1",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			o.AddressIP("10.0.0.1/24"),
 			o.AddressIP("fc::1/64")),
 	); err != nil {
@@ -53,7 +53,7 @@ func TestDocker(t *testing.T) {
 
 	if h2, err = n.AddHost("h2",
 		o.ExistingDockerContainer(id),
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			o.AddressIP("10.0.0.2/24"),
 			o.AddressIP("fc::2/64")),
 	); err != nil {

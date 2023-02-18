@@ -33,14 +33,14 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 	}
 
 	if _, err = n.AddHost(pfx+"h1",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			address(1)),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if _, err = n.AddHost(pfx+"h2",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			address(2)),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
