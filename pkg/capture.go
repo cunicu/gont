@@ -305,7 +305,7 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 	for _, lAddr := range c.Listeners {
 		listener, err := newCaptureListener(lAddr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to creater listener: %w", err)
+			return nil, fmt.Errorf("failed to create listener: %w", err)
 		}
 
 		// Wait for first connection before proceeding

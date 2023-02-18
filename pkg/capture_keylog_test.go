@@ -18,7 +18,7 @@ import (
 	copt "github.com/stv0g/gont/pkg/options/capture"
 )
 
-// TestCaptureKeyLog tests the decryption of captured trafic
+// TestCaptureKeyLog tests the decryption of captured traffic
 func TestCaptureKeyLog(t *testing.T) {
 	var (
 		err    error
@@ -69,7 +69,7 @@ func TestCaptureKeyLog(t *testing.T) {
 		t.Fatalf("cURL Request failed: %s", err)
 	}
 
-	// Wait until all trafic propagates through PCAP
+	// Wait until all traffic propagates through PCAP
 	time.Sleep(time.Second)
 
 	// We must close here so all decryption secrets are written to the PCAP files
