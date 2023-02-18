@@ -21,6 +21,5 @@ type Node interface {
 	NetlinkHandle() *nl.Handle
 
 	RunFunc(cb Callback) error
-
 	ConfigureInterface(i *Interface) error
 }

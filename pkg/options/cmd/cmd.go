@@ -13,19 +13,19 @@ import (
 
 type Path string
 
-func (p Path) ApplyCmd(c *exec.Cmd) {
+func (p Path) ApplyExecCmd(c *exec.Cmd) {
 	c.Path = string(p)
 }
 
 type Arg string
 
-func (a Arg) ApplyCmd(c *exec.Cmd) {
+func (a Arg) ApplyExecCmd(c *exec.Cmd) {
 	c.Args = append(c.Args, string(a))
 }
 
 type Args []string
 
-func (as Args) ApplyCmd(c *exec.Cmd) {
+func (as Args) ApplyExecCmd(c *exec.Cmd) {
 	for _, a := range []string(as) {
 		c.Args = append(c.Args, a)
 	}
@@ -35,7 +35,7 @@ type Stdin struct {
 	io.Reader
 }
 
-func (s Stdin) ApplyCmd(c *exec.Cmd) {
+func (s Stdin) ApplyExecCmd(c *exec.Cmd) {
 	c.Stdin = s.Reader
 }
 
@@ -43,7 +43,7 @@ type Stdout struct {
 	io.Writer
 }
 
-func (s Stdout) ApplyCmd(c *exec.Cmd) {
+func (s Stdout) ApplyExecCmd(c *exec.Cmd) {
 	c.Stdout = s.Writer
 }
 
@@ -51,31 +51,31 @@ type Stderr struct {
 	io.Writer
 }
 
-func (s Stderr) ApplyCmd(c *exec.Cmd) {
+func (s Stderr) ApplyExecCmd(c *exec.Cmd) {
 	c.Stderr = s.Writer
 }
 
 type ExtraFile os.File
 
-func (e *ExtraFile) ApplyCmd(c *exec.Cmd) {
+func (e *ExtraFile) ApplyExecCmd(c *exec.Cmd) {
 	c.ExtraFiles = append(c.ExtraFiles, (*os.File)(e))
 }
 
 type SysProcAttr syscall.SysProcAttr
 
-func (s *SysProcAttr) ApplyCmd(c *exec.Cmd) {
+func (s *SysProcAttr) ApplyExecCmd(c *exec.Cmd) {
 	c.SysProcAttr = (*syscall.SysProcAttr)(s)
 }
 
 type Dir string
 
-func (d Dir) ApplyCmd(c *exec.Cmd) {
+func (d Dir) ApplyExecCmd(c *exec.Cmd) {
 	c.Dir = string(d)
 }
 
 type Env string
 
-func (e Env) ApplyCmd(c *exec.Cmd) {
+func (e Env) ApplyExecCmd(c *exec.Cmd) {
 	c.Env = append(c.Env, string(e))
 }
 

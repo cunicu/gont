@@ -29,6 +29,10 @@ func (t *Tracer) ApplyBaseNode(n *BaseNode) {
 	n.Tracer = t
 }
 
+func (t *Tracer) ApplyCmd(c *Cmd) {
+	c.Tracer = t
+}
+
 type Tracer struct {
 	// Output options
 	Files     []*os.File

@@ -7,50 +7,15 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 
-	"github.com/gopacket/gopacket/pcapgo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapio"
 )
 
-func (n *BaseNode) Command(name string, args ...any) *exec.Cmd {
-	// Actual namespace switching is done similar to Docker's reexec
-	// in a forked version of ourself by passing all required details
-	// in environment variables.
-
-	strArgs, nonStrArgs := stringifyArgs(args)
-
-	c := exec.Command(name, strArgs...)
-
-	for _, arg := range nonStrArgs {
-		if arg, ok := arg.(CmdOption); ok {
-			arg.ApplyCmd(c)
-		}
-	}
-
-	if !n.NsHandle.Equal(n.network.HostNode.NsHandle) {
-		if n.ExistingDockerContainer == "" {
-			c.Path = "/proc/self/exe"
-			c.Env = append(os.Environ(),
-				"GONT_UNSHARE=exec",
-				"GONT_NODE="+n.name,
-				"GONT_NETWORK="+n.network.Name)
-		} else {
-			c.Path = "/usr/bin/docker"
-			c.Args = append([]string{"docker", "exec", n.ExistingDockerContainer, name}, strArgs...)
-		}
-	}
-
-	for k, v := range n.Env {
-		env := fmt.Sprintf("%s=%v", k, v)
-		c.Env = append(c.Env, env)
-	}
-
-	return c
+func (n *BaseNode) Command(name string, args ...any) *Cmd {
+	return command(name, n, args...)
 }
 
 func (n *BaseNode) Run(cmd string, args ...any) ([]byte, *exec.Cmd, error) {
@@ -103,34 +68,6 @@ func (n *BaseNode) Start(cmd string, args ...any) (io.Reader, io.Reader, *exec.C
 		return nil, nil, nil, err
 	}
 
-	// Add some IPC pipes to capture decryption secrets
-	for envName, secretsType := range map[string]uint32{
-		"SSLKEYLOGFILE": pcapgo.DSB_SECRETS_TYPE_TLS,
-		"WG_KEYLOGFILE": pcapgo.DSB_SECRETS_TYPE_WIREGUARD,
-	} {
-		if pipe, err := n.network.KeyLogPipe(secretsType); err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to open key log pipe: %w", err)
-		} else if pipe != nil {
-			extraEnvFile(c, envName, pipe)
-		}
-	}
-
-	// Add tracing pipe
-	var tracer *Tracer
-	if t := n.Tracer; t != nil {
-		tracer = t
-	} else if t := n.network.Tracer; t != nil {
-		tracer = t
-	}
-
-	if tracer != nil {
-		if pipe, err := tracer.Pipe(); err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to create tracing pipe: %w", err)
-		} else if pipe != nil {
-			extraEnvFile(c, "GONT_TRACEFILE", pipe)
-		}
-	}
-
 	logger := n.logger.With(
 		zap.String("cmd", cmd),
 		zap.Any("cmd_args", c.Args),
@@ -139,7 +76,7 @@ func (n *BaseNode) Start(cmd string, args ...any) (io.Reader, io.Reader, *exec.C
 	if err = c.Start(); err != nil {
 		logger.Error("Failed to start", zap.Error(err))
 
-		return nil, nil, c, err
+		return nil, nil, c.Cmd, err
 	}
 
 	logger = logger.With(
@@ -171,7 +108,7 @@ func (n *BaseNode) Start(cmd string, args ...any) (io.Reader, io.Reader, *exec.C
 		go io.Copy(logStderr, errReader)
 	}
 
-	return stdout, stderr, c, nil
+	return stdout, stderr, c.Cmd, nil
 }
 
 func (n *BaseNode) StartGo(script string, args ...any) (io.Reader, io.Reader, *exec.Cmd, error) {
@@ -192,48 +129,4 @@ func (n *BaseNode) RunGo(script string, args ...any) ([]byte, *exec.Cmd, error) 
 	}
 
 	return n.Run(tmp, args...)
-}
-
-func stringifyArgs(args []any) ([]string, []any) {
-	strArgs := []string{}
-	nonStrArgs := []any{}
-
-	for _, arg := range args {
-		switch arg := arg.(type) {
-		case Node:
-			strArgs = append(strArgs, arg.Name())
-		case fmt.Stringer:
-			strArgs = append(strArgs, arg.String())
-		case string:
-			strArgs = append(strArgs, arg)
-		case int:
-			strArgs = append(strArgs, strconv.FormatInt(int64(arg), 10))
-		case uint:
-			strArgs = append(strArgs, strconv.FormatUint(uint64(arg), 10))
-		case int32:
-			strArgs = append(strArgs, strconv.FormatInt(int64(arg), 10))
-		case uint32:
-			strArgs = append(strArgs, strconv.FormatUint(uint64(arg), 10))
-		case int64:
-			strArgs = append(strArgs, strconv.FormatInt(arg, 10))
-		case uint64:
-			strArgs = append(strArgs, strconv.FormatUint(arg, 10))
-		case float32:
-			strArgs = append(strArgs, strconv.FormatFloat(float64(arg), 'f', -1, 32))
-		case float64:
-			strArgs = append(strArgs, strconv.FormatFloat(arg, 'f', -1, 64))
-		case bool:
-			strArgs = append(strArgs, strconv.FormatBool(arg))
-		default:
-			nonStrArgs = append(nonStrArgs, arg)
-		}
-	}
-
-	return strArgs, nonStrArgs
-}
-
-func extraEnvFile(c *exec.Cmd, envName string, f *os.File) {
-	fd := len(c.ExtraFiles) + 3
-	c.ExtraFiles = append(c.ExtraFiles, f)
-	c.Env = append(c.Env, fmt.Sprintf("%s=/proc/self/fd/%d", envName, fd))
 }
