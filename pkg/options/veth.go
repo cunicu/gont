@@ -11,6 +11,6 @@ import (
 
 type PeerHardwareAddress net.HardwareAddr
 
-func (p PeerHardwareAddress) Apply(v *nl.Veth) {
+func (p PeerHardwareAddress) ApplyVeth(v *nl.Veth) {
 	v.PeerHardwareAddr = net.HardwareAddr(p)
 }

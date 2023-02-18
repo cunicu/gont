@@ -13,7 +13,7 @@ import (
 )
 
 type HostOption interface {
-	Apply(h *Host)
+	ApplyHost(h *Host)
 }
 
 type Host struct {
@@ -27,7 +27,7 @@ type Host struct {
 }
 
 // Options
-func (h *Host) Apply(i *Interface) {
+func (h *Host) ApplyInterface(i *Interface) {
 	i.Node = h
 }
 
@@ -48,7 +48,7 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 	// Apply host options
 	for _, opt := range opts {
 		if hopt, ok := opt.(HostOption); ok {
-			hopt.Apply(host)
+			hopt.ApplyHost(host)
 		}
 	}
 

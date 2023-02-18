@@ -22,7 +22,7 @@ type FilterRule struct {
 	Hook FilterHook
 }
 
-func (fr FilterRule) Apply(h *Host) {
+func (fr FilterRule) ApplyHost(h *Host) {
 	h.FilterRules = append(h.FilterRules, &fr)
 }
 

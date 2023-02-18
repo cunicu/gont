@@ -20,7 +20,7 @@ import (
 )
 
 type NetworkOption interface {
-	Apply(n *Network)
+	ApplyNetwork(n *Network)
 }
 
 type Network struct {
@@ -72,7 +72,7 @@ func HostNode(n *Network) *Host {
 	}
 }
 
-func NewNetwork(name string, opts ...Option) (*Network, error) {
+func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
 	if err := CheckCaps(); err != nil {
 		return nil, err
 	}
@@ -97,9 +97,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 
 	// Apply network specific options
 	for _, opt := range opts {
-		if nopt, ok := opt.(NetworkOption); ok {
-			nopt.Apply(n)
-		}
+		opt.ApplyNetwork(n)
 	}
 
 	if stat, err := os.Stat(varPath); err == nil && stat.IsDir() {

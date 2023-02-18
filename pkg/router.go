@@ -4,14 +4,14 @@
 package gont
 
 type RouterOption interface {
-	Apply(r *Router)
+	ApplyRouter(r *Router)
 }
 
 type Router struct {
 	*Host
 }
 
-func (h *Router) Apply(i *Interface) {
+func (h *Router) ApplyInterface(i *Interface) {
 	i.Node = h
 }
 

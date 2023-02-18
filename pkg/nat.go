@@ -13,7 +13,7 @@ import (
 )
 
 type NATOption interface {
-	Apply(n *NAT)
+	ApplyNAT(n *NAT)
 }
 
 type NAT struct {
@@ -32,7 +32,7 @@ type NAT struct {
 	SourcePortMax int
 }
 
-func (n *NAT) Apply(i *Interface) {
+func (n *NAT) ApplyInterface(i *Interface) {
 	i.Node = n
 }
 
@@ -50,7 +50,7 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 	for _, o := range opts {
 		switch opt := o.(type) {
 		case NATOption:
-			opt.Apply(nat)
+			opt.ApplyNAT(nat)
 		}
 	}
 
@@ -82,9 +82,9 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 	for _, o := range opts {
 		switch opt := o.(type) {
 		case NATOption:
-			opt.Apply(nat)
+			opt.ApplyNAT(nat)
 		case BaseNodeOption:
-			opt.Apply(host.BaseNode)
+			opt.ApplyBaseNode(host.BaseNode)
 		}
 	}
 

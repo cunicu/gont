@@ -20,7 +20,7 @@ import (
 )
 
 type BaseNodeOption interface {
-	Apply(b *BaseNode)
+	ApplyBaseNode(n *BaseNode)
 }
 
 type BaseNode struct {
@@ -42,6 +42,7 @@ type BaseNode struct {
 	LogToDebug              bool
 	EmptyDirs               []string
 	Env                     map[string]any
+	Captures                []*Capture
 
 	logger *zap.Logger
 }
@@ -72,7 +73,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 
 	for _, opt := range opts {
 		if nopt, ok := opt.(BaseNodeOption); ok {
-			nopt.Apply(node)
+			nopt.ApplyBaseNode(node)
 		}
 	}
 
@@ -276,11 +277,12 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 	}
 
 	// Start packet capturing if requested on network or host level
-	allCaptures := []*Capture{}
-	allCaptures = append(allCaptures, n.network.Captures...)
-	allCaptures = append(allCaptures, i.Captures...)
+	captures := []*Capture{}
+	captures = append(captures, n.network.Captures...)
+	captures = append(captures, n.Captures...)
+	captures = append(captures, i.Captures...)
 
-	for _, c := range allCaptures {
+	for _, c := range captures {
 		if c != nil && (c.FilterInterface == nil || c.FilterInterface(i)) {
 			if _, err := c.startInterface(i); err != nil {
 				return fmt.Errorf("failed to capture interface: %w", err)

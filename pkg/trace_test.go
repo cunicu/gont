@@ -23,7 +23,7 @@ func TestTracer(t *testing.T) {
 		h1  *g.Host
 	)
 
-	c1 := o.Capture(
+	c1 := g.NewCapture(
 		co.Listener(*captureSocketAddr),
 	)
 
@@ -37,9 +37,7 @@ func TestTracer(t *testing.T) {
 	}
 
 	if n, err = g.NewNetwork(*nname,
-		o.Customize(globalNetworkOptions,
-			t1, c1,
-		)...,
+		o.Customize[g.NetworkOption](globalNetworkOptions, t1, c1)...,
 	); err != nil {
 		t.Fatalf("Failed to create network: %s", err)
 	}

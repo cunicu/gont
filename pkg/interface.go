@@ -30,10 +30,10 @@ var loopbackInterface = Interface{
 }
 
 type InterfaceOption interface {
-	Apply(n *Interface)
+	ApplyInterface(n *Interface)
 }
 
-func (i *Interface) Apply(n *BaseNode) {
+func (i *Interface) ApplyBaseNode(n *BaseNode) {
 	n.ConfiguredInterfaces = append(n.ConfiguredInterfaces, i)
 }
 
@@ -62,9 +62,9 @@ func NewInterface(name string, opts ...Option) *Interface {
 	for _, o := range opts {
 		switch opt := o.(type) {
 		case InterfaceOption:
-			opt.Apply(i)
+			opt.ApplyInterface(i)
 		case LinkOption:
-			opt.Apply(&i.LinkAttrs)
+			opt.ApplyLink(&i.LinkAttrs)
 		}
 	}
 

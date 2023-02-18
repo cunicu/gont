@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	globalNetworkOptions = []g.Option{}
+	globalNetworkOptions = []g.NetworkOption{}
 	nname                = flag.String("name", "", "Network name")
 	persist              = flag.Bool("persist", false, "Do not teardown networks after test")
 	capture              = flag.String("capture", "", "Capture network traffic to PCAPng file")

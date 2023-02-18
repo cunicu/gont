@@ -93,7 +93,7 @@ func TestCaptureNetwork(t *testing.T) {
 	)
 
 	if n, err = g.NewNetwork(*nname,
-		o.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
+		o.Customize[g.NetworkOption](globalNetworkOptions, c1, // Also multiple capturers are supported
 			g.NewCapture(
 				co.ToFilename("all.pcapng"), // We can create a file
 			),
@@ -109,7 +109,7 @@ func TestCaptureNetwork(t *testing.T) {
 	if h1, err = n.AddHost("h1",
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("fc::1/64"),
-			o.Capture(
+			g.NewCapture(
 				co.Filename("{{ .Host }}_{{ .Interface }}.pcapng"),
 			),
 		),

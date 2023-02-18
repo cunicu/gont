@@ -18,11 +18,15 @@ import (
 // Options
 
 type TraceOption interface {
-	Apply(t *Tracer)
+	ApplyTracer(t *Tracer)
 }
 
-func (c *Tracer) Apply(n *BaseNode) {
-	n.Tracer = c
+func (t *Tracer) ApplyNetwork(n *Network) {
+	n.Tracer = t
+}
+
+func (t *Tracer) ApplyBaseNode(n *BaseNode) {
+	n.Tracer = t
 }
 
 type Tracer struct {
@@ -51,7 +55,7 @@ func NewTracer(opts ...TraceOption) *Tracer {
 	}
 
 	for _, opt := range opts {
-		opt.Apply(t)
+		opt.ApplyTracer(t)
 	}
 
 	return t

@@ -11,11 +11,11 @@ import (
 )
 
 type SwitchOption interface {
-	Apply(sw *Switch)
+	ApplySwitch(sw *Switch)
 }
 
 type BridgeOption interface {
-	Apply(br *nl.Bridge)
+	ApplyBridge(br *nl.Bridge)
 }
 
 // Switch is an abstraction for a Linux virtual bridge
@@ -25,7 +25,7 @@ type Switch struct {
 
 // Options
 
-func (sw *Switch) Apply(i *Interface) {
+func (sw *Switch) ApplyInterface(i *Interface) {
 	i.Node = sw
 }
 
@@ -53,11 +53,11 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 	for _, opt := range opts {
 		switch opt := opt.(type) {
 		case SwitchOption:
-			opt.Apply(sw)
+			opt.ApplySwitch(sw)
 		case BridgeOption:
-			opt.Apply(br)
+			opt.ApplyBridge(br)
 		case LinkOption:
-			opt.Apply(&br.LinkAttrs)
+			opt.ApplyLink(&br.LinkAttrs)
 		}
 	}
 

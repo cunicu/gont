@@ -11,20 +11,22 @@ import (
 // Network emulation
 
 type NetemOption interface {
-	Apply(n *Netem)
+	ApplyNetem(n *Netem)
 }
 
 type Netem nl.NetemQdiscAttrs
 
 func WithNetem(opts ...NetemOption) Netem {
 	netem := Netem{}
+
 	for _, opt := range opts {
-		opt.Apply(&netem)
+		opt.ApplyNetem(&netem)
 	}
+
 	return netem
 }
 
-func (ne Netem) Apply(p *g.Interface) {
+func (ne Netem) ApplyInterface(p *g.Interface) {
 	p.Netem = nl.NetemQdiscAttrs(ne)
 	p.Flags |= g.WithQdiscNetem
 }
@@ -32,20 +34,22 @@ func (ne Netem) Apply(p *g.Interface) {
 // Token Bucket Filter
 
 type TbfOption interface {
-	Apply(t *Tbf)
+	ApplyTbf(t *Tbf)
 }
 
 type Tbf nl.Tbf
 
 func WithTbf(opts ...TbfOption) Tbf {
 	tbf := Tbf{}
+
 	for _, opt := range opts {
-		opt.Apply(&tbf)
+		opt.ApplyTbf(&tbf)
 	}
+
 	return tbf
 }
 
-func (tbf Tbf) Apply(p *g.Interface) {
+func (tbf Tbf) ApplyInterface(p *g.Interface) {
 	p.Tbf = nl.Tbf(tbf)
 	p.Flags |= g.WithQdiscTbf
 }

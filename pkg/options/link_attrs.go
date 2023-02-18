@@ -14,25 +14,25 @@ import (
 
 type MTU int
 
-func (m MTU) Apply(la *nl.LinkAttrs) {
+func (m MTU) ApplyLink(la *nl.LinkAttrs) {
 	la.MTU = int(m)
 }
 
 type Group g.DeviceGroup
 
-func (h Group) Apply(p *g.Interface) {
-	p.LinkAttrs.Group = uint32(h)
+func (h Group) ApplyLink(la *nl.LinkAttrs) {
+	la.Group = uint32(h)
 }
 
 type TxQLen int
 
-func (l TxQLen) Apply(la *nl.LinkAttrs) {
+func (l TxQLen) ApplyLink(la *nl.LinkAttrs) {
 	la.TxQLen = int(l)
 }
 
 type HardwareAddress net.HardwareAddr
 
-func (a HardwareAddress) Apply(la *nl.LinkAttrs) {
+func (a HardwareAddress) ApplyLink(la *nl.LinkAttrs) {
 	la.HardwareAddr = net.HardwareAddr(a)
 }
 

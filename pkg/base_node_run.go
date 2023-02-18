@@ -28,7 +28,7 @@ func (n *BaseNode) Command(name string, args ...any) *exec.Cmd {
 
 	for _, arg := range nonStrArgs {
 		if arg, ok := arg.(CmdOption); ok {
-			arg.Apply(c)
+			arg.ApplyCmd(c)
 		}
 	}
 

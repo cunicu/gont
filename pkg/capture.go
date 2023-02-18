@@ -58,7 +58,7 @@ type captureStats struct {
 }
 
 type CaptureOption interface {
-	Apply(n *Capture)
+	ApplyCapture(n *Capture)
 }
 
 type Capture struct {
@@ -92,8 +92,16 @@ type Capture struct {
 	logger     *zap.Logger
 }
 
-func (c *Capture) Apply(i *Interface) {
+func (c *Capture) ApplyInterface(i *Interface) {
 	i.Captures = append(i.Captures, c)
+}
+
+func (c *Capture) ApplyBaseNode(n *BaseNode) {
+	n.Captures = append(n.Captures, c)
+}
+
+func (c *Capture) ApplyNetwork(n *Network) {
+	n.Captures = append(n.Captures, c)
 }
 
 func NewCapture(opts ...CaptureOption) *Capture {
@@ -107,7 +115,7 @@ func NewCapture(opts ...CaptureOption) *Capture {
 	}
 
 	for _, opt := range opts {
-		opt.Apply(c)
+		opt.ApplyCapture(c)
 	}
 
 	return c

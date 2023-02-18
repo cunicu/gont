@@ -15,11 +15,11 @@ import (
 )
 
 type VethOption interface {
-	Apply(ve *nl.Veth)
+	ApplyVeth(ve *nl.Veth)
 }
 
 type LinkOption interface {
-	Apply(a *nl.LinkAttrs)
+	ApplyLink(a *nl.LinkAttrs)
 }
 
 func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
@@ -65,7 +65,7 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 	for _, opt := range opts {
 		switch opt := opt.(type) {
 		case VethOption:
-			opt.Apply(veth)
+			opt.ApplyVeth(veth)
 		}
 	}
 
