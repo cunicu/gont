@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	g "github.com/stv0g/gont/pkg"
-	gopt "github.com/stv0g/gont/pkg/options"
-	copt "github.com/stv0g/gont/pkg/options/capture"
-	topt "github.com/stv0g/gont/pkg/options/trace"
+	o "github.com/stv0g/gont/pkg/options"
+	co "github.com/stv0g/gont/pkg/options/capture"
+	to "github.com/stv0g/gont/pkg/options/trace"
 	"github.com/stv0g/gont/pkg/trace"
 )
 
@@ -23,13 +23,13 @@ func TestTracer(t *testing.T) {
 		h1  *g.Host
 	)
 
-	c1 := gopt.Capture(
-		copt.Listener(*captureSocketAddr),
+	c1 := o.Capture(
+		co.Listener(*captureSocketAddr),
 	)
 
 	t1 := g.NewTracer(
-		topt.ToFilename("trace.log"),
-		topt.ToCapture(c1),
+		to.ToFilename("trace.log"),
+		to.ToCapture(c1),
 	)
 
 	if err := t1.StartLocal(); err != nil {
@@ -37,7 +37,7 @@ func TestTracer(t *testing.T) {
 	}
 
 	if n, err = g.NewNetwork(*nname,
-		gopt.Customize(globalNetworkOptions,
+		o.Customize(globalNetworkOptions,
 			t1, c1,
 		)...,
 	); err != nil {
@@ -45,7 +45,7 @@ func TestTracer(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		gopt.LogToDebug(true),
+		o.LogToDebug(true),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
 	}

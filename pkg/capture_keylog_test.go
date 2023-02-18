@@ -14,8 +14,8 @@ import (
 	"time"
 
 	g "github.com/stv0g/gont/pkg"
-	gopt "github.com/stv0g/gont/pkg/options"
-	copt "github.com/stv0g/gont/pkg/options/capture"
+	o "github.com/stv0g/gont/pkg/options"
+	co "github.com/stv0g/gont/pkg/options/capture"
 )
 
 // TestCaptureKeyLog tests the decryption of captured traffic
@@ -33,15 +33,15 @@ func TestCaptureKeyLog(t *testing.T) {
 	}
 
 	c1 := g.NewCapture(
-		copt.ToFile(tmpPCAP),
-		copt.LogKeys(true),
-		copt.Comment("This PCAPng file contains TLS decryption secrets"),
+		co.ToFile(tmpPCAP),
+		co.LogKeys(true),
+		co.Comment("This PCAPng file contains TLS decryption secrets"),
 	)
 
 	if n, err = g.NewNetwork(*nname,
-		gopt.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
+		o.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
 			g.NewCapture(
-				copt.ToFilename("all.pcapng"), // We can create a file
+				co.ToFilename("all.pcapng"), // We can create a file
 			),
 		)...,
 	); err != nil {
@@ -58,9 +58,9 @@ func TestCaptureKeyLog(t *testing.T) {
 
 	if err := n.AddLink(
 		g.NewInterface("veth0", client,
-			gopt.AddressIP("fc::1:2/112")),
+			o.AddressIP("fc::1:2/112")),
 		g.NewInterface("veth0", server,
-			gopt.AddressIP("fc::1:1/112")),
+			o.AddressIP("fc::1:1/112")),
 	); err != nil {
 		t.Fatalf("Failed to add link: %s", err)
 	}

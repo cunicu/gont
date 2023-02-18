@@ -15,8 +15,8 @@ import (
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
 	g "github.com/stv0g/gont/pkg"
-	gopt "github.com/stv0g/gont/pkg/options"
-	copt "github.com/stv0g/gont/pkg/options/capture"
+	o "github.com/stv0g/gont/pkg/options"
+	co "github.com/stv0g/gont/pkg/options/capture"
 	"go.uber.org/zap"
 )
 
@@ -69,17 +69,17 @@ func TestCaptureNetwork(t *testing.T) {
 	// }
 
 	c1 := g.NewCapture(
-		copt.ToFile(tmpPCAP),
-		copt.ToChannel(ch),
-		copt.Callback(cb),
-		copt.CaptureLength(1600),
-		copt.Promiscuous(true),
-		copt.FilterExpression("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
+		co.ToFile(tmpPCAP),
+		co.ToChannel(ch),
+		co.Callback(cb),
+		co.CaptureLength(1600),
+		co.Promiscuous(true),
+		co.FilterExpression("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
 		// copt.FilterInstructions(instrs),
-		copt.FilterInterfaces(func(i *g.Interface) bool {
+		co.FilterInterfaces(func(i *g.Interface) bool {
 			return strings.HasPrefix(i.Name, "veth")
 		}),
-		copt.FilterPackets(func(p *g.CapturePacket) bool {
+		co.FilterPackets(func(p *g.CapturePacket) bool {
 			pp := p.Decode(gopacket.DecodeOptions{})
 			if layer := pp.Layer(layers.LayerTypeICMPv6); layer != nil {
 				typec := layer.(*layers.ICMPv6).TypeCode.Type()
@@ -89,13 +89,13 @@ func TestCaptureNetwork(t *testing.T) {
 				return false
 			}
 		}),
-		copt.Comment("Some random comment which will be included in the capture file"),
+		co.Comment("Some random comment which will be included in the capture file"),
 	)
 
 	if n, err = g.NewNetwork(*nname,
-		gopt.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
+		o.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
 			g.NewCapture(
-				copt.ToFilename("all.pcapng"), // We can create a file
+				co.ToFilename("all.pcapng"), // We can create a file
 			),
 		)...,
 	); err != nil {
@@ -108,9 +108,9 @@ func TestCaptureNetwork(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		g.NewInterface("veth0", sw1,
-			gopt.AddressIP("fc::1/64"),
-			gopt.Capture(
-				copt.Filename("{{ .Host }}_{{ .Interface }}.pcapng"),
+			o.AddressIP("fc::1/64"),
+			o.Capture(
+				co.Filename("{{ .Host }}_{{ .Interface }}.pcapng"),
 			),
 		),
 	); err != nil {
@@ -119,7 +119,7 @@ func TestCaptureNetwork(t *testing.T) {
 
 	if h2, err = n.AddHost("h2",
 		g.NewInterface("veth0", sw1,
-			gopt.AddressIP("fc::2/64"),
+			o.AddressIP("fc::2/64"),
 		),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
