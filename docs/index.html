@@ -369,10 +369,10 @@ SPDX-License-Identifier: Apache-2.0 -->
 						<h3>Running things inside a node</h3>
 						<pre><code class="language-go" data-trim>
 							// Run a simple process synchronously
-							out, cmd, err := h1.Run("ping", "h2")
+							cmd, err := h1.Run("ping", "h2")
 
 							// And asynchronously
-							stdout, stderr, cmd, err := h1.Start("ping", "h2")
+							cmd, err := h1.Start("ping", "h2")
 							
 							time.Sleep(5 * time.Second)
 

@@ -20,6 +20,7 @@ import (
 
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
+	co "github.com/stv0g/gont/pkg/options/cmd"
 )
 
 // TestGetMyIP performs and end-to-end ping test
@@ -76,14 +77,14 @@ func TestGetMyIP(t *testing.T) {
 		t.Fatalf("Failed to setup default route: %s", err)
 	}
 
-	out, _, err := client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server")
-	if err != nil {
+	outp := &bytes.Buffer{}
+	if _, err = client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server",
+		co.Stdout(outp),
+	); err != nil {
 		t.Fatalf("Request failed: %s", err)
 	}
 
-	hostPort := string(out)
-
-	ip, _, err := net.SplitHostPort(hostPort)
+	ip, _, err := net.SplitHostPort(outp.String())
 	if err != nil {
 		t.Fatalf("Failed to split host:port: %s", err)
 	}

@@ -39,7 +39,7 @@ type BaseNode struct {
 	Tracer                  *Tracer
 	ExistingNamespace       string
 	ExistingDockerContainer string
-	LogToDebug              bool
+	RedirectToLog           bool
 	EmptyDirs               []string
 	Captures                []*Capture
 
@@ -67,7 +67,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 	node.logger.Info("Adding new node")
 
 	// Enable log if level is debug
-	node.LogToDebug = node.logger.Core().Enabled(zap.DebugLevel)
+	node.RedirectToLog = node.logger.Core().Enabled(zap.DebugLevel)
 
 	for _, opt := range opts {
 		if nopt, ok := opt.(BaseNodeOption); ok {

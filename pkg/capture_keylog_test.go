@@ -65,7 +65,7 @@ func TestCaptureKeyLog(t *testing.T) {
 		t.Fatalf("Failed to add link: %s", err)
 	}
 
-	if _, _, err = client.Run("curl", "--http2", "--silent", "--insecure", "--connect-timeout", 5, "https://server"); err != nil {
+	if _, err = client.Run("curl", "--http2", "--silent", "--insecure", "--connect-timeout", 5, "https://server"); err != nil {
 		t.Fatalf("cURL Request failed: %s", err)
 	}
 

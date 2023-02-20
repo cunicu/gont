@@ -4,12 +4,16 @@
 package gont
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
 
 	"github.com/gopacket/gopacket/pcapgo"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapio"
 )
 
 type ExecCmdOption interface {
@@ -24,31 +28,49 @@ type Cmd struct {
 	*exec.Cmd
 
 	// Options
+	Tracer        *Tracer
+	RedirectToLog bool
+
+	StdoutWriters []io.Writer
+	StderrWriters []io.Writer
+
+	stdoutPipe io.ReadCloser
+	stderrPipe io.ReadCloser
+
 	node   *BaseNode
-	Tracer *Tracer
+	logger *zap.Logger
 }
 
-func command(name string, n *BaseNode, args ...any) *Cmd {
+func (n *BaseNode) Command(name string, args ...any) *Cmd {
 	c := &Cmd{
-		node: n,
+		node:          n,
+		StdoutWriters: []io.Writer{},
+		StderrWriters: []io.Writer{},
 	}
-
-	// Actual namespace switching is done similar to Docker's reexec
-	// in a forked version of ourself by passing all required details
-	// in environment variables.
-
-	strArgs, nonStrArgs := stringifyArgs(args)
-
-	c.Cmd = exec.Command(name, strArgs...)
-
-	for _, arg := range nonStrArgs {
+	strArgs := []string{}
+	for _, arg := range args {
 		switch arg := arg.(type) {
 		case ExecCmdOption:
 			arg.ApplyExecCmd(c.Cmd)
 		case CmdOption:
 			arg.ApplyCmd(c)
+		default:
+			if strArg, ok := stringifyArg(arg); ok {
+				strArgs = append(strArgs, strArg)
+			}
 		}
 	}
+
+	c.logger = n.logger.Named("cmd").With(
+		zap.String("path", name),
+		zap.Strings("args", strArgs),
+	)
+
+	// Actual namespace switching is done similar to Docker's reexec
+	// in a forked version of ourself by passing all required details
+	// in environment variables.
+
+	c.Cmd = exec.Command(name, strArgs...)
 
 	if !c.node.NsHandle.Equal(c.node.network.HostNode.NsHandle) {
 		if c.node.ExistingDockerContainer == "" {
@@ -88,7 +110,85 @@ func (c *Cmd) Start() error {
 		}
 	}
 
-	return c.Cmd.Start()
+	// Redirect process stdout/stderr to zapio.Writer
+	var updateLogger func(*zap.Logger)
+	if c.RedirectToLog || c.node.RedirectToLog || c.node.network.RedirectToLog {
+		updateLogger = c.redirectToLog()
+	}
+
+	if len(c.StdoutWriters) > 0 {
+		c.Stdout = io.MultiWriter(c.StdoutWriters...)
+	}
+
+	if len(c.StderrWriters) > 0 {
+		c.Stderr = io.MultiWriter(c.StderrWriters...)
+	}
+
+	if err := c.Cmd.Start(); err != nil {
+		return err
+	}
+
+	logger := c.logger.With(
+		zap.Int("pid", c.Process.Pid),
+	)
+
+	if updateLogger != nil {
+		updateLogger(logger)
+	}
+
+	logger.Info("Process started")
+
+	return nil
+}
+
+func (c *Cmd) Run() error {
+	if err := c.Start(); err != nil {
+		c.logger.Info("Failed to start", zap.Error(err))
+		return err
+	}
+	err := c.Wait()
+
+	logger := c.logger.With(
+		zap.Int("pid", c.Process.Pid),
+		zap.Int("rc", c.ProcessState.ExitCode()),
+		zap.Duration("sys_time", c.ProcessState.SystemTime()),
+	)
+
+	if c.ProcessState.Success() {
+		logger.Info("Process terminated successfully")
+	} else {
+		logger.Error("Process terminated with error code")
+	}
+
+	return err
+}
+
+// CombinedOutput runs the command and returns its combined standard
+// output and standard error.
+func (c *Cmd) CombinedOutput() ([]byte, error) {
+	var b bytes.Buffer
+
+	c.StdoutWriters = append(c.StdoutWriters, &b)
+	c.StderrWriters = append(c.StderrWriters, &b)
+
+	err := c.Run()
+	return b.Bytes(), err
+}
+
+func (c *Cmd) StdoutPipe() (io.ReadCloser, error) {
+	rd, wr := io.Pipe()
+
+	c.StdoutWriters = append(c.StdoutWriters, wr)
+
+	return rd, nil
+}
+
+func (c *Cmd) StderrPipe() (io.ReadCloser, error) {
+	rd, wr := io.Pipe()
+
+	c.StderrWriters = append(c.StderrWriters, wr)
+
+	return rd, nil
 }
 
 func (c *Cmd) tracer() *Tracer {
@@ -107,40 +207,53 @@ func (c *Cmd) extraEnvFile(envName string, f *os.File) {
 	c.Env = append(c.Env, fmt.Sprintf("%s=/proc/self/fd/%d", envName, fd))
 }
 
-func stringifyArgs(args []any) ([]string, []any) {
-	strArgs := []string{}
-	nonStrArgs := []any{}
-
-	for _, arg := range args {
-		switch arg := arg.(type) {
-		case Node:
-			strArgs = append(strArgs, arg.Name())
-		case fmt.Stringer:
-			strArgs = append(strArgs, arg.String())
-		case string:
-			strArgs = append(strArgs, arg)
-		case int:
-			strArgs = append(strArgs, strconv.FormatInt(int64(arg), 10))
-		case uint:
-			strArgs = append(strArgs, strconv.FormatUint(uint64(arg), 10))
-		case int32:
-			strArgs = append(strArgs, strconv.FormatInt(int64(arg), 10))
-		case uint32:
-			strArgs = append(strArgs, strconv.FormatUint(uint64(arg), 10))
-		case int64:
-			strArgs = append(strArgs, strconv.FormatInt(arg, 10))
-		case uint64:
-			strArgs = append(strArgs, strconv.FormatUint(arg, 10))
-		case float32:
-			strArgs = append(strArgs, strconv.FormatFloat(float64(arg), 'f', -1, 32))
-		case float64:
-			strArgs = append(strArgs, strconv.FormatFloat(arg, 'f', -1, 64))
-		case bool:
-			strArgs = append(strArgs, strconv.FormatBool(arg))
-		default:
-			nonStrArgs = append(nonStrArgs, arg)
-		}
+func (c *Cmd) redirectToLog() func(*zap.Logger) {
+	stdoutLog := &zapio.Writer{
+		Log:   c.logger,
+		Level: zap.InfoLevel,
 	}
 
-	return strArgs, nonStrArgs
+	stderrLog := &zapio.Writer{
+		Log:   c.logger,
+		Level: zap.WarnLevel,
+	}
+
+	c.StdoutWriters = append(c.StdoutWriters, stdoutLog)
+	c.StderrWriters = append(c.StderrWriters, stderrLog)
+
+	return func(l *zap.Logger) {
+		stdoutLog.Log = l
+		stderrLog.Log = l
+	}
+}
+
+func stringifyArg(arg any) (string, bool) {
+	switch arg := arg.(type) {
+	case Node:
+		return arg.Name(), true
+	case fmt.Stringer:
+		return arg.String(), true
+	case string:
+		return arg, true
+	case int:
+		return strconv.FormatInt(int64(arg), 10), true
+	case uint:
+		return strconv.FormatUint(uint64(arg), 10), true
+	case int32:
+		return strconv.FormatInt(int64(arg), 10), true
+	case uint32:
+		return strconv.FormatUint(uint64(arg), 10), true
+	case int64:
+		return strconv.FormatInt(arg, 10), true
+	case uint64:
+		return strconv.FormatUint(arg, 10), true
+	case float32:
+		return strconv.FormatFloat(float64(arg), 'f', -1, 32), true
+	case float64:
+		return strconv.FormatFloat(arg, 'f', -1, 64), true
+	case bool:
+		return strconv.FormatBool(arg), true
+	default:
+		return "", false
+	}
 }

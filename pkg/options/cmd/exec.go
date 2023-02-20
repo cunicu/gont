@@ -23,9 +23,9 @@ func (a Arg) ApplyExecCmd(c *exec.Cmd) {
 	c.Args = append(c.Args, string(a))
 }
 
-type Args []string
+type Arguments []string
 
-func (as Args) ApplyExecCmd(c *exec.Cmd) {
+func (as Arguments) ApplyExecCmd(c *exec.Cmd) {
 	for _, a := range []string(as) {
 		c.Args = append(c.Args, a)
 	}
@@ -37,22 +37,6 @@ type Stdin struct {
 
 func (s Stdin) ApplyExecCmd(c *exec.Cmd) {
 	c.Stdin = s.Reader
-}
-
-type Stdout struct {
-	io.Writer
-}
-
-func (s Stdout) ApplyExecCmd(c *exec.Cmd) {
-	c.Stdout = s.Writer
-}
-
-type Stderr struct {
-	io.Writer
-}
-
-func (s Stderr) ApplyExecCmd(c *exec.Cmd) {
-	c.Stderr = s.Writer
 }
 
 type ExtraFile os.File

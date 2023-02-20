@@ -4,12 +4,14 @@
 package gont_test
 
 import (
+	"bytes"
 	"net/url"
 	"strings"
 	"testing"
 
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
+	co "github.com/stv0g/gont/pkg/options/cmd"
 )
 
 func TestDocker(t *testing.T) {
@@ -42,12 +44,15 @@ func TestDocker(t *testing.T) {
 	}
 
 	// h2 is a Docker container
-	outp, _, err := n.HostNode.Run("docker", "run", "--detach", "nginx")
+	outp := &bytes.Buffer{}
+	_, err = n.HostNode.Run("docker", "run", "--detach", "nginx",
+		co.Stdout(outp),
+	)
 	if err != nil {
 		t.Fatalf("Failed to start Docker container")
 	}
 
-	id := strings.TrimSpace(string(outp))
+	id := strings.TrimSpace(outp.String())
 
 	t.Logf("Started nginx Docker container with id %s", id)
 

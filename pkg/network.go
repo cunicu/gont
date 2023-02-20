@@ -36,10 +36,11 @@ type Network struct {
 	TmpPath  string
 
 	// Options
-	Persistent bool
-	NSPrefix   string
-	Captures   []*Capture
-	Tracer     *Tracer
+	Persistent    bool
+	NSPrefix      string
+	Captures      []*Capture
+	Tracer        *Tracer
+	RedirectToLog bool
 
 	keyLogPipes []*os.File
 	logger      *zap.Logger

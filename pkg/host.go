@@ -138,7 +138,7 @@ func (h *Host) Traceroute(o *Host, opts ...any) error {
 	}
 
 	opts = append(opts, o)
-	_, _, err := h.Run("traceroute", opts...)
+	_, err := h.Run("traceroute", opts...)
 	return err
 }
 

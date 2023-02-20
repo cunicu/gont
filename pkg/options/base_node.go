@@ -21,13 +21,6 @@ func (d ExistingDockerContainer) ApplyBaseNode(n *g.BaseNode) {
 	n.ExistingDockerContainer = string(d)
 }
 
-// Log output of sub-processes to debug log-level
-type LogToDebug bool
-
-func (l LogToDebug) ApplyBaseNode(n *g.BaseNode) {
-	n.LogToDebug = bool(l)
-}
-
 // Mount an empty dir to shadow parts of the root filesystem
 type EmptyDir string
 

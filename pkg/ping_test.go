@@ -170,7 +170,7 @@ func TestPingDirect(t *testing.T) {
 		t.Fatalf("Failed to connect hosts: %s", err)
 	}
 
-	if _, _, err = h1.Run("cat", "/etc/hosts"); err != nil {
+	if _, err = h1.Run("cat", "/etc/hosts"); err != nil {
 		t.Errorf("Failed to show /etc/hosts file: %s", err)
 	}
 
@@ -257,11 +257,11 @@ func TestPingLoopback(t *testing.T) {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
-	if _, _, err := h.Run("ping", "-4", "-c", 1, "localhost"); err != nil {
+	if _, err := h.Run("ping", "-4", "-c", 1, "localhost"); err != nil {
 		t.Errorf("Failed to ping: %s", err)
 	}
 
-	if _, _, err := h.Run("ping", "-6", "-c", 1, "localhost"); err != nil {
+	if _, err := h.Run("ping", "-6", "-c", 1, "localhost"); err != nil {
 		t.Errorf("Failed to ping: %s", err)
 	}
 }

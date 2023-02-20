@@ -247,11 +247,11 @@ func TestPingHostNAT(t *testing.T) {
 		t.Fatalf("Failed to create host NAT: %s", err)
 	}
 
-	if _, _, err = h1.Run("ping", "-c", 1, "1.1.1.1"); err != nil {
+	if _, err = h1.Run("ping", "-c", 1, "1.1.1.1"); err != nil {
 		t.Fatalf("Failed to ping: %s", err)
 	}
 
-	if _, _, err = h1.Run("ping", "-c", 1, "www.rwth-aachen.de"); err != nil {
+	if _, err = h1.Run("ping", "-c", 1, "www.rwth-aachen.de"); err != nil {
 		t.Fail()
 	}
 

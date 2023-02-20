@@ -43,14 +43,13 @@ func TestTracer(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.LogToDebug(true),
+		o.RedirectToLog(true),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	for i := 0; i < 5; i++ {
-		_, _, err = h1.Run("../test/tracee/tracee", i)
-		if err != nil {
+		if _, err = h1.Run("../test/tracee/tracee", i); err != nil {
 			t.Fatalf("Failed to run tracee: %s", err)
 		}
 
