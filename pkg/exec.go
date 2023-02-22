@@ -29,7 +29,13 @@ func init() {
 			panic(err)
 		}
 
-		if err := Exec(network, node, os.Args); err != nil {
+		// Enter new namespaces
+		if err := Unshare(network, node); err != nil {
+			panic(err)
+		}
+
+		// Run program
+		if err := execvpe.Execvpe(os.Args[0], os.Args, os.Environ()); err != nil {
 			panic(err)
 		}
 
@@ -38,6 +44,18 @@ func init() {
 }
 
 func Exec(network, node string, args []string) error {
+	if err := Unshare(network, node); err != nil {
+		return err
+	}
+
+	if err := execvpe.Execvpe(args[0], args, os.Environ()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Unshare(network, node string) error {
 	networkDir := filepath.Join(baseVarDir, network)
 	nodeDir := filepath.Join(networkDir, "nodes", node)
 
@@ -74,11 +92,6 @@ func Exec(network, node string, args []string) error {
 
 	if err := unix.Setns(netNsFd, syscall.CLONE_NEWNET); err != nil {
 		return fmt.Errorf("failed to switch to netns: %w", err)
-	}
-
-	// Run program
-	if err := execvpe.Execvpe(args[0], args, os.Environ()); err != nil {
-		return fmt.Errorf("failed exec: %w", err)
 	}
 
 	return nil
