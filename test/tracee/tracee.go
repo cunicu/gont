@@ -14,8 +14,10 @@ import (
 )
 
 func main() {
-	trace.Start(0)
-	defer trace.Stop()
+	if err := trace.Start(0); err != nil {
+		panic(err)
+	}
+	defer trace.Stop() //nolint:errcheck
 
 	cfg := zap.NewDevelopmentConfig()
 	cfg.Level.SetLevel(zap.DebugLevel)
@@ -28,9 +30,17 @@ func main() {
 
 	zap.ReplaceGlobals(logger)
 
-	traced()
-	log()
-	ping()
+	if err := traced(); err != nil {
+		logger.Fatal("Failed to run traced", zap.Error(err))
+	}
+
+	if err := log(); err != nil {
+		logger.Fatal("Failed to run log", zap.Error(err))
+	}
+
+	if err := ping(); err != nil {
+		logger.Fatal("Failed to run ping", zap.Error(err))
+	}
 }
 
 func traced() error {
@@ -87,7 +97,7 @@ func ping() error {
 		cmd.Stdout = os.Stdout
 		err := cmd.Run()
 
-		elapsed := time.Now().Sub(start)
+		elapsed := time.Since(start)
 
 		logger.Info("Pinged", zap.Duration("rtt", elapsed), zap.Error(err))
 

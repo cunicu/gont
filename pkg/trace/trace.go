@@ -16,6 +16,7 @@ import (
 // The following functions are intended to by used used for instrumentation of Go code
 // which is started by gont.Node.{Start,StartWith,Run}
 
+//nolint:gochecknoglobals
 var (
 	eventCallback EventCallback
 	eventWriter   io.Writer

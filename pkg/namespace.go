@@ -12,7 +12,6 @@ import (
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
-
 	"golang.org/x/sys/unix"
 )
 

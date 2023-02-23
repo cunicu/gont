@@ -4,10 +4,7 @@
 package gont_test
 
 import (
-	crand "crypto/rand"
-	"encoding/binary"
 	"flag"
-	"math/rand"
 	"os"
 	"testing"
 
@@ -18,6 +15,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+//nolint:gochecknoglobals
 var (
 	globalNetworkOptions = []g.NetworkOption{}
 	nname                = flag.String("name", "", "Network name")
@@ -43,22 +41,9 @@ func setupLogging() *zap.Logger {
 	return logger
 }
 
-func setupRand() error {
-	var seed int64
-
-	if err := binary.Read(crand.Reader, binary.LittleEndian, &seed); err != nil {
-		return err
-	}
-
-	rand.Seed(seed)
-
-	return nil
-}
-
 func TestMain(m *testing.M) {
-	setupRand()
 	logger := setupLogging()
-	defer logger.Sync()
+	defer logger.Sync() //nolint:errcheck
 
 	// Handle global flags
 	if *persist {

@@ -99,7 +99,8 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
-	if node.ExistingNamespace != "" {
+	switch {
+	case node.ExistingNamespace != "":
 		// Use an existing namespace created by "ip netns add"
 		nsh, err := netns.GetFromName(node.ExistingNamespace)
 		if err != nil {
@@ -110,7 +111,8 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 			Name:     node.ExistingNamespace,
 			NsHandle: nsh,
 		}
-	} else if node.ExistingDockerContainer != "" {
+
+	case node.ExistingDockerContainer != "":
 		// Use an existing net namespace from a Docker container
 		nsh, err := netns.GetFromDocker(node.ExistingDockerContainer)
 		if err != nil {
@@ -121,7 +123,8 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 			Name:     node.ExistingDockerContainer,
 			NsHandle: nsh,
 		}
-	} else {
+
+	default:
 		// Create a new network namespace
 		nsName := fmt.Sprintf("%s%s-%s", n.NSPrefix, n.Name, name)
 		if node.Namespace, err = NewNamespace(nsName); err != nil {

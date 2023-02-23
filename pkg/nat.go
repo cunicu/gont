@@ -138,7 +138,6 @@ func (n *NAT) setupTable(c *nft.Conn) error {
 
 	// We do not install input & forward chains for a HostNAT
 	if n.Host != n.network.HostNode {
-
 		// Input chain
 		n.Input = c.AddChain(&nft.Chain{
 			Name:     "input",

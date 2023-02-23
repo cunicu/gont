@@ -12,6 +12,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
+//nolint:gochecknoglobals
 var (
 	dm cbor.DecMode
 	em cbor.EncMode

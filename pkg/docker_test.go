@@ -65,13 +65,19 @@ func TestDocker(t *testing.T) {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
-	h2.Run("hostname")
+	if _, err := h2.Run("hostname"); err != nil {
+		t.Fatalf("Failed to run: %s", err)
+	}
 
 	u, err := url.Parse("http://h2/")
 	if err != nil {
 		t.Fail()
 	}
 
-	h1.Run("curl", u)
-	h2.Ping(h1)
+	if _, err := h1.Run("curl", u); err != nil {
+		t.Fatalf("Failed to run: %s", err)
+	}
+	if _, err := h2.Ping(h1); err != nil {
+		t.Fatalf("Failed to run: %s", err)
+	}
 }

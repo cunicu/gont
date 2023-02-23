@@ -20,7 +20,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestCaptureNetwork(t *testing.T) {
+func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 	var (
 		err    error
 		n      *g.Network
@@ -72,7 +72,7 @@ func TestCaptureNetwork(t *testing.T) {
 		co.ToFile(tmpPCAP),
 		co.ToChannel(ch),
 		co.Callback(cb),
-		co.CaptureLength(1600),
+		co.Length(1600),
 		co.Promiscuous(true),
 		co.FilterExpression("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
 		// copt.FilterInstructions(instrs),
@@ -85,9 +85,9 @@ func TestCaptureNetwork(t *testing.T) {
 				typec := layer.(*layers.ICMPv6).TypeCode.Type()
 
 				return typec == layers.ICMPv6TypeEchoRequest || typec == layers.ICMPv6TypeEchoReply
-			} else {
-				return false
 			}
+
+			return false
 		}),
 		co.Comment("Some random comment which will be included in the capture file"),
 	)

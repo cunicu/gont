@@ -15,6 +15,7 @@ const (
 	WithQdiscTbf   = (1 << iota)
 )
 
+//nolint:gochecknoglobals
 var loopbackInterface = Interface{
 	Name: loopbackInterfaceName,
 	Addresses: []net.IPNet{

@@ -7,9 +7,11 @@ import (
 	"math/rand"
 )
 
+// Names is a list of well known persons in information theory / networking
 // From: https://en.wikipedia.org/wiki/List_of_Internet_pioneers
-//  and  https://www.internethalloffame.org/inductees/all
-
+// and   https://www.internethalloffame.org/inductees/all
+//
+//nolint:gochecknoglobals
 var Names = []string{
 	"akkerhuis",
 	"akplogan",
@@ -134,6 +136,6 @@ var Names = []string{
 }
 
 func GetRandomName() string {
-	index := rand.Intn(len(Names))
+	index := rand.Intn(len(Names)) //nolint:gosec
 	return Names[index]
 }

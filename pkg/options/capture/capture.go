@@ -11,9 +11,9 @@ import (
 	"golang.org/x/net/bpf"
 )
 
-type CaptureLength int
+type Length int
 
-func (sl CaptureLength) ApplyCapture(c *g.Capture) {
+func (sl Length) ApplyCapture(c *g.Capture) {
 	c.CaptureLength = int(sl)
 }
 

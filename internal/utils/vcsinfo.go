@@ -26,7 +26,7 @@ func ReadVCSInfos() (bool, string, bool, time.Time) {
 		}
 
 		return true, rev, dirty, btime
-	} else {
-		return false, "", false, time.Time{}
 	}
+
+	return false, "", false, time.Time{}
 }

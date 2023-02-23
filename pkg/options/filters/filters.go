@@ -9,7 +9,8 @@ import "github.com/google/nftables/expr"
 // Statement is a list of one or more nftables expressions
 type Statement []expr.Any
 
-var Drop = Statement{
+// Drop is a statement which drops all packets
+var Drop = Statement{ //nolint:gochecknoglobals
 	&expr.Verdict{
 		Kind: expr.VerdictDrop,
 	},

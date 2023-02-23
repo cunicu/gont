@@ -12,7 +12,8 @@ import (
 	"strings"
 )
 
-var IPv4loopback = net.IPv4(127, 0, 0, 1)
+// IPv4loopback is the IPv4 loopback address (127.0.0.1)
+var IPv4loopback = net.IPv4(127, 0, 0, 1) //nolint:gochecknoglobals
 
 // GenerateHostsFile writes the addresses and host names of all nodes
 // into a file located at /run/gont/<network>/files/etc/hosts
@@ -107,8 +108,12 @@ func (n *Network) GenerateIProute2Files() error {
 	defer f.Close()
 
 	if contentsOrig, err := os.ReadFile("/etc/iproute2/group"); err == nil {
-		f.Write(contentsOrig)
-		f.WriteString("\n")
+		if _, err := f.Write(contentsOrig); err != nil {
+			return err
+		}
+		if _, err := f.WriteString("\n"); err != nil {
+			return err
+		}
 	}
 
 	groups := map[DeviceGroup]string{

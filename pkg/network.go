@@ -293,7 +293,9 @@ func (n *Network) KeyLogPipe(secretsType uint32) (*os.File, error) {
 		}
 
 		for _, c := range capturesWithKeys {
-			c.writeDecryptionSecret(secretsType, b.Bytes())
+			if err := c.writeDecryptionSecret(secretsType, b.Bytes()); err != nil {
+				n.logger.Error("Failed to decryption secret", zap.Error(err))
+			}
 		}
 	}()
 

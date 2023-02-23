@@ -14,7 +14,7 @@ func TestNamespace(t *testing.T) {
 	nsName := "gont-testing-ns"
 
 	// delete stale namespaces from previous runs
-	netns.DeleteNamed(nsName)
+	netns.DeleteNamed(nsName) //nolint:errcheck
 
 	n, err := g.NewNamespace(nsName)
 	if err != nil {

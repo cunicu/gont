@@ -86,7 +86,9 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 			Node: intf.Node,
 		}
 
-		n.AddLink(left, right)
+		if err := n.AddLink(left, right); err != nil {
+			return nil, fmt.Errorf("failed to add link: %w", err)
+		}
 	}
 
 	return sw, nil

@@ -112,7 +112,7 @@ func AddWebServer(n *g.Network, name string) (*HTTPServer, error) {
 
 	cert, err := tls.X509KeyPair(pub, priv)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create x509 keypair: %w", err)
+		return nil, fmt.Errorf("failed to create x509 key pair: %w", err)
 	}
 
 	s := &HTTPServer{
@@ -122,8 +122,10 @@ func AddWebServer(n *g.Network, name string) (*HTTPServer, error) {
 		TLSConfig: &tls.Config{
 			Certificates: []tls.Certificate{cert},
 			CipherSuites: []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, // force PFS
+			MinVersion:   tls.VersionTLS13,
 		},
-		Handler: s,
+		ReadHeaderTimeout: time.Second,
+		Handler:           s,
 	}
 
 	listener, err := s.ListenTCP(443)
@@ -131,14 +133,14 @@ func AddWebServer(n *g.Network, name string) (*HTTPServer, error) {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
 
-	go s.ServeTLS(listener, "", "")
+	go s.ServeTLS(listener, "", "") //nolint:errcheck
 
 	return s, nil
 }
 
 func (h *HTTPServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// We reply to all requests with the IP of the requester
-	w.Write([]byte(req.RemoteAddr))
+	w.Write([]byte(req.RemoteAddr)) //nolint:errcheck
 }
 
 func (h *HTTPServer) ListenTCP(port int) (net.Listener, error) {

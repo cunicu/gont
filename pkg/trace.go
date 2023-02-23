@@ -108,7 +108,9 @@ func (t *Tracer) Flush() error {
 	for t.queue.Len() > 0 {
 		p := t.queue.Pop().(trace.Event)
 
-		t.writeEvent(p)
+		if err := t.writeEvent(p); err != nil {
+			return err
+		}
 	}
 
 	return nil

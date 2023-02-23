@@ -6,7 +6,6 @@ package gont
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path"
@@ -71,10 +70,10 @@ func GenerateNetworkName() string {
 	}
 
 	// TODO: This can generate non-unique network names!
-	index := rand.Intn(len(Names))
+	index := rand.Intn(len(Names)) //nolint:gosec
 	random := Names[index]
 
-	return fmt.Sprintf("%s%d", random, rand.Intn(128)+1)
+	return fmt.Sprintf("%s%d", random, rand.Intn(128)+1) //nolint:gosec
 }
 
 func TeardownAllNetworks() error {
@@ -92,7 +91,7 @@ func TeardownNetwork(network string) error {
 	networkTmpPath := filepath.Join(baseTmpDir, network)
 	nodesVarPath := filepath.Join(networkVarPath, "nodes")
 
-	fis, err := ioutil.ReadDir(nodesVarPath)
+	fis, err := os.ReadDir(nodesVarPath)
 	if err != nil {
 		return fmt.Errorf("failed to read nodes dir: %w", err)
 	}

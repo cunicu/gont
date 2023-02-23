@@ -79,7 +79,7 @@ func TestCaptureKeyLog(t *testing.T) {
 
 	t.Logf("PCAPng file: %s", tmpPCAP.Name())
 
-	c := exec.Command("tshark", "-r", tmpPCAP.Name(), "-T", "fields", "-e", "http2.data.data", "len(http2.data.data) > 0")
+	c := exec.Command("tshark", "-r", tmpPCAP.Name(), "-T", "fields", "-e", "http2.data.data", "len(http2.data.data) > 0") //nolint:gosec
 
 	out := &bytes.Buffer{}
 	c.Stdout = out

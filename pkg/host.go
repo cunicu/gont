@@ -124,6 +124,7 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 	}
 
 	for _, addr := range i.Addresses {
+		addr := addr
 		if err := i.AddAddress(&addr); err != nil {
 			return fmt.Errorf("failed to add link address: %s", err)
 		}

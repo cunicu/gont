@@ -14,6 +14,7 @@ import (
 	"github.com/stv0g/gont/pkg/trace"
 )
 
+//nolint:gochecknoglobals
 var captureSocketAddr = flag.String("trace-socket", "tcp:[::1]:42125", "Listen address for capture socket")
 
 func TestTracer(t *testing.T) {
@@ -53,6 +54,8 @@ func TestTracer(t *testing.T) {
 			t.Fatalf("Failed to run tracee: %s", err)
 		}
 
-		trace.PrintfWithData(i, "Hello from test process")
+		if err := trace.PrintfWithData(i, "Hello from test process"); err != nil {
+			t.Fatalf("Failed to print: %s", err)
+		}
 	}
 }

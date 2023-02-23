@@ -84,13 +84,13 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 
 	// Move one side into the target netns
 	if err := lHandle.LinkSetNsFd(rLink, int(r.Node.NetNSHandle())); err != nil {
-		lHandle.LinkDel(veth)
+		lHandle.LinkDel(veth) //nolint:errcheck
 		return fmt.Errorf("failed to move interface to namespace: %w", err)
 	}
 
 	// Rename veth
 	if err := lHandle.LinkSetName(veth, l.Name); err != nil {
-		lHandle.LinkDel(veth)
+		lHandle.LinkDel(veth) //nolint:errcheck
 		return fmt.Errorf("failed to rename interface: %w", err)
 	}
 

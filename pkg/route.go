@@ -7,6 +7,7 @@ import (
 	"net"
 )
 
+//nolint:gochecknoglobals
 var (
 	DefaultIPv4Mask = net.IPNet{
 		IP:   net.IPv4zero,

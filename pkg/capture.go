@@ -40,6 +40,21 @@ type filenameTemplate struct {
 	Network   string
 }
 
+func (t filenameTemplate) execute(filename string, i *Interface) (string, error) {
+	b := &bytes.Buffer{}
+
+	tpl, err := template.New("filename").Parse(filename)
+	if err != nil {
+		return "", fmt.Errorf("invalid filename template: %w", err)
+	}
+
+	if err := tpl.Execute(b, t); err != nil {
+		return "", fmt.Errorf("failed to execute filename template: %w", err)
+	}
+
+	return b.String(), nil
+}
+
 type captureInterface struct {
 	*Interface
 
@@ -130,7 +145,9 @@ func (c *Capture) Flush() error {
 	for c.queue.Len() > 0 {
 		p := c.queue.Pop().(CapturePacket)
 
-		c.writePacket(p)
+		if err := c.writePacket(p); err != nil {
+			return err
+		}
 	}
 
 	for _, ci := range c.interfaces {
@@ -237,6 +254,7 @@ out:
 }
 
 func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
+	var err error
 	wrs := []io.Writer{}
 
 	// File handlers
@@ -246,81 +264,29 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 
 	// Filenames
 	for _, filename := range c.Filenames {
-		if i.Interface != nil {
-			b := &bytes.Buffer{}
-
-			tpl, err := template.New("filename").Parse(filename)
-			if err != nil {
-				return nil, fmt.Errorf("invalid filename template: %w", err)
-			}
-
-			if err := tpl.Execute(b, filenameTemplate{
-				Network:   i.Node.Network().Name,
-				Host:      i.Node.Name(),
-				Interface: i.Name,
-			}); err != nil {
-				return nil, fmt.Errorf("failed to execute filename template: %w", err)
-			}
-
-			filename = b.String()
-		}
-
-		var file *os.File
-		var err error
-		if file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755); err != nil {
+		if file, err := c.openFile(filename, i); err != nil {
 			return nil, fmt.Errorf("failed to open file: %w", err)
+		} else {
+			wrs = append(wrs, file)
 		}
-
-		wrs = append(wrs, file)
 	}
 
 	// Pipenames
 	for _, pipename := range c.Pipenames {
-		logger := c.logger.With(zap.String("path", pipename))
-
-		if stat, err := os.Stat(pipename); err != nil {
-			if os.IsNotExist(err) {
-				logger.Debug("Pipe does not exist yet. Creating..")
-				if err := syscall.Mkfifo(pipename, 0o644); err != nil {
-					return nil, fmt.Errorf("failed to create fifo: %w", err)
-				}
-			} else {
-				return nil, fmt.Errorf("failed to stat pipe %s: %w", pipename, err)
-			}
-		} else if stat.Mode()&os.ModeNamedPipe == 0 {
-			logger.Debug("Non-pipe exists. Removing before recreating")
-			if err := os.RemoveAll(pipename); err != nil {
-				return nil, fmt.Errorf("failed to delete: %w", err)
-			}
-			if err := syscall.Mkfifo(pipename, 0o644); err != nil {
-				return nil, fmt.Errorf("failed to create fifo: %w", err)
-			}
+		if pipe, err := c.createPipe(pipename); err != nil {
+			return nil, fmt.Errorf("failed to create pipe: %w", err)
+		} else {
+			wrs = append(wrs, pipe)
 		}
-
-		logger.Info("Opening named pipe. Waiting for a reader...")
-
-		fifo, err := os.OpenFile("/var/run/pcap", os.O_WRONLY, 0o300)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open fifo: %w", err)
-		}
-
-		logger.Info("Reader opened remote site of the fifo. Continuing execution")
-
-		wrs = append(wrs, fifo)
 	}
 
 	// Listeners
 	for _, lAddr := range c.Listeners {
-		listener, err := newCaptureListener(lAddr)
-		if err != nil {
+		if listener, err := c.createListener(lAddr); err != nil {
 			return nil, fmt.Errorf("failed to create listener: %w", err)
+		} else {
+			wrs = append(wrs, listener)
 		}
-
-		// Wait for first connection before proceeding
-		c.logger.Info("Opened listener. Waiting for a reader...", zap.String("addr", lAddr))
-		<-listener.Conns
-
-		wrs = append(wrs, listener)
 	}
 
 	wr := io.MultiWriter(wrs...)
@@ -328,7 +294,7 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 	comment := c.Comment
 	if comment == "" {
 		if i.Interface == nil {
-			comment = fmt.Sprintf("Captured with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)")
+			comment = "Captured with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)"
 		} else {
 			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.Node.Network().Name)
 		}
@@ -459,4 +425,70 @@ func (c *Capture) startTrace() (*captureInterface, *traceEventPacketSource, erro
 	go c.readPackets(ci)
 
 	return ci, tps, nil
+}
+
+func (c *Capture) createListener(lAddr string) (*captureListener, error) {
+	listener, err := newCaptureListener(lAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for first connection before proceeding
+	c.logger.Info("Opened listener. Waiting for a reader...", zap.String("addr", lAddr))
+	<-listener.Conns
+
+	return listener, nil
+}
+
+func (c *Capture) createPipe(pipename string) (*os.File, error) {
+	logger := c.logger.With(zap.String("path", pipename))
+
+	if stat, err := os.Stat(pipename); err != nil { //nolint:nestif
+		if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("failed to stat pipe %s: %w", pipename, err)
+		}
+
+		logger.Debug("Pipe does not exist yet. Creating..")
+		if err := syscall.Mkfifo(pipename, 0o644); err != nil {
+			return nil, fmt.Errorf("failed to create fifo: %w", err)
+		}
+	} else if stat.Mode()&os.ModeNamedPipe == 0 {
+		logger.Debug("Non-pipe exists. Removing before recreating")
+		if err := os.RemoveAll(pipename); err != nil {
+			return nil, fmt.Errorf("failed to delete: %w", err)
+		}
+
+		if err := syscall.Mkfifo(pipename, 0o644); err != nil {
+			return nil, fmt.Errorf("failed to create fifo: %w", err)
+		}
+	}
+
+	logger.Info("Opening named pipe. Waiting for a reader...")
+
+	pipe, err := os.OpenFile(pipename, os.O_WRONLY, 0o300)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open fifo: %w", err)
+	}
+
+	logger.Info("Reader opened remote site of the fifo. Continuing execution")
+
+	return pipe, nil
+}
+
+func (c *Capture) openFile(filename string, i *captureInterface) (*os.File, error) {
+	var err error
+
+	if i.Interface != nil {
+		tpl := filenameTemplate{
+			Network:   i.Node.Network().Name,
+			Host:      i.Node.Name(),
+			Interface: i.Name,
+		}
+
+		if filename, err = tpl.execute(filename, i.Interface); err != nil {
+			return nil, err
+		}
+	}
+
+	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 }

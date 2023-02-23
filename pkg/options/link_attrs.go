@@ -21,7 +21,7 @@ func (m MTU) ApplyLink(la *nl.LinkAttrs) {
 type Group g.DeviceGroup
 
 func (h Group) ApplyLink(la *nl.LinkAttrs) {
-	la.Group = uint32(h)
+	la.Group = uint32(g.DeviceGroup(h))
 }
 
 type TxQLen int

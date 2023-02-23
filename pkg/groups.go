@@ -3,7 +3,7 @@
 
 package gont
 
-type DeviceGroup int
+type DeviceGroup uint32
 
 const (
 	DeviceGroupDefault    DeviceGroup = 0

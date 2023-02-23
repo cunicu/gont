@@ -26,9 +26,7 @@ func (a Arg) ApplyExecCmd(c *exec.Cmd) {
 type Arguments []string
 
 func (as Arguments) ApplyExecCmd(c *exec.Cmd) {
-	for _, a := range []string(as) {
-		c.Args = append(c.Args, a)
-	}
+	c.Args = append(c.Args, as...)
 }
 
 type Stdin struct {

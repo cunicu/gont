@@ -4,11 +4,9 @@
 package internal
 
 import (
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"go.uber.org/zap"
 )
@@ -23,10 +21,6 @@ func SetupLogging() *zap.Logger {
 	zap.LevelFlag("log-level", zap.InfoLevel, "Log level")
 
 	return logger
-}
-
-func SetupRand() {
-	rand.Seed(time.Now().UTC().UnixNano())
 }
 
 func SetupSignals() chan os.Signal {

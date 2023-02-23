@@ -13,7 +13,7 @@ func (pfx NSPrefix) ApplyNetwork(n *g.Network) {
 	n.NSPrefix = string(pfx)
 }
 
-// Persistent keeps a network from beeing torn down.
+// Persistent keeps a network from being torn down.
 type Persistent bool
 
 func (p Persistent) ApplyNetwork(n *g.Network) {

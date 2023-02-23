@@ -1,0 +1,21 @@
+linters:
+  enable:
+  - errname
+  - exportloopref
+  - gci
+  - gochecknoglobals
+  - gocognit
+  - gofmt
+  - misspell
+  - tagliatelle
+  - whitespace
+  - revive
+  - gosec
+  - nestif
+  - nolintlint
+  - prealloc
+
+linters-settings:
+  revive:
+    severity: warning
+    
