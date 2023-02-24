@@ -104,6 +104,7 @@ type Capture struct {
 	queue      *prque.PriorityQueue
 	count      atomic.Uint64
 	interfaces []*captureInterface
+	closables  []io.Closer
 	logger     *zap.Logger
 }
 
@@ -164,6 +165,12 @@ func (c *Capture) Close() error {
 
 	if err := c.Flush(); err != nil {
 		return fmt.Errorf("failed to flush: %w", err)
+	}
+
+	for _, closable := range c.closables {
+		if err := closable.Close(); err != nil {
+			return fmt.Errorf("failed to close: %w", err)
+		}
 	}
 
 	return nil
@@ -268,24 +275,27 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 			return nil, fmt.Errorf("failed to open file: %w", err)
 		} else {
 			wrs = append(wrs, file)
+			c.closables = append(c.closables, file)
 		}
 	}
 
 	// Pipenames
 	for _, pipename := range c.Pipenames {
-		if pipe, err := c.createPipe(pipename); err != nil {
+		if pipe, err := c.createAndOpenPipe(pipename); err != nil {
 			return nil, fmt.Errorf("failed to create pipe: %w", err)
 		} else {
 			wrs = append(wrs, pipe)
+			c.closables = append(c.closables, pipe)
 		}
 	}
 
 	// Listeners
-	for _, lAddr := range c.Listeners {
+	for _, lAddr := range c.ListenAddrs {
 		if listener, err := c.createListener(lAddr); err != nil {
 			return nil, fmt.Errorf("failed to create listener: %w", err)
 		} else {
 			wrs = append(wrs, listener)
+			c.closables = append(c.closables, listener)
 		}
 	}
 
