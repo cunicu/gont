@@ -35,9 +35,6 @@ type Cmd struct {
 	StdoutWriters []io.Writer
 	StderrWriters []io.Writer
 
-	stdoutPipe io.ReadCloser
-	stderrPipe io.ReadCloser
-
 	node   *BaseNode
 	logger *zap.Logger
 }
