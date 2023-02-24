@@ -235,6 +235,103 @@ func (c *Cmd) redirectToLog() func(*zap.Logger) {
 	}
 }
 
+// stoppedStart starts the child in a stopped state (SIGSTOP).
+//
+// Starting the process in a stopped state requires the following sequence:
+//
+//  1. We start ourself as a traced sub-process:
+//     Cmd.Path = "/proc/self/exe"
+//     Cmd.Args = <args of new child>
+//     Cmd.SysProcAttr.Ptrace = true
+//
+//  2. In response to 1), the child process calls immediately ptrace(PTRACE_TRACEME, ...)
+//
+//  3. The child now becomes a tracee and enters a Ptrace-stop
+//
+//  4. The parent waits for the tracee to enter the Ptrace-stop
+//     wait4(pid, &ws, 0, NULL)
+//     WSTOPSIG(ws) == SIGTRAP
+//
+//  5. We now enable the Ptrace-exec-stop:
+//     ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACEEXEC)
+//
+//  6. The tracee execution is continued and uses execve() to start the actual child process
+//
+//  7. The tracee enters the Ptrace exec-stop
+//
+//  8. While stopped, we send a SIGSTOP to the tracee to provoke a Ptrace signal-delivery-stop.
+//
+//  9. We continue the execution of the tracee until the Ptrace signal-delivery-stop.
+//
+//  9. We detach from the tracee and inject a SIGSTOP signal
+//     ptrace(PTRACE_DETACH, pid, 0, SIGSTOP)
+//
+// 10) The parent process has detached from the tracee and the tracee is stopped due to the injected SIGSTOP in 9)
+func (c *Cmd) stoppedStart() error {
+	if c.Cmd.SysProcAttr == nil {
+		c.Cmd.SysProcAttr = &syscall.SysProcAttr{}
+	}
+
+	c.SysProcAttr.Setpgid = true
+	c.SysProcAttr.Ptrace = true
+
+	if err := c.Cmd.Start(); err != nil {
+		return err
+	}
+
+	pgid, err := syscall.Getpgid(c.Process.Pid)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	for {
+		var ws syscall.WaitStatus
+		wpid, err := syscall.Wait4(-pgid, &ws, syscall.WALL, nil)
+		if err != nil {
+			return err
+		}
+
+		c.logger.Debug("Stopped",
+			zap.String("signal", ws.Signal().String()),
+			zap.String("stop_signal", ws.StopSignal().String()),
+			zap.Int("trap_cause", ws.TrapCause()))
+
+		if ws.Exited() {
+			return fmt.Errorf("process exited")
+		}
+
+		if !ws.Stopped() {
+			continue
+		}
+
+		switch ws.StopSignal() {
+		case syscall.SIGTRAP:
+			if ws.TrapCause() == syscall.PTRACE_EVENT_EXEC {
+				if err := syscall.Tgkill(c.Process.Pid, wpid, syscall.SIGSTOP); err != nil {
+					return err
+				}
+			} else if ws.TrapCause() == 0 {
+				if err := syscall.PtraceSetOptions(wpid, syscall.PTRACE_O_TRACEEXEC); err != nil {
+					return err
+				}
+			}
+
+		case syscall.SIGSTOP:
+			if err := ptrace(syscall.PTRACE_DETACH, wpid, 0, uintptr(syscall.SIGSTOP)); err != nil {
+				return err
+			}
+
+			c.logger.Debug("Detached from tracee")
+
+			return nil
+		}
+
+		if err = syscall.PtraceCont(wpid, 0); err != nil {
+			return err
+		}
+	}
+}
+
 func stringifyArg(arg any) (string, bool) {
 	switch arg := arg.(type) {
 	case Node:
