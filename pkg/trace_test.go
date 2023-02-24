@@ -25,7 +25,7 @@ func TestTracer(t *testing.T) {
 	)
 
 	c1 := g.NewCapture(
-		co.Listener(*captureSocketAddr),
+		co.ListenAddr(*captureSocketAddr),
 	)
 
 	t1 := g.NewTracer(

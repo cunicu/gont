@@ -72,7 +72,7 @@ func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 		co.ToFile(tmpPCAP),
 		co.ToChannel(ch),
 		co.Callback(cb),
-		co.Length(1600),
+		co.SnapshotLength(1600),
 		co.Promiscuous(true),
 		co.FilterExpression("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
 		// copt.FilterInstructions(instrs),

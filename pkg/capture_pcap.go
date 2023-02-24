@@ -31,7 +31,7 @@ func (c *Capture) createPCAPHandle(name string) (PacketSource, error) {
 		return nil, fmt.Errorf("failed to set: %w", err)
 	}
 
-	if err := ihdl.SetSnapLen(c.CaptureLength); err != nil {
+	if err := ihdl.SetSnapLen(c.SnapshotLength); err != nil {
 		return nil, fmt.Errorf("failed to set: %w", err)
 	}
 

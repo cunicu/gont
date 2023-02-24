@@ -78,12 +78,12 @@ type CaptureOption interface {
 
 type Capture struct {
 	// Options
-	CaptureLength int
-	Promiscuous   bool
-	Comment       string
-	Timeout       time.Duration
-	LogKeys       bool
-	FlushEach     uint64
+	SnapshotLength int
+	Promiscuous    bool
+	Comment        string
+	Timeout        time.Duration
+	LogKeys        bool
+	FlushEach      uint64
 
 	// Filter options
 	FilterInterface    CaptureFilterInterfaceFunc
@@ -92,12 +92,12 @@ type Capture struct {
 	FilterInstructions []bpf.Instruction
 
 	// Output options
-	Files     []*os.File
-	Filenames []string
-	Channels  []chan CapturePacket
-	Callbacks []CaptureCallbackFunc
-	Pipenames []string
-	Listeners []string
+	Files       []*os.File
+	Filenames   []string
+	Channels    []chan CapturePacket
+	Callbacks   []CaptureCallbackFunc
+	Pipenames   []string
+	ListenAddrs []string
 
 	writer     *pcapgo.NgWriter
 	stop       chan any
@@ -122,7 +122,7 @@ func (c *Capture) ApplyNetwork(n *Network) {
 func NewCapture(opts ...CaptureOption) *Capture {
 	c := &Capture{
 		// Default options
-		CaptureLength: 1600,
+		SnapshotLength: 1600,
 
 		stop:   make(chan any),
 		queue:  prque.New(),
@@ -360,7 +360,7 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 			Name:        fmt.Sprintf("%s/%s", i.Node.Name(), i.Name),
 			Filter:      c.FilterExpression,
 			LinkType:    hdl.LinkType(),
-			SnapLength:  uint32(c.CaptureLength),
+			SnapLength:  uint32(c.SnapshotLength),
 			OS:          "Linux",
 			Description: "Linux veth pair",
 			Comment:     fmt.Sprintf("Gont Network: '%s'", i.Node.Network().Name),
@@ -398,7 +398,7 @@ func (c *Capture) startTrace() (*captureInterface, *traceEventPacketSource, erro
 		pcapInterface: pcapgo.NgInterface{
 			Name:        "tracer",
 			LinkType:    LinkTypeTrace,
-			SnapLength:  uint32(c.CaptureLength),
+			SnapLength:  uint32(c.SnapshotLength),
 			OS:          "Debug",
 			Description: "Trace output",
 		},
