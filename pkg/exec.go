@@ -15,13 +15,28 @@ import (
 )
 
 const (
-	gontNetworkSuffix = ".gont"
+	gontNetworkSuffix  = ".gont"
+	persGetPersonality = 0xffffffff // Argument to pass to personality syscall to get the current personality
+	persNoRandomize    = 0x0040000  // ADDR_NO_RANDOMIZE
 )
 
 func init() {
 	unshare := os.Getenv("GONT_UNSHARE")
 	node := os.Getenv("GONT_NODE")
 	network := os.Getenv("GONT_NETWORK")
+	disableASLR := os.Getenv("GONT_DISABLE_ASLR")
+
+	if disableASLR != "" {
+		oldPers, _, err := syscall.Syscall(syscall.SYS_PERSONALITY, persGetPersonality, 0, 0)
+		if err != 0 {
+			panic(err)
+		}
+
+		newPers := oldPers | persNoRandomize
+		if _, _, err := syscall.Syscall(syscall.SYS_PERSONALITY, newPers, 0, 0); err != syscall.Errno(0) {
+			panic(err)
+		}
+	}
 
 	if unshare != "" {
 		// Avoid recursion

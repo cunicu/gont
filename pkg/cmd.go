@@ -30,6 +30,7 @@ type Cmd struct {
 	// Options
 	Tracer        *Tracer
 	RedirectToLog bool
+	DisableASLR   bool
 
 	StdoutWriters []io.Writer
 	StderrWriters []io.Writer
@@ -73,15 +74,22 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 	c.Cmd = exec.Command(name, strArgs...)
 
 	if !c.node.NsHandle.Equal(c.node.network.HostNode.NsHandle) {
+		c.Env = os.Environ()
 		if c.node.ExistingDockerContainer == "" {
 			c.Path = "/proc/self/exe"
-			c.Env = append(os.Environ(),
-				"GONT_UNSHARE=exec",
+			c.Env = append(c.Env,
+				"GONT_UNSHARE=true",
 				"GONT_NODE="+c.node.name,
 				"GONT_NETWORK="+c.node.network.Name)
 		} else {
 			c.Path = "/usr/bin/docker"
 			c.Args = append([]string{"docker", "exec", c.node.ExistingDockerContainer, name}, strArgs...)
+		}
+
+		if c.DisableASLR {
+			c.Env = append(c.Env,
+				"GONT_DISABLE_ASLR=true",
+			)
 		}
 	}
 
