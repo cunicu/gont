@@ -5,8 +5,8 @@ package gont
 
 import (
 	"fmt"
-	"math/rand"
-	"path/filepath"
+	"os"
+	"os/exec"
 )
 
 func (n *BaseNode) Run(cmd string, args ...any) (*Cmd, error) {
@@ -19,24 +19,39 @@ func (n *BaseNode) Start(cmd string, args ...any) (*Cmd, error) {
 	return c, c.Start()
 }
 
-func (n *BaseNode) StartGo(script string, args ...any) (*Cmd, error) {
-	tmp := filepath.Join(n.network.VarPath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
+func (n *BaseNode) StartGo(fileOrPkg string, args ...any) (*Cmd, error) {
+	bin, err := n.BuildGo(fileOrPkg)
+	if err != nil {
+		return nil, err
+	}
 
-	c := n.network.HostNode.Command("go", "build", "-o", tmp, script)
+	return n.Start(bin.Name(), args...)
+}
+
+func (n *BaseNode) RunGo(fileOrPkg string, args ...any) (*Cmd, error) {
+	bin, err := n.BuildGo(fileOrPkg)
+	if err != nil {
+		return nil, err
+	}
+
+	return n.Run(bin.Name(), args...)
+}
+
+func (n *BaseNode) BuildGo(fileOrPkg string) (*os.File, error) {
+	if err := os.MkdirAll(n.network.TmpPath, 0o644); err != nil {
+		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
+	}
+
+	tmp, err := os.CreateTemp(n.network.TmpPath, "go-build-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary file: %w", err)
+	}
+
+	c := exec.Command("go", "build", "-o", tmp.Name(), fileOrPkg) //nolint:gosec
 
 	if out, err := c.CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("failed to compile Go code: %w\n%s", err, string(out))
 	}
 
-	return n.Start(tmp, args...)
-}
-
-func (n *BaseNode) RunGo(script string, args ...any) (*Cmd, error) {
-	tmp := filepath.Join(n.network.TmpPath, fmt.Sprintf("go-build-%d", rand.Intn(1<<16)))
-
-	if _, err := n.network.HostNode.Run("go", "build", "-o", tmp, script); err != nil {
-		return nil, fmt.Errorf("failed to compile Go code: %w", err)
-	}
-
-	return n.Run(tmp, args...)
+	return tmp, nil
 }
