@@ -41,7 +41,7 @@ type Tracer struct {
 	Callbacks []trace.EventCallback
 	Captures  []*Capture
 
-	// Outputs
+	closables     []io.Closer
 	files         []*os.File
 	packetSources []*traceEventPacketSource
 
@@ -66,13 +66,17 @@ func NewTracer(opts ...TraceOption) *Tracer {
 }
 
 func (t *Tracer) Start() error {
+	// Files
+	t.files = t.Files
+
 	// Filenames
-	for _, fn := range t.Filenames {
-		f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-		if err != nil {
+	for _, filename := range t.Filenames {
+		if file, err := t.OpenFile(filename); err != nil {
+			t.files = append(t.files, file)
+			t.closables = append(t.closables, file)
+		} else {
 			return fmt.Errorf("failed to open file: %w", err)
 		}
-		t.files = append(t.files, f)
 	}
 
 	// Captures
@@ -125,13 +129,13 @@ func (t *Tracer) Close() error {
 
 	for _, tps := range t.packetSources {
 		if err := tps.Close(); err != nil {
-			return err
+			return fmt.Errorf("failed to close packet source: %w", err)
 		}
 	}
 
-	for _, file := range t.files {
-		if err := file.Close(); err != nil {
-			return err
+	for _, closable := range t.closables {
+		if err := closable.Close(); err != nil {
+			return fmt.Errorf("failed to close: %w", err)
 		}
 	}
 
@@ -227,4 +231,8 @@ out:
 			return
 		}
 	}
+}
+
+func (t *Tracer) OpenFile(filename string) (*os.File, error) {
+	return os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 }
