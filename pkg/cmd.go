@@ -5,11 +5,14 @@ package gont
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
+	"syscall"
 
 	"github.com/gopacket/gopacket/pcapgo"
 	"go.uber.org/zap"
@@ -29,6 +32,7 @@ type Cmd struct {
 
 	// Options
 	Tracer        *Tracer
+	Debugger      *Debugger
 	RedirectToLog bool
 	DisableASLR   bool
 
@@ -129,8 +133,23 @@ func (c *Cmd) Start() error {
 		c.Stderr = io.MultiWriter(c.StderrWriters...)
 	}
 
-	if err := c.Cmd.Start(); err != nil {
-		return err
+	if d := c.debugger(); d != nil {
+		// We need to start the process in a stopped state
+		// so we can attach the delve debugger before execution
+		// commences in order to allow for breakpoints early
+		// in the execution.
+		if err := c.stoppedStart(); err != nil {
+			return err
+		}
+
+		var err error
+		if err = d.Start(c.Cmd); err != nil {
+			return err
+		}
+	} else {
+		if err := c.Cmd.Start(); err != nil {
+			return err
+		}
 	}
 
 	logger := c.logger.With(
@@ -168,6 +187,14 @@ func (c *Cmd) Run() error {
 	return err
 }
 
+func (c *Cmd) Wait() error {
+	if d := c.debugger(); d != nil {
+		return errors.New("cant wait on debugged process")
+	}
+
+	return c.Cmd.Wait()
+}
+
 // CombinedOutput runs the command and returns its combined standard
 // output and standard error.
 func (c *Cmd) CombinedOutput() ([]byte, error) {
@@ -203,6 +230,18 @@ func (c *Cmd) tracer() *Tracer {
 		return t
 	} else if t := c.node.network.Tracer; t != nil {
 		return t
+	} else {
+		return nil
+	}
+}
+
+func (c *Cmd) debugger() *Debugger {
+	if d := c.Debugger; d != nil {
+		return d
+	} else if d := c.node.Debugger; d != nil {
+		return d
+	} else if d := c.node.network.Debugger; d != nil {
+		return d
 	} else {
 		return nil
 	}

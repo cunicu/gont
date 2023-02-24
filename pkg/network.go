@@ -39,6 +39,7 @@ type Network struct {
 	Persistent    bool
 	NSPrefix      string
 	Captures      []*Capture
+	Debugger      *Debugger
 	Tracer        *Tracer
 	RedirectToLog bool
 

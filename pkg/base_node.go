@@ -37,6 +37,7 @@ type BaseNode struct {
 	// Options
 	ConfiguredInterfaces    []*Interface
 	Tracer                  *Tracer
+	Debugger                *Debugger
 	ExistingNamespace       string
 	ExistingDockerContainer string
 	RedirectToLog           bool
