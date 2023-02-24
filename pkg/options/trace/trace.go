@@ -10,7 +10,8 @@ import (
 	"github.com/stv0g/gont/pkg/trace"
 )
 
-// File writes all captured packets to a file handle
+// File writes tracing events in JSON format to the provided file handle.
+// Each event is written to a new line.
 type File struct {
 	*os.File
 }
@@ -21,7 +22,7 @@ func (f File) ApplyTracer(t *g.Tracer) {
 
 func ToFile(f *os.File) File { return File{File: f} }
 
-// Filename writes all captured packets to a PCAPng file
+// Filename appends tracing events to a new or existing file with the provided filename.
 type Filename string
 
 func (fn Filename) ApplyTracer(c *g.Tracer) {
@@ -30,7 +31,7 @@ func (fn Filename) ApplyTracer(c *g.Tracer) {
 
 func ToFilename(fn string) Filename { return Filename(fn) }
 
-// Channel sends all captured packets to the provided channel.
+// Channel sends tracing events to the provided channel.
 type Channel chan trace.Event
 
 func (d Channel) ApplyTracer(t *g.Tracer) {
@@ -39,14 +40,23 @@ func (d Channel) ApplyTracer(t *g.Tracer) {
 
 func ToChannel(ch chan trace.Event) Channel { return Channel(ch) }
 
-// Callback provides a custom callback function which is called for each captured packet
+// Callback provides a custom callback function which is called for each tracing event.
 type Callback trace.EventCallback
 
 func (cb Callback) ApplyTracer(t *g.Tracer) {
 	t.Callbacks = append(t.Callbacks, trace.EventCallback(cb))
 }
 
-// Capture will write Tracepoints as fake packets to the capture
+// Capture will write Tracepoints as fake packets to the capture.
+//
+// Checkout the included  Lua-based WireShark dissector to decode the fake
+// tracing event packets.
+//
+// Start WireShark with the following options to load the dissector:
+//
+//	wireshark -Xlua_script:dissector.lua
+//
+// See ./dissector/dissector.lua
 type Capture struct {
 	*g.Capture
 }
