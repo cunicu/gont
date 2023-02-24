@@ -199,6 +199,8 @@ func (c *Cmd) StderrPipe() (io.ReadCloser, error) {
 func (c *Cmd) tracer() *Tracer {
 	if t := c.Tracer; t != nil {
 		return t
+	} else if t := c.node.Tracer; t != nil {
+		return t
 	} else if t := c.node.network.Tracer; t != nil {
 		return t
 	} else {
