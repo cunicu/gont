@@ -12,7 +12,7 @@ type Router struct {
 }
 
 func (h *Router) ApplyInterface(i *Interface) {
-	i.Node = h
+	i.node = h
 }
 
 func (n *Network) AddRouter(name string, opts ...Option) (*Router, error) {

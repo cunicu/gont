@@ -36,11 +36,12 @@ type PacketSource interface {
 
 type filenameTemplate struct {
 	Interface string
-	Host      string
+	Node      string
 	Network   string
+	PID       int
 }
 
-func (t filenameTemplate) execute(filename string, i *Interface) (string, error) {
+func (t filenameTemplate) execute(filename string) (string, error) {
 	b := &bytes.Buffer{}
 
 	tpl, err := template.New("filename").Parse(filename)
@@ -306,7 +307,7 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 		if i.Interface == nil {
 			comment = "Captured with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)"
 		} else {
-			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.Node.Network().Name)
+			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.node.Network().Name)
 		}
 	}
 
@@ -356,7 +357,7 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 	var err error
 	var hdl PacketSource
 
-	if err := i.Node.RunFunc(func() error {
+	if err := i.node.RunFunc(func() error {
 		hdl, err = c.createPCAPHandle(i.Name)
 		return err
 	}); err != nil {
@@ -367,13 +368,13 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 		Interface: i,
 		source:    hdl,
 		pcapInterface: pcapgo.NgInterface{
-			Name:        fmt.Sprintf("%s/%s", i.Node.Name(), i.Name),
+			Name:        fmt.Sprintf("%s/%s", i.node.Name(), i.Name),
 			Filter:      c.FilterExpression,
 			LinkType:    hdl.LinkType(),
 			SnapLength:  uint32(c.SnapshotLength),
 			OS:          "Linux",
 			Description: "Linux veth pair",
-			Comment:     fmt.Sprintf("Gont Network: '%s'", i.Node.Network().Name),
+			Comment:     fmt.Sprintf("Gont Network: '%s'", i.node.Network().Name),
 		},
 		logger: c.logger.With(zap.String("intf", i.Name)),
 	}
@@ -450,7 +451,7 @@ func (c *Capture) createListener(lAddr string) (*captureListener, error) {
 	return listener, nil
 }
 
-func (c *Capture) createPipe(pipename string) (*os.File, error) {
+func (c *Capture) createAndOpenPipe(pipename string) (*os.File, error) {
 	logger := c.logger.With(zap.String("path", pipename))
 
 	if stat, err := os.Stat(pipename); err != nil { //nolint:nestif
@@ -490,15 +491,15 @@ func (c *Capture) openFile(filename string, i *captureInterface) (*os.File, erro
 
 	if i.Interface != nil {
 		tpl := filenameTemplate{
-			Network:   i.Node.Network().Name,
-			Host:      i.Node.Name(),
+			Network:   i.node.Network().Name,
+			Node:      i.node.Name(),
 			Interface: i.Name,
 		}
 
-		if filename, err = tpl.execute(filename, i.Interface); err != nil {
+		if filename, err = tpl.execute(filename); err != nil {
 			return nil, err
 		}
 	}
 
-	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
+	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 }

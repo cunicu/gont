@@ -28,7 +28,7 @@ type Host struct {
 
 // Options
 func (h *Host) ApplyInterface(i *Interface) {
-	i.Node = h
+	i.node = h
 }
 
 func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
@@ -47,14 +47,14 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 
 	// Apply host options
 	for _, opt := range opts {
-		if hopt, ok := opt.(HostOption); ok {
-			hopt.ApplyHost(host)
+		if hOpt, ok := opt.(HostOption); ok {
+			hOpt.ApplyHost(host)
 		}
 	}
 
 	// Configure loopback device
 	lo := loopbackInterface
-	lo.Node = host
+	lo.node = host
 	if lo.Link, err = host.nlHandle.LinkByName("lo"); err != nil {
 		return nil, fmt.Errorf("failed to get loopback interface: %w", err)
 	}
@@ -97,11 +97,11 @@ func (h *Host) ConfigureLinks() error {
 
 		right := &Interface{
 			Name: peerDev,
-			Node: intf.Node,
+			node: intf.node,
 		}
 
 		left := intf
-		left.Node = h
+		left.node = h
 
 		if err := h.network.AddLink(left, right); err != nil {
 			return err

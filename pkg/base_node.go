@@ -70,8 +70,8 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 	node.RedirectToLog = node.logger.Core().Enabled(zap.DebugLevel)
 
 	for _, opt := range opts {
-		if nopt, ok := opt.(BaseNodeOption); ok {
-			nopt.ApplyBaseNode(node)
+		if nOpt, ok := opt.(BaseNodeOption); ok {
+			nOpt.ApplyBaseNode(node)
 		}
 	}
 

@@ -13,7 +13,7 @@ import (
 	"github.com/go-ping/ping"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
-	tcopt "github.com/stv0g/gont/pkg/options/tc"
+	tco "github.com/stv0g/gont/pkg/options/tc"
 )
 
 func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
@@ -62,7 +62,7 @@ func TestNetemLatency(t *testing.T) {
 	latency := 50 * time.Millisecond
 
 	ne := o.WithNetem(
-		tcopt.Latency(latency),
+		tco.Latency(latency),
 	)
 
 	stats, err := testNetem(t, ne)
@@ -90,7 +90,7 @@ func TestNetemLoss(t *testing.T) {
 	}
 
 	ne := o.WithNetem(
-		tcopt.Loss{Probability: 10.0},
+		tco.Loss{Probability: 10.0},
 	)
 
 	stats, err := testNetem(t, ne)
@@ -113,7 +113,7 @@ func TestNetemDuplication(t *testing.T) {
 	}
 
 	ne := o.WithNetem(
-		tcopt.Duplicate{Probability: 50.0},
+		tco.Duplicate{Probability: 50.0},
 	)
 
 	stats, err := testNetem(t, ne)

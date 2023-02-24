@@ -33,7 +33,7 @@ func TestTracer(t *testing.T) {
 		to.ToCapture(c1),
 	)
 
-	if err := t1.StartLocal(); err != nil {
+	if err := t1.Start(); err != nil {
 		t.Fatalf("Failed to start: %s", err)
 	}
 

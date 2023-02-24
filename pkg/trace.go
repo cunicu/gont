@@ -45,15 +45,13 @@ type Tracer struct {
 	files         []*os.File
 	packetSources []*traceEventPacketSource
 
-	started bool
-	stop    chan any
-	queue   *prque.PriorityQueue
-	logger  *zap.Logger
+	stop   chan any
+	queue  *prque.PriorityQueue
+	logger *zap.Logger
 }
 
 func NewTracer(opts ...TraceOption) *Tracer {
 	t := &Tracer{
-		stop:   make(chan any),
 		queue:  prque.New(),
 		logger: zap.L().Named("tracer"),
 	}
@@ -65,13 +63,16 @@ func NewTracer(opts ...TraceOption) *Tracer {
 	return t
 }
 
-func (t *Tracer) Start() error {
+func (t *Tracer) start() error {
 	// Files
 	t.files = t.Files
 
 	// Filenames
 	for _, filename := range t.Filenames {
-		if file, err := t.OpenFile(filename); err != nil {
+		// TODO: It would be nice of we can use the same kind of templating
+		//       for the filename as in Capture filenames. However, its tricky to
+		//       include the PID into the template :(
+		if file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); err != nil {
 			t.files = append(t.files, file)
 			t.closables = append(t.closables, file)
 		} else {
@@ -87,18 +88,19 @@ func (t *Tracer) Start() error {
 		}
 
 		t.packetSources = append(t.packetSources, ps)
+		t.closables = append(t.closables, ps)
 	}
 
-	go t.writeEvents()
+	t.stop = make(chan any)
 
-	t.started = true
+	go t.writeEvents()
 
 	return nil
 }
 
-func (t *Tracer) StartLocal() error {
-	if !t.started {
-		if err := t.Start(); err != nil {
+func (t *Tracer) Start() error {
+	if t.stop == nil {
+		if err := t.start(); err != nil {
 			return err
 		}
 	}
@@ -121,16 +123,14 @@ func (t *Tracer) Flush() error {
 }
 
 func (t *Tracer) Close() error {
+	if t.stop == nil {
+		return nil // not started
+	}
+
 	close(t.stop)
 
 	if err := t.Flush(); err != nil {
 		return fmt.Errorf("failed to flush: %w", err)
-	}
-
-	for _, tps := range t.packetSources {
-		if err := tps.Close(); err != nil {
-			return fmt.Errorf("failed to close packet source: %w", err)
-		}
 	}
 
 	for _, closable := range t.closables {
@@ -143,8 +143,8 @@ func (t *Tracer) Close() error {
 }
 
 func (t *Tracer) Pipe() (*os.File, error) {
-	if !t.started {
-		if err := t.Start(); err != nil {
+	if t.stop == nil {
+		if err := t.start(); err != nil {
 			return nil, err
 		}
 	}
@@ -231,8 +231,4 @@ out:
 			return
 		}
 	}
-}
-
-func (t *Tracer) OpenFile(filename string) (*os.File, error) {
-	return os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 }

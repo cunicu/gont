@@ -46,8 +46,7 @@ func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 
 			logger.Info("Packet",
 				zap.Strings("layers", layers),
-				zap.String("node", p.Interface.Node.Name()),
-				zap.String("intf", p.Interface.Name))
+				zap.Any("intf", p.Interface))
 		}
 	}()
 
@@ -75,7 +74,7 @@ func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 		co.SnapshotLength(1600),
 		co.Promiscuous(true),
 		co.FilterExpression("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
-		// copt.FilterInstructions(instrs),
+		// co.FilterInstructions(instrs),
 		co.FilterInterfaces(func(i *g.Interface) bool {
 			return strings.HasPrefix(i.Name, "veth")
 		}),
