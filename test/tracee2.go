@@ -7,17 +7,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/stv0g/gont/pkg/trace"
 	"go.uber.org/zap"
 )
 
+var myID string //nolint:unused,gochecknoglobals
+
 func main() {
 	if err := trace.Start(0); err != nil {
 		panic(err)
 	}
 	defer trace.Stop() //nolint:errcheck
+
+	myID = os.Args[1]
 
 	cfg := zap.NewDevelopmentConfig()
 	cfg.Level.SetLevel(zap.DebugLevel)
@@ -29,6 +34,8 @@ func main() {
 	logger = logger.With(zap.Strings("argv", os.Args))
 
 	zap.ReplaceGlobals(logger)
+
+	runtime.Breakpoint()
 
 	if err := traced(); err != nil {
 		logger.Fatal("Failed to run traced", zap.Error(err))
@@ -45,22 +52,26 @@ func main() {
 
 func traced() error {
 	for i := 0; i < 5; i++ {
-		ts := time.Now()
+		myTime(i)
 
-		fmt.Printf("My time is: %s\n", ts)
-
-		data := map[string]any{
-			"i": i,
-		}
-
-		if err := trace.PrintfWithData(data, "My time is: %s\n", ts); err != nil {
-			fmt.Println(err)
-		}
-
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 	}
 
 	return nil
+}
+
+func myTime(i int) {
+	ts := time.Now()
+
+	fmt.Printf("My time is: %s\n", ts)
+
+	data := map[string]any{
+		"i": i,
+	}
+
+	if err := trace.PrintfWithData(data, "My time is: %s\n", ts); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func log() error {

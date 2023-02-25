@@ -211,9 +211,7 @@ func TestPingDoubleNAT(t *testing.T) {
 //	h1 <-> sw <-> n1 (host) <-> external
 func TestPingHostNAT(t *testing.T) {
 	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
-		// GitHubs Azure based CI environment does not
-		// allow to ping external targets
-		t.Skip()
+		t.Skip("GitHubs Azure based CI environment does not allow to ping external targets")
 	}
 
 	var (

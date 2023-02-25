@@ -15,8 +15,7 @@ import (
 )
 
 func TestDocker(t *testing.T) {
-	// Test is broken
-	t.Skip()
+	t.Skip("Test is currently broken")
 
 	var (
 		err    error

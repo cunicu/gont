@@ -109,7 +109,7 @@ func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("fc::1/64"),
 			g.NewCapture(
-				co.Filename("{{ .Host }}_{{ .Interface }}.pcapng"),
+				co.Filename("{{ .Node }}_{{ .Interface }}.pcapng"),
 			),
 		),
 	); err != nil {

@@ -17,6 +17,8 @@ import (
 )
 
 func TestDebugger(t *testing.T) {
+	t.Skip("Requires interactive debugger")
+
 	var (
 		err error
 		n   *g.Network
@@ -49,7 +51,7 @@ func TestDebugger(t *testing.T) {
 		do.ListenAddr(":1234"),
 		do.BreakOnEntry(true),
 		// g.NewTracepoint(
-		// 	do.FunctionsRegex("main.mytime"),
+		// 	do.FunctionsRegex("main.myTime"),
 		// 	do.Message("Variable i is {i}"),
 		// 	do.Condition("i >= 4"),
 		// 	do.Stacktrace(1),
@@ -70,7 +72,7 @@ func TestDebugger(t *testing.T) {
 		// g.NewTracepoint(
 		// 	do.Name("My watchpoint"), do.Description("hallo", "welt"),
 		// 	do.Watch("i", api.WatchWrite),
-		// 	do.File("/home/stv0g/workspace/gont/test/tracee/tracee.go"), do.Line(43),
+		// 	do.File("/home/stv0g/workspace/gont/test/tracee2.go"), do.Line(43),
 		// 	do.Data("my user data"),
 		// ),
 		do.ToTracer(s),
@@ -89,11 +91,11 @@ func TestDebugger(t *testing.T) {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
-	if _, err = h1.StartGo("../test/tracee", 1); err != nil {
+	if _, err = h1.StartGo("../test/tracee2.go", 1); err != nil {
 		t.Fatalf("Failed to run tracee: %s", err)
 	}
 
-	if _, err = h1.StartGo("../test/tracee", 2); err != nil {
+	if _, err = h1.StartGo("../test/tracee2.go", 2); err != nil {
 		t.Fatalf("Failed to run tracee: %s", err)
 	}
 

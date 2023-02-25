@@ -6,7 +6,7 @@ package options
 
 // Customize clones and extends a list of options without altering the list of base options.
 func Customize[T any](opts []T, extraOptions ...T) []T {
-	new := make([]T, len(opts)+len(extraOptions))
+	new := make([]T, 0, len(opts)+len(extraOptions))
 	new = append(new, opts...)
 	new = append(new, extraOptions...)
 

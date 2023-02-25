@@ -23,7 +23,7 @@ type traceCore struct {
 }
 
 func (c *traceCore) Enabled(lvl zapcore.Level) bool {
-	return eventFile != nil
+	return eventWriter != nil || eventCallback != nil
 }
 
 func (c *traceCore) With(fields []zapcore.Field) zapcore.Core {
@@ -34,17 +34,13 @@ func (c *traceCore) With(fields []zapcore.Field) zapcore.Core {
 
 func (c *traceCore) Check(e zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
 	if c.Enabled(e.Level) {
-		ce.AddCore(e, c)
+		ce = ce.AddCore(e, c)
 	}
 
 	return ce
 }
 
 func (c *traceCore) Write(e zapcore.Entry, fields []zapcore.Field) error {
-	if eventWriter == nil {
-		return nil
-	}
-
 	enc := zapcore.NewMapObjectEncoder()
 
 	for _, f := range c.fields {
@@ -67,8 +63,17 @@ func (c *traceCore) Write(e zapcore.Entry, fields []zapcore.Field) error {
 		Data:      enc.Fields,
 	}
 
-	_, err := t.WriteTo(eventWriter)
-	return err
+	if eventCallback != nil {
+		eventCallback(t)
+	}
+
+	if eventWriter != nil {
+		if _, err := t.WriteTo(eventWriter); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c *traceCore) Sync() error {
