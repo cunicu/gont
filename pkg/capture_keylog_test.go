@@ -27,7 +27,7 @@ func TestCaptureKeyLog(t *testing.T) {
 		server *HTTPServer
 	)
 
-	tmpPCAP, err := os.CreateTemp("", "gont-capture-*.pcapng")
+	tmpPCAP, err := os.CreateTemp(t.TempDir(), "gont-capture-*.pcapng")
 	if err != nil {
 		t.Fatalf("Failed to open temporary file: %s", err)
 	}

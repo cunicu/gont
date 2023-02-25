@@ -28,7 +28,7 @@ func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 		sw1    *g.Switch
 	)
 
-	tmpPCAP, err := os.CreateTemp("", "gont-capture-*.pcapng")
+	tmpPCAP, err := os.CreateTemp(t.TempDir(), "gont-capture-*.pcapng")
 	if err != nil {
 		t.Fatalf("Failed to open temporary file: %s", err)
 	}
