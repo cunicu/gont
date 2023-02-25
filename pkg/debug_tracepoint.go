@@ -8,7 +8,7 @@ import (
 )
 
 type TracepointOption interface {
-	ApplyBreakpoint(*Tracepoint)
+	ApplyTracepoint(*Tracepoint)
 }
 
 type Tracepoint struct {
@@ -26,7 +26,7 @@ func NewTracepoint(opts ...TracepointOption) Tracepoint {
 	bp := Tracepoint{}
 
 	for _, opt := range opts {
-		opt.ApplyBreakpoint(&bp)
+		opt.ApplyTracepoint(&bp)
 	}
 
 	return bp

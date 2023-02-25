@@ -11,7 +11,7 @@ import (
 // User defined name of the breakpoint.
 type Name string
 
-func (n Name) ApplyBreakpoint(b *g.Tracepoint) {
+func (n Name) ApplyTracepoint(b *g.Tracepoint) {
 	b.Name = string(n)
 }
 
@@ -19,7 +19,7 @@ func (n Name) ApplyBreakpoint(b *g.Tracepoint) {
 // See: https://github.com/go-delve/delve/blob/master/Documentation/cli/locspec.md
 type Location string
 
-func (l Location) ApplyBreakpoint(b *g.Tracepoint) {
+func (l Location) ApplyTracepoint(b *g.Tracepoint) {
 	b.Location = string(l)
 }
 
@@ -33,21 +33,21 @@ func FunctionNameRegex(expr string) Location {
 // Address is deprecated, use Addrs.
 type Address uint64
 
-func (a Address) ApplyBreakpoint(b *g.Tracepoint) {
+func (a Address) ApplyTracepoint(b *g.Tracepoint) {
 	b.Addr = uint64(a)
 }
 
 // File is the source file for the breakpoint.
 type File string
 
-func (f File) ApplyBreakpoint(b *g.Tracepoint) {
+func (f File) ApplyTracepoint(b *g.Tracepoint) {
 	b.File = string(f)
 }
 
 // Line is a line in File for the breakpoint.
 type Line int
 
-func (l Line) ApplyBreakpoint(b *g.Tracepoint) {
+func (l Line) ApplyTracepoint(b *g.Tracepoint) {
 	b.Line = int(l)
 }
 
@@ -55,14 +55,14 @@ func (l Line) ApplyBreakpoint(b *g.Tracepoint) {
 // may not always be available.
 type FunctionName string
 
-func (fn FunctionName) ApplyBreakpoint(b *g.Tracepoint) {
+func (fn FunctionName) ApplyTracepoint(b *g.Tracepoint) {
 	b.FunctionName = string(fn)
 }
 
 // Breakpoint condition.
 type Condition string
 
-func (c Condition) ApplyBreakpoint(b *g.Tracepoint) {
+func (c Condition) ApplyTracepoint(b *g.Tracepoint) {
 	b.Cond = string(c)
 }
 
@@ -70,21 +70,21 @@ func (c Condition) ApplyBreakpoint(b *g.Tracepoint) {
 // Supported hit count conditions are "NUMBER" and "OP NUMBER".
 type HitCondition string
 
-func (hc HitCondition) ApplyBreakpoint(b *g.Tracepoint) {
+func (hc HitCondition) ApplyTracepoint(b *g.Tracepoint) {
 	b.HitCond = string(hc)
 }
 
 // HitConditionPerGoroutine use per goroutine hitcount as HitCond operand, instead of total hitcount.
 type HitConditionPerGoroutine bool
 
-func (hc HitConditionPerGoroutine) ApplyBreakpoint(b *g.Tracepoint) {
+func (hc HitConditionPerGoroutine) ApplyTracepoint(b *g.Tracepoint) {
 	b.HitCondPerG = bool(hc)
 }
 
 // Tracepoint flag, signifying this is a tracepoint.
 type Tracepoint bool
 
-func (tp Tracepoint) ApplyBreakpoint(b *g.Tracepoint) {
+func (tp Tracepoint) ApplyTracepoint(b *g.Tracepoint) {
 	b.Tracepoint = bool(tp)
 }
 
@@ -92,28 +92,28 @@ func (tp Tracepoint) ApplyBreakpoint(b *g.Tracepoint) {
 // statement in a traced function.
 type TraceReturn bool
 
-func (tr TraceReturn) ApplyBreakpoint(b *g.Tracepoint) {
+func (tr TraceReturn) ApplyTracepoint(b *g.Tracepoint) {
 	b.TraceReturn = bool(tr)
 }
 
 // Retrieve goroutine information
 type Goroutine bool
 
-func (g Goroutine) ApplyBreakpoint(b *g.Tracepoint) {
+func (g Goroutine) ApplyTracepoint(b *g.Tracepoint) {
 	b.Goroutine = bool(g)
 }
 
 // Stack frames to retrieve
 type Stacktrace int
 
-func (s Stacktrace) ApplyBreakpoint(b *g.Tracepoint) {
+func (s Stacktrace) ApplyTracepoint(b *g.Tracepoint) {
 	b.Stacktrace = int(s)
 }
 
 // Expressions to evaluate
 type Variable string
 
-func (v Variable) ApplyBreakpoint(b *g.Tracepoint) {
+func (v Variable) ApplyTracepoint(b *g.Tracepoint) {
 	b.Variables = append(b.Variables, string(v))
 }
 
@@ -123,7 +123,7 @@ type WatchExpression struct {
 	Type api.WatchType
 }
 
-func (w WatchExpression) ApplyBreakpoint(b *g.Tracepoint) {
+func (w WatchExpression) ApplyTracepoint(b *g.Tracepoint) {
 	b.WatchExpr = w.Expr
 	b.WatchType = w.Type
 }
@@ -137,7 +137,7 @@ func Watch(expr string, typ api.WatchType) WatchExpression {
 
 type VerboseDescription []string
 
-func (v VerboseDescription) ApplyBreakpoint(b *g.Tracepoint) {
+func (v VerboseDescription) ApplyTracepoint(b *g.Tracepoint) {
 	b.VerboseDescr = []string(v)
 }
 
@@ -148,7 +148,7 @@ func Description(strs ...string) VerboseDescription {
 // Disabled flag, signifying the state of the breakpoint
 type Disabled bool
 
-func (d Disabled) ApplyBreakpoint(b *g.Tracepoint) {
+func (d Disabled) ApplyTracepoint(b *g.Tracepoint) {
 	b.Disabled = bool(d)
 }
 
@@ -158,7 +158,7 @@ type UserData struct {
 	Data any
 }
 
-func (u UserData) ApplyBreakpoint(b *g.Tracepoint) {
+func (u UserData) ApplyTracepoint(b *g.Tracepoint) {
 	b.UserData = any(u.Data)
 }
 
@@ -181,7 +181,7 @@ func LoadConfig(opts ...LoadConfigOption) api.LoadConfig {
 // LoadArguments requests loading function arguments when the breakpoint is hit
 type LoadArgumentsConfig api.LoadConfig
 
-func (l LoadArgumentsConfig) ApplyBreakpoint(b *g.Tracepoint) {
+func (l LoadArgumentsConfig) ApplyTracepoint(b *g.Tracepoint) {
 	b.LoadArgs = (*api.LoadConfig)(&l)
 }
 
@@ -192,7 +192,7 @@ func LoadArguments(opts ...LoadConfigOption) LoadArgumentsConfig {
 // LoadLocals requests loading function locals when the breakpoint is hit
 type LoadLocalsConfig api.LoadConfig
 
-func (l LoadLocalsConfig) ApplyBreakpoint(b *g.Tracepoint) {
+func (l LoadLocalsConfig) ApplyTracepoint(b *g.Tracepoint) {
 	b.LoadLocals = (*api.LoadConfig)(&l)
 }
 
@@ -209,6 +209,6 @@ func LoadLocals(opts ...LoadConfigOption) LoadLocalsConfig {
 // Example: "The variable myVar has currently the value {myVar}"
 type Message string
 
-func (m Message) ApplyBreakpoint(b *g.Tracepoint) {
+func (m Message) ApplyTracepoint(b *g.Tracepoint) {
 	b.Message = string(m)
 }
