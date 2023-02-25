@@ -42,7 +42,7 @@ func TestPriorityQueue(t *testing.T) {
 	assert.Equal(t, it.Time().Second(), 2)
 
 	o := q.Oldest()
-	assert.Equal(t, o.Unix(), 3)
+	assert.EqualValues(t, o.Unix(), 3)
 
 	it = q.Pop()
 	assert.Equal(t, it.Time().Second(), 3)
@@ -50,5 +50,5 @@ func TestPriorityQueue(t *testing.T) {
 	it = q.Pop()
 	assert.Equal(t, it.Time().Second(), 4)
 
-	assert.Equal(t, q.Len(), 0)
+	assert.Zero(t, q.Len())
 }

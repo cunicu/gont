@@ -32,5 +32,5 @@ func TestTouch(t *testing.T) {
 
 	assert.False(t, fi.IsDir())
 
-	assert.Equal(t, fi.Size(), 0)
+	assert.Zero(t, fi.Size())
 }
