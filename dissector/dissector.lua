@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2014-2015 Kim Alvefur
-// SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: 2014-2015 Kim Alvefur
+-- SPDX-License-Identifier: MIT
 
 cbor = require('cbor')
 
@@ -81,7 +81,7 @@ function trace.dissector(buffer, pinfo, tree)
     end
     if dec.data ~= nil then
         if type(dec.data) == "table" then
-            build_tree(trace.fields.data, dec.data, subtree) 
+            build_tree(trace.fields.data, dec.data, subtree)
         else
             subtree:add(trace.fields.data, dec.data)
         end
