@@ -47,7 +47,7 @@ jobs:
       run: |
         sudo --preserve-env \
           env "PATH=$PATH" \
-          go test -coverprofile coverage.out -v ./...
+          go test -coverprofile coverage.out -v ./pkg ./internal/...
 
     - name: Run codacy-coverage-reporter
       uses: codacy/codacy-coverage-reporter-action@v1

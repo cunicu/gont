@@ -72,7 +72,7 @@ func TestDebugger(t *testing.T) {
 		// g.NewTracepoint(
 		// 	do.Name("My watchpoint"), do.Description("hallo", "welt"),
 		// 	do.Watch("i", api.WatchWrite),
-		// 	do.File("/home/stv0g/workspace/gont/test/tracee2.go"), do.Line(43),
+		// 	do.File("/home/stv0g/workspace/gont/test/tracee2/main.go"), do.Line(43),
 		// 	do.Data("my user data"),
 		// ),
 		do.ToTracer(s),
@@ -91,11 +91,11 @@ func TestDebugger(t *testing.T) {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
-	if _, err = h1.StartGo("../test/tracee2.go", 1); err != nil {
+	if _, err = h1.StartGo("../test/tracee2", 1); err != nil {
 		t.Fatalf("Failed to run tracee: %s", err)
 	}
 
-	if _, err = h1.StartGo("../test/tracee2.go", 2); err != nil {
+	if _, err = h1.StartGo("../test/tracee2", 2); err != nil {
 		t.Fatalf("Failed to run tracee: %s", err)
 	}
 

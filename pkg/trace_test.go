@@ -46,7 +46,7 @@ func TestTraceSubProcess(t *testing.T) {
 		t.Fatalf("Failed to start tracer: %s", err)
 	}
 
-	cmd, err := n.HostNode.RunGo("../test/tracee1.go")
+	cmd, err := n.HostNode.RunGo("../test/tracee1")
 	if err != nil {
 		t.Fatalf("Failed to run sub-process: %s", err)
 	}
@@ -77,8 +77,9 @@ func TestTraceSubProcess(t *testing.T) {
 		t.Fatalf("Mismatching data: %+#v != %+#v", event.Data, myData)
 	}
 
-	if !strings.HasSuffix(event.File, "test/tracee1.go") {
-		t.Fatalf("Mismatching filename: %s != %s", event.File, "test/tracee1.go")
+	filename := "test/tracee1/main.go"
+	if !strings.HasSuffix(event.File, filename) {
+		t.Fatalf("Mismatching filename: %s != %s", event.File, filename)
 	}
 
 	if event.Line == 0 {
@@ -262,7 +263,7 @@ func TestTracerWithCapture(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		if _, err = h1.RunGo("../test/tracee2.go", i); err != nil {
+		if _, err = h1.RunGo("../test/tracee2", i); err != nil {
 			t.Fatalf("Failed to run tracee: %s", err)
 		}
 	}
