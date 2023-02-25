@@ -7,14 +7,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"time"
 
 	"github.com/stv0g/gont/pkg/trace"
 	"go.uber.org/zap"
 )
-
-var myID string //nolint:unused,gochecknoglobals
 
 func main() {
 	if err := trace.Start(0); err != nil {
@@ -22,51 +19,18 @@ func main() {
 	}
 	defer trace.Stop() //nolint:errcheck
 
-	myID = os.Args[1]
-
-	cfg := zap.NewDevelopmentConfig()
-	cfg.Level.SetLevel(zap.DebugLevel)
-	logger, err := cfg.Build(trace.Log())
-	if err != nil {
-		panic(err)
-	}
-
-	logger = logger.With(zap.Strings("argv", os.Args))
-
-	zap.ReplaceGlobals(logger)
-
-	runtime.Breakpoint()
-
-	if err := traced(); err != nil {
-		logger.Fatal("Failed to run traced", zap.Error(err))
-	}
-
-	if err := log(); err != nil {
-		logger.Fatal("Failed to run log", zap.Error(err))
-	}
-
-	if err := ping(); err != nil {
-		logger.Fatal("Failed to run ping", zap.Error(err))
-	}
+	traced()
+	log()
+	ping()
 }
 
-func traced() error {
-	for i := 0; i < 5; i++ {
-		myTime(i)
-
-		time.Sleep(1 * time.Second)
-	}
-
-	return nil
-}
-
-func myTime(i int) {
+func traced() {
 	ts := time.Now()
 
 	fmt.Printf("My time is: %s\n", ts)
 
 	data := map[string]any{
-		"i": i,
+		"i": 1337,
 	}
 
 	if err := trace.PrintfWithData(data, "My time is: %s\n", ts); err != nil {
@@ -74,7 +38,7 @@ func myTime(i int) {
 	}
 }
 
-func log() error {
+func log() {
 	logger := zap.L().Named("log")
 
 	logger.Named("my_first_logger").Debug("Debug")
@@ -95,11 +59,9 @@ func log() error {
 		}),
 		zap.Time("in_one_year", time.Now().Add(24*365*time.Hour)),
 	)
-
-	return nil
 }
 
-func ping() error {
+func ping() {
 	logger := zap.L().Named("ping")
 
 	for i := 0; i < 5; i++ {
@@ -114,6 +76,4 @@ func ping() error {
 
 		time.Sleep(100 * time.Millisecond)
 	}
-
-	return nil
 }

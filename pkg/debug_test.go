@@ -5,8 +5,10 @@ package gont_test
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	do "github.com/stv0g/gont/pkg/options/debug"
