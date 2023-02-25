@@ -63,11 +63,7 @@ func Exec(network, node string, args []string) error {
 		return err
 	}
 
-	if err := execvpe.Execvpe(args[0], args, os.Environ()); err != nil {
-		return err
-	}
-
-	return nil
+	return execvpe.Execvpe(args[0], args, os.Environ())
 }
 
 func Unshare(network, node string) error {

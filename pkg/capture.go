@@ -272,32 +272,35 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 
 	// Filenames
 	for _, filename := range c.Filenames {
-		if file, err := c.openFile(filename, i); err != nil {
+		file, err := c.openFile(filename, i)
+		if err != nil {
 			return nil, fmt.Errorf("failed to open file: %w", err)
-		} else {
-			wrs = append(wrs, file)
-			c.closables = append(c.closables, file)
 		}
+
+		wrs = append(wrs, file)
+		c.closables = append(c.closables, file)
 	}
 
 	// Pipenames
 	for _, pipename := range c.Pipenames {
-		if pipe, err := c.createAndOpenPipe(pipename); err != nil {
+		pipe, err := c.createAndOpenPipe(pipename)
+		if err != nil {
 			return nil, fmt.Errorf("failed to create pipe: %w", err)
-		} else {
-			wrs = append(wrs, pipe)
-			c.closables = append(c.closables, pipe)
 		}
+
+		wrs = append(wrs, pipe)
+		c.closables = append(c.closables, pipe)
 	}
 
 	// Listeners
 	for _, lAddr := range c.ListenAddrs {
-		if listener, err := c.createListener(lAddr); err != nil {
+		listener, err := c.createListener(lAddr)
+		if err != nil {
 			return nil, fmt.Errorf("failed to create listener: %w", err)
-		} else {
-			wrs = append(wrs, listener)
-			c.closables = append(c.closables, listener)
 		}
+
+		wrs = append(wrs, listener)
+		c.closables = append(c.closables, listener)
 	}
 
 	wr := io.MultiWriter(wrs...)

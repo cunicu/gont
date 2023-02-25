@@ -72,12 +72,13 @@ func (t *Tracer) start() error {
 		// TODO: It would be nice of we can use the same kind of templating
 		//       for the filename as in Capture filenames. However, its tricky to
 		//       include the PID into the template :(
-		if file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); err != nil {
+		file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
 			return fmt.Errorf("failed to open file: %w", err)
-		} else {
-			t.files = append(t.files, file)
-			t.closables = append(t.closables, file)
 		}
+
+		t.files = append(t.files, file)
+		t.closables = append(t.closables, file)
 	}
 
 	// Captures
