@@ -1,6 +1,6 @@
 # Gont - A testing framework for distributed Go applications
 
-[![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/stv0g/gont/Build%20and%20Test/master)](https://github.com/stv0g/gont/actions)
+[![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/stv0g/gont/build.yaml)](https://github.com/stv0g/gont/actions)
 [![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
 [![Codacy coverage](https://img.shields.io/codacy/coverage/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
 [![libraries.io](https://img.shields.io/librariesio/github/stv0g/gont)](https://libraries.io/github/stv0g/gont)
@@ -9,11 +9,19 @@
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
 [![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
 
-Gont is a package to create realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native).
+Gont is a Go package to support the development networked and distributed applications.
+
+It can construct a virtual network using Linux network spaces, to simulate switches, routers, NAT and endpoints, on a single machine (VM, cloud or native).
+In addition, it supports developers with tooling for tracing and debugger tooling for investigating distributed applications.
 
 Gont is heavily inspired by [Mininet](https://mininet.org).
-It allows the user to build virtual network topologies using Go code.
+It allows the user to build virtual network topologies defined Go code.
 Under the hood the network is then constructed using Linux virtual bridges and network namespaces.
+
+Gont runs on all moderatly recent Linux versions and requires `NET_ADMIN` capabilities (or root access).
+
+Using Gont, developers can test complex distributed peer-to-peer and federated applications like routing daemons or social networks and messaging.
+Integration tests can be automated and executed in CI environments like GitHub actions (which are in fact used to test Gont itself).
 
 ## Getting started
 
