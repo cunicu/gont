@@ -4,8 +4,12 @@
 package gont_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 	"testing"
@@ -58,7 +62,7 @@ func TestTraceSubProcess(t *testing.T) {
 	assert.Equal(t, event.Message, "This is my first trace message: Hurra", "Wrong message")
 	assert.Equal(t, event.Data, myData, "Mismatching data")
 	assert.True(t, strings.HasSuffix(event.File, filename), "Mismatching filename")
-	assert.NotEqual(t, event.Line, 0, "Empty line number")
+	assert.NotZero(t, event.Line, "Empty line number")
 	assert.Equal(t, event.PID, cmd.Process.Pid, "Wrong PID")
 	assert.Equal(t, event.Function, "main.main", "Wrong function name")
 }
@@ -92,7 +96,7 @@ func TestTraceInSameProcess(t *testing.T) {
 	assert.Equal(t, event.Message, "This is my first trace message: Hurra", "Wrong message")
 	assert.Equal(t, event.Data, myData, "Mismatching data")
 	assert.True(t, strings.HasSuffix(event.File, filename), "Mismatching filename")
-	assert.NotEqual(t, event.Line, 0, "Empty line number")
+	assert.NotZero(t, event.Line, "Empty line number")
 	assert.Equal(t, event.PID, os.Getpid(), "Wrong PID")
 	assert.Equal(t, event.Function, "github.com/stv0g/gont/pkg_test.TestTraceInSameProcess", "Wrong function name")
 }
@@ -140,7 +144,7 @@ func TestTraceLog(t *testing.T) {
 	assert.Equal(t, event.Type, "log", "Unexpected event type")
 	assert.Equal(t, event.Data, data, "Mismatching data")
 	assert.Equal(t, event.File, filename, "Mismatching filename")
-	assert.NotEqual(t, event.Line, 0, "Empty line number")
+	assert.NotZero(t, event.Line, "Empty line number")
 	assert.Equal(t, event.PID, os.Getpid(), "Wrong PID")
 	assert.Equal(t, event.Source, "my-test-logger", "Wrong logger name")
 	assert.Equal(t, event.Level, uint8(zap.DebugLevel+2), "Wrong level")
@@ -175,4 +179,53 @@ func TestTraceWithCapture(t *testing.T) {
 		_, err = h1.RunGo("../test/tracee2", i)
 		assert.NoError(t, err, "Failed to run tracee")
 	}
+}
+
+func TestTraceDissector(t *testing.T) {
+	tmpPCAP, err := os.CreateTemp(t.TempDir(), "gont-capture-*.pcapng")
+	assert.NoError(t, err, "Failed to open temporary file")
+
+	c1 := g.NewCapture(
+		co.ToFile(tmpPCAP),
+	)
+
+	t1 := g.NewTracer(
+		to.ToCapture(c1),
+	)
+
+	err = t1.Start()
+	assert.NoError(t, err, "Failed to start tracer")
+
+	err = trace.PrintfWithData(1237, "This is my first trace message: %s", "Hurra")
+	assert.NoError(t, err, "Failed to write trace")
+
+	err = t1.Close()
+	assert.NoError(t, err, "Failed to close tracer")
+
+	err = c1.Close()
+	assert.NoError(t, err, "Failed to close capture")
+
+	t.Logf("PCAPng file: %s", tmpPCAP.Name())
+
+	c := exec.Command("tshark", "-Xlua_script:../dissector/dissector.lua", "-r", tmpPCAP.Name(), "-T", "json") //nolint:gosec
+
+	buf := &bytes.Buffer{}
+	c.Stdout = buf
+
+	err = c.Run()
+	assert.NoError(t, err, "Failed to run tshark")
+
+	var tsharkOutput []TsharkOutput
+	err = json.Unmarshal(buf.Bytes(), &tsharkOutput)
+	assert.NoError(t, err, "Failed to parse Tshark JSON output")
+
+	assert.Len(t, tsharkOutput, 1)
+
+	trace := tsharkOutput[0].Source.Layers.Trace
+	assert.Equal(t, trace.Message, "This is my first trace message: Hurra")
+	assert.Equal(t, trace.Type, "tracepoint")
+	assert.Equal(t, trace.Function, "github.com/stv0g/gont/pkg_test.TestTraceDissector")
+	assert.Equal(t, trace.Data, fmt.Sprint(1237))
+	assert.Equal(t, trace.Pid, fmt.Sprint(os.Getpid()))
+	assert.True(t, strings.HasSuffix(trace.File, "gont/pkg/trace_test.go"))
 }
