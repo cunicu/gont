@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -5,11 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
-	"syscall"
-
 	"os"
 	"path/filepath"
+	"sync"
+	"syscall"
 
 	nft "github.com/google/nftables"
 	"github.com/vishvananda/netlink"
@@ -18,7 +20,7 @@ import (
 )
 
 type NetworkOption interface {
-	Apply(n *Network)
+	ApplyNetwork(n *Network)
 }
 
 type Network struct {
@@ -34,9 +36,12 @@ type Network struct {
 	TmpPath  string
 
 	// Options
-	Persistent bool
-	NSPrefix   string
-	Captures   []*Capture
+	Persistent    bool
+	NSPrefix      string
+	Captures      []*Capture
+	Debugger      *Debugger
+	Tracer        *Tracer
+	RedirectToLog bool
 
 	keyLogPipes []*os.File
 	logger      *zap.Logger
@@ -69,7 +74,7 @@ func HostNode(n *Network) *Host {
 	}
 }
 
-func NewNetwork(name string, opts ...Option) (*Network, error) {
+func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
 	if err := CheckCaps(); err != nil {
 		return nil, err
 	}
@@ -94,9 +99,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 
 	// Apply network specific options
 	for _, opt := range opts {
-		if nopt, ok := opt.(NetworkOption); ok {
-			nopt.Apply(n)
-		}
+		opt.ApplyNetwork(n)
 	}
 
 	if stat, err := os.Stat(varPath); err == nil && stat.IsDir() {
@@ -105,7 +108,7 @@ func NewNetwork(name string, opts ...Option) (*Network, error) {
 
 	for _, path := range []string{"files", "nodes"} {
 		path = filepath.Join(varPath, path)
-		if err := os.MkdirAll(path, 0644); err != nil {
+		if err := os.MkdirAll(path, 0o644); err != nil {
 			return nil, err
 		}
 	}
@@ -248,6 +251,12 @@ func (n *Network) Close() error {
 		}
 	}
 
+	if t := n.Tracer; t != nil {
+		if err := t.Close(); err != nil {
+			return fmt.Errorf("failed to close packet capture: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -260,14 +269,14 @@ func (n *Network) Register(m Node) {
 }
 
 func (n *Network) KeyLogPipe(secretsType uint32) (*os.File, error) {
-	captureWithKeys := []*Capture{}
+	capturesWithKeys := []*Capture{}
 	for _, c := range n.Captures {
 		if c.LogKeys {
-			captureWithKeys = append(captureWithKeys, c)
+			capturesWithKeys = append(capturesWithKeys, c)
 		}
 	}
 
-	if len(captureWithKeys) == 0 {
+	if len(capturesWithKeys) == 0 {
 		return nil, nil
 	}
 
@@ -284,8 +293,10 @@ func (n *Network) KeyLogPipe(secretsType uint32) (*os.File, error) {
 			return
 		}
 
-		for _, c := range captureWithKeys {
-			c.WriteDecryptionSecret(secretsType, b.Bytes())
+		for _, c := range capturesWithKeys {
+			if err := c.writeDecryptionSecret(secretsType, b.Bytes()); err != nil {
+				n.logger.Error("Failed to decryption secret", zap.Error(err))
+			}
 		}
 	}()
 

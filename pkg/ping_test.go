@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
@@ -30,7 +33,7 @@ func TestPingDualStack(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			o.AddressIP("10.0.0.1/24"),
 			o.AddressIP("fc::1/64")),
 	); err != nil {
@@ -38,7 +41,7 @@ func TestPingDualStack(t *testing.T) {
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			o.AddressIP("10.0.0.2/24"),
 			o.AddressIP("fc::2/64")),
 	); err != nil {
@@ -75,14 +78,14 @@ func TestPingIPv4(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			o.AddressIP("10.0.0.1/24")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			o.AddressIP("10.0.0.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
@@ -116,14 +119,14 @@ func TestPingIPv6(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			o.AddressIP("fc::1/64")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.Interface("veth0", sw,
+		g.NewInterface("veth0", sw,
 			o.AddressIP("fc::2/64")),
 	); err != nil {
 		t.Fatalf("Failed to create host: %s", err)
@@ -159,15 +162,15 @@ func TestPingDirect(t *testing.T) {
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", h1,
+		g.NewInterface("veth0", h1,
 			o.AddressIP("10.0.0.1/24")),
-		o.Interface("veth0", h2,
+		g.NewInterface("veth0", h2,
 			o.AddressIP("10.0.0.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to connect hosts: %s", err)
 	}
 
-	if _, _, err = h1.Run("cat", "/etc/hosts"); err != nil {
+	if _, err = h1.Run("cat", "/etc/hosts"); err != nil {
 		t.Errorf("Failed to show /etc/hosts file: %s", err)
 	}
 
@@ -203,7 +206,7 @@ func TestPingMultiHop(t *testing.T) {
 
 	if h1, err = n.AddHost("h1",
 		o.DefaultGatewayIP("10.0.1.1"),
-		o.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.1.2/24"),
 		),
 	); err != nil {
@@ -212,17 +215,17 @@ func TestPingMultiHop(t *testing.T) {
 
 	if h2, err = n.AddHost("h2",
 		o.DefaultGatewayIP("10.0.2.1"),
-		o.Interface("veth0", sw2,
+		g.NewInterface("veth0", sw2,
 			o.AddressIP("10.0.2.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if _, err := n.AddRouter("r1",
-		o.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.1.1/24"),
 		),
-		o.Interface("veth1", sw2,
+		g.NewInterface("veth1", sw2,
 			o.AddressIP("10.0.2.1/24"),
 		),
 	); err != nil {
@@ -254,11 +257,11 @@ func TestPingLoopback(t *testing.T) {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
-	if _, _, err := h.Run("ping", "-4", "-c", 1, "localhost"); err != nil {
+	if _, err := h.Run("ping", "-4", "-c", 1, "localhost"); err != nil {
 		t.Errorf("Failed to ping: %s", err)
 	}
 
-	if _, _, err := h.Run("ping", "-6", "-c", 1, "localhost"); err != nil {
+	if _, err := h.Run("ping", "-6", "-c", 1, "localhost"); err != nil {
 		t.Errorf("Failed to ping: %s", err)
 	}
 }
@@ -284,10 +287,10 @@ func TestPingSelf(t *testing.T) {
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", h1,
+		g.NewInterface("veth0", h1,
 			o.AddressIP("10.0.0.1/24"),
 			o.AddressIP("fc::1/64")),
-		o.Interface("veth0", h2,
+		g.NewInterface("veth0", h2,
 			o.AddressIP("10.0.0.2/24"),
 			o.AddressIP("fc::2/64")),
 	); err != nil {

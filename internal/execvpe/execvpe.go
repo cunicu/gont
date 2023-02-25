@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package execvpe
 
 // The following is a port of glibc execvep(2) implementation to Go
@@ -20,7 +23,7 @@ func maybeScriptExecute(argv0 string, argv []string, envp []string) error {
 		newArgv = append(newArgv, argv[1:]...)
 	}
 
-	return syscall.Exec(newArgv[0], newArgv, envp)
+	return syscall.Exec(newArgv[0], newArgv, envp) //nolint:gosec
 }
 
 // Execvpe searches the executable binary or a shell script in the currently configured
@@ -38,7 +41,9 @@ func Execvpe(argv0 string, argv []string, envp []string) error {
 		err := syscall.Exec(argv0, argv, envp)
 
 		if err == syscall.ENOEXEC {
-			maybeScriptExecute(argv0, argv, envp)
+			if err := maybeScriptExecute(argv0, argv, envp); err != nil {
+				return err
+			}
 		}
 
 		return syscall.EINVAL
@@ -76,7 +81,7 @@ func Execvpe(argv0 string, argv []string, envp []string) error {
 		case syscall.ENODEV:
 			fallthrough
 		case syscall.ETIMEDOUT:
-			// Some strange filesystems like AFS return even
+			// Some strange file systems like AFS return even
 			// stranger error numbers.  They cannot reasonably mean
 			// anything else so ignore those, too.
 

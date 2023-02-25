@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -12,13 +15,28 @@ import (
 )
 
 const (
-	gontNetworkSuffix = ".gont"
+	gontNetworkSuffix  = ".gont"
+	persGetPersonality = 0xffffffff // Argument to pass to personality syscall to get the current personality
+	persNoRandomize    = 0x0040000  // ADDR_NO_RANDOMIZE
 )
 
 func init() {
 	unshare := os.Getenv("GONT_UNSHARE")
 	node := os.Getenv("GONT_NODE")
 	network := os.Getenv("GONT_NETWORK")
+	disableASLR := os.Getenv("GONT_DISABLE_ASLR")
+
+	if disableASLR != "" {
+		oldPers, _, err := syscall.Syscall(syscall.SYS_PERSONALITY, persGetPersonality, 0, 0)
+		if err != 0 {
+			panic(err)
+		}
+
+		newPers := oldPers | persNoRandomize
+		if _, _, err := syscall.Syscall(syscall.SYS_PERSONALITY, newPers, 0, 0); err != syscall.Errno(0) {
+			panic(err)
+		}
+	}
 
 	if unshare != "" {
 		// Avoid recursion
@@ -26,7 +44,13 @@ func init() {
 			panic(err)
 		}
 
-		if err := Exec(network, node, os.Args); err != nil {
+		// Enter new namespaces
+		if err := Unshare(network, node); err != nil {
+			panic(err)
+		}
+
+		// Run program
+		if err := execvpe.Execvpe(os.Args[0], os.Args, os.Environ()); err != nil {
 			panic(err)
 		}
 
@@ -35,6 +59,14 @@ func init() {
 }
 
 func Exec(network, node string, args []string) error {
+	if err := Unshare(network, node); err != nil {
+		return err
+	}
+
+	return execvpe.Execvpe(args[0], args, os.Environ())
+}
+
+func Unshare(network, node string) error {
 	networkDir := filepath.Join(baseVarDir, network)
 	nodeDir := filepath.Join(networkDir, "nodes", node)
 
@@ -64,18 +96,13 @@ func Exec(network, node string, args []string) error {
 
 	// Switch network namespace
 	netNsHandle := filepath.Join(nodeDir, "ns", "net")
-	netNsFd, err := syscall.Open(netNsHandle, os.O_RDONLY, 0644)
+	netNsFd, err := syscall.Open(netNsHandle, os.O_RDONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open netns: %w", err)
 	}
 
 	if err := unix.Setns(netNsFd, syscall.CLONE_NEWNET); err != nil {
 		return fmt.Errorf("failed to switch to netns: %w", err)
-	}
-
-	// Run program
-	if err := execvpe.Execvpe(args[0], args, os.Environ()); err != nil {
-		return fmt.Errorf("failed exec: %w", err)
 	}
 
 	return nil

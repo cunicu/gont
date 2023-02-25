@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 // gontc is a command line interface for inspecting and managing networks created by Gont
 package main
 
@@ -16,7 +19,7 @@ import (
 )
 
 // Set via ldflags (see Makefile)
-var tag string
+var tag string //nolint:gochecknoglobals
 
 func usage() {
 	w := flag.CommandLine.Output() // may be os.Stderr - but not necessarily
@@ -50,9 +53,8 @@ func main() {
 	var err error
 	var network, node string
 
-	internal.SetupRand()
 	logger := internal.SetupLogging()
-	defer logger.Sync()
+	defer logger.Sync() //nolint:errcheck
 
 	if err := g.CheckCaps(); err != nil {
 		fmt.Printf("error: %s\n", err)
@@ -72,46 +74,20 @@ func main() {
 
 	switch subcmd {
 	case "shell":
-		if network, node, err = getNetworkNode(args); err == nil {
-			shell := os.Getenv("SHELL")
-			if shell == "" {
-				shell = "/bin/bash"
-			}
-
-			ps1 := fmt.Sprintf("%s/%s: ", network, node)
-			os.Setenv("PS1", ps1)
-
-			cmd := []string{shell, "--norc"}
-			err = execCommand(network, node, cmd)
+		if network, node, err = networkNode(args); err == nil {
+			err = shell(network, node)
 		}
 
 	case "exec":
-		if network, node, err = getNetworkNode(args); err == nil {
-			err = execCommand(network, node, args[2:])
+		if network, node, err = networkNode(args); err == nil {
+			err = exec(network, node, args[2:])
 		}
 
 	case "clean":
-		if len(args) > 1 {
-			network := args[1]
-			if err = g.TeardownNetwork(network); err != nil {
-				err = fmt.Errorf("failed to teardown network '%s': %w", network, err)
-			}
-		} else {
-			err = g.TeardownAllNetworks()
-		}
+		err = clean(args)
 
 	case "list":
-		if len(args) > 1 {
-			network = args[1]
-			for _, name := range g.NodeNames(network) {
-				fmt.Printf("%s/%s\n", network, name)
-			}
-		} else {
-			for _, name := range g.NetworkNames() {
-				fmt.Println(name)
-			}
-
-		}
+		list(args)
 
 	case "identify":
 		if network, node, err = g.Identify(); err == nil {
@@ -119,21 +95,7 @@ func main() {
 		}
 
 	case "version":
-		version := "unknown"
-		if tag != "" {
-			version = tag
-		}
-
-		if ok, rev, dirty, btime := utils.ReadVCSInfos(); ok {
-			dirtyFlag := ""
-			if dirty {
-				dirtyFlag = "-dirty"
-			}
-
-			fmt.Printf("%s (%s%s, build on %s)\n", version, rev[:8], dirtyFlag, btime.String())
-		} else {
-			fmt.Println(version)
-		}
+		version()
 
 	case "help":
 		flag.Usage()
@@ -149,26 +111,7 @@ func main() {
 	}
 }
 
-func execCommand(network, node string, args []string) error {
-	if len(flag.Args()) <= 1 {
-		return fmt.Errorf("not enough arguments")
-	}
-
-	if network == "" {
-		return fmt.Errorf("there is no active Gont network")
-	}
-
-	if err := os.Setenv("GONT_NETWORK", network); err != nil {
-		return err
-	}
-	if err := os.Setenv("GONT_NODE", node); err != nil {
-		return err
-	}
-
-	return g.Exec(network, node, args)
-}
-
-func getNetworkNode(args []string) (string, string, error) {
+func networkNode(args []string) (string, string, error) {
 	var node, network string
 
 	networks := g.NetworkNames()
@@ -197,4 +140,81 @@ func getNetworkNode(args []string) (string, string, error) {
 	}
 
 	return network, node, nil
+}
+
+func version() {
+	version := "unknown"
+	if tag != "" {
+		version = tag
+	}
+
+	if ok, rev, dirty, btime := utils.ReadVCSInfos(); ok {
+		dirtyFlag := ""
+		if dirty {
+			dirtyFlag = "-dirty"
+		}
+
+		fmt.Printf("%s (%s%s, build on %s)\n", version, rev[:8], dirtyFlag, btime.String())
+	} else {
+		fmt.Println(version)
+	}
+}
+
+func list(args []string) {
+	if len(args) > 1 {
+		network := args[1]
+		for _, name := range g.NodeNames(network) {
+			fmt.Printf("%s/%s\n", network, name)
+		}
+	} else {
+		for _, name := range g.NetworkNames() {
+			fmt.Println(name)
+		}
+	}
+}
+
+func clean(args []string) error {
+	if len(args) > 1 {
+		network := args[1]
+		if err := g.TeardownNetwork(network); err != nil {
+			return fmt.Errorf("failed to teardown network '%s': %w", network, err)
+		}
+	} else {
+		return g.TeardownAllNetworks()
+	}
+
+	return nil
+}
+
+func exec(network, node string, args []string) error {
+	if len(flag.Args()) <= 1 {
+		return fmt.Errorf("not enough arguments")
+	}
+
+	if network == "" {
+		return fmt.Errorf("there is no active Gont network")
+	}
+
+	if err := os.Setenv("GONT_NETWORK", network); err != nil {
+		return err
+	}
+	if err := os.Setenv("GONT_NODE", node); err != nil {
+		return err
+	}
+
+	return g.Exec(network, node, args)
+}
+
+func shell(network, node string) error {
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "/bin/bash"
+	}
+
+	ps1 := fmt.Sprintf("%s/%s: ", network, node)
+	os.Setenv("PS1", ps1)
+
+	cmd := []string{shell, "--norc"}
+
+	return exec(network, node, cmd)
 }

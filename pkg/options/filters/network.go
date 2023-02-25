@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package filters
 
 import (
@@ -15,26 +18,25 @@ const (
 	dirDestination
 )
 
-func network(dir direction, netw *net.IPNet) Statement {
-	var offset, len uint32
+func ipOffsetLen(ip net.IP, dir direction) (uint32, uint32) {
+	isV4 := ip.To4() != nil
 
-	isV4 := netw.IP.To4() != nil
-	if isV4 {
-		len = net.IPv4len
-		if dir == dirSource {
-			offset = 12
-		} else {
-			offset = 16
-		}
-	} else {
-		len = net.IPv6len
-		if dir == dirSource {
-			offset = 8
-		} else {
-			offset = 24
-		}
+	switch {
+	case isV4 && dir == dirSource:
+		return 12, net.IPv4len
+	case isV4 && dir == dirDestination:
+		return 16, net.IPv4len
+	case !isV4 && dir == dirSource:
+		return 8, net.IPv6len
+	case !isV4 && dir == dirDestination:
+		return 24, net.IPv6len
+	default:
+		return 0, 0
 	}
+}
 
+func network(dir direction, netw *net.IPNet) Statement {
+	offset, len := ipOffsetLen(netw.IP, dir)
 	fromAddr, toAddr := utils.AddressRange(netw)
 
 	return Statement{

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
@@ -17,6 +20,7 @@ import (
 
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
+	co "github.com/stv0g/gont/pkg/options/cmd"
 )
 
 // TestGetMyIP performs and end-to-end ping test
@@ -52,18 +56,18 @@ func TestGetMyIP(t *testing.T) {
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", client,
+		g.NewInterface("veth0", client,
 			o.AddressIP("fc::1:2/112")),
-		o.Interface("veth0", nat, o.SouthBound,
+		g.NewInterface("veth0", nat, o.SouthBound,
 			o.AddressIP("fc::1:1/112")),
 	); err != nil {
 		t.Fatalf("Failed to add link: %s", err)
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", server,
+		g.NewInterface("veth0", server,
 			o.AddressIP("fc::2:2/112")),
-		o.Interface("veth1", nat, o.NorthBound,
+		g.NewInterface("veth1", nat, o.NorthBound,
 			o.AddressIP("fc::2:1/112")),
 	); err != nil {
 		t.Fatalf("Failed to add link: %s", err)
@@ -73,14 +77,14 @@ func TestGetMyIP(t *testing.T) {
 		t.Fatalf("Failed to setup default route: %s", err)
 	}
 
-	out, _, err := client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server")
-	if err != nil {
+	outp := &bytes.Buffer{}
+	if _, err = client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server",
+		co.Stdout(outp),
+	); err != nil {
 		t.Fatalf("Request failed: %s", err)
 	}
 
-	hostPort := string(out)
-
-	ip, _, err := net.SplitHostPort(hostPort)
+	ip, _, err := net.SplitHostPort(outp.String())
 	if err != nil {
 		t.Fatalf("Failed to split host:port: %s", err)
 	}
@@ -108,7 +112,7 @@ func AddWebServer(n *g.Network, name string) (*HTTPServer, error) {
 
 	cert, err := tls.X509KeyPair(pub, priv)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create x509 keypair: %w", err)
+		return nil, fmt.Errorf("failed to create x509 key pair: %w", err)
 	}
 
 	s := &HTTPServer{
@@ -118,8 +122,10 @@ func AddWebServer(n *g.Network, name string) (*HTTPServer, error) {
 		TLSConfig: &tls.Config{
 			Certificates: []tls.Certificate{cert},
 			CipherSuites: []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, // force PFS
+			MinVersion:   tls.VersionTLS13,
 		},
-		Handler: s,
+		ReadHeaderTimeout: time.Second,
+		Handler:           s,
 	}
 
 	listener, err := s.ListenTCP(443)
@@ -127,14 +133,14 @@ func AddWebServer(n *g.Network, name string) (*HTTPServer, error) {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
 
-	go s.ServeTLS(listener, "", "")
+	go s.ServeTLS(listener, "", "") //nolint:errcheck
 
 	return s, nil
 }
 
 func (h *HTTPServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// We reply to all requests with the IP of the requester
-	w.Write([]byte(req.RemoteAddr))
+	w.Write([]byte(req.RemoteAddr)) //nolint:errcheck
 }
 
 func (h *HTTPServer) ListenTCP(port int) (net.Listener, error) {

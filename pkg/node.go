@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -18,6 +21,5 @@ type Node interface {
 	NetlinkHandle() *nl.Handle
 
 	RunFunc(cb Callback) error
-
 	ConfigureInterface(i *Interface) error
 }

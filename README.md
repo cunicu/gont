@@ -1,6 +1,6 @@
-# Gont - A Go network testing toolkit
+# Gont - A testing framework for distributed Go applications
 
-[![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/stv0g/gont/Build%20and%20Test/master)](https://github.com/stv0g/gont/actions)
+[![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/stv0g/gont/build.yaml)](https://github.com/stv0g/gont/actions)
 [![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
 [![Codacy coverage](https://img.shields.io/codacy/coverage/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
 [![libraries.io](https://img.shields.io/librariesio/github/stv0g/gont)](https://libraries.io/github/stv0g/gont)
@@ -9,11 +9,19 @@
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
 [![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
 
-Gont is a package to create realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native).
+Gont is a Go package to support the development networked and distributed applications.
+
+It can construct a virtual network using Linux network spaces, to simulate switches, routers, NAT and endpoints, on a single machine (VM, cloud or native).
+In addition, it supports developers with tooling for tracing and debugger tooling for investigating distributed applications.
 
 Gont is heavily inspired by [Mininet](https://mininet.org).
-It allows the user to build virtual network topologies using Go code.
+It allows the user to build virtual network topologies defined Go code.
 Under the hood the network is then constructed using Linux virtual bridges and network namespaces.
+
+Gont runs on all moderatly recent Linux versions and requires `NET_ADMIN` capabilities (or root access).
+
+Using Gont, developers can test complex distributed peer-to-peer and federated applications like routing daemons or social networks and messaging.
+Integration tests can be automated and executed in CI environments like GitHub actions (which are in fact used to test Gont itself).
 
 ## Getting started
 
@@ -40,8 +48,21 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
 -   Configuration of per-host nftables firewall rules
 -   Built-in Ping & Traceroute diagnostic tools
 -   Built-in packet tracing with [PCAPng](https://wiki.wireshark.org/Development/PcapNg) output
+    - Real-time streaming of PCAPng data to WireShark via [TCP sockets or named-pipes](https://wiki.wireshark.org/CaptureSetup/Pipes.md)
     - Automatic decryption of captured trafic using Wireshark/thark by including session secrets in PCAPng file
     - Automatic instrumentation of sub-processes using [`SSLKEYLOGFILE` environment variable](https://everything.curl.dev/usingcurl/tls/sslkeylogfile)
+- Distributed tracing of events
+  - Support for emitting [zap](https://github.com/uber-go/zap) log messages as trace events
+  - Cedicated [gont/trace](https://pkg.go.dev/github.com/stv0g/gont/pkg/trace) package for emitting trace events
+  - Capturing of trace events in PCAPng files
+  - WireShark Lua dissector for decoding events
+- Built-in [Delve](https://github.com/go-delve/delve) debugger
+  - Simultaneous attachment to multiple processes
+  - Tracing via HW watch- & breakpoints to emit tracer events (see above)
+    - Capture and investigate tracepoints in WireShark
+  - Remote debugging via [DAP](https://microsoft.github.io/debug-adapter-protocol/)
+  - Generation of VS Code [compound launch configurations](https://code.visualstudio.com/docs/editor/debugging#_compound-launch-configurations)
+    - Start Gont test and attach to all processes at once
 
 ## Examples
 
@@ -138,6 +159,13 @@ classDiagram
 
 <img alt="European Flag" src="https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg" align="left" style="margin-right: 10px"/> The development of [Gont][gont] has been supported by the [ERIGrid 2.0][erigrid] project \
 of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.eu/project/id/870620)
+
+## License
+
+Gont is [REUSE compliant](https://reuse.software/) and mainly licensed under the [Apache 2.0 license](LICENSES/Apache-2.0.txt)
+
+- SPDX-FileCopyrightText: 2023 Steffen Vogel \<post@steffenvogel.de\>
+- SPDX-License-Identifier: Apache-2.0
 
 [erigrid]: https://erigrid2.eu
 [gont]: https://github.com/stv0g/gont

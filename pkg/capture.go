@@ -1,10 +1,16 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"sync/atomic"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -16,59 +22,69 @@ import (
 	"golang.org/x/net/bpf"
 )
 
-type handle interface {
+type (
+	CaptureFilterInterfaceFunc func(i *Interface) bool
+	CaptureFilterPacketFunc    func(p *CapturePacket) bool
+	CaptureCallbackFunc        func(pkt CapturePacket)
+)
+
+type PacketSource interface {
 	ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error)
-	Stats() (CaptureStats, error)
+	Stats() (captureStats, error)
 	LinkType() layers.LinkType
 }
 
 type filenameTemplate struct {
 	Interface string
-	Host      string
+	Node      string
 	Network   string
+	PID       int
 }
 
-type CaptureFilterInterfaceFunc func(i *Interface) bool
-type CaptureFilterPacketFunc func(p *CapturePacket) bool
-type CaptureCallbackFunc func(pkt CapturePacket)
+func (t filenameTemplate) execute(filename string) (string, error) {
+	b := &bytes.Buffer{}
 
-type CaptureInterface struct {
+	tpl, err := template.New("filename").Parse(filename)
+	if err != nil {
+		return "", fmt.Errorf("invalid filename template: %w", err)
+	}
+
+	if err := tpl.Execute(b, t); err != nil {
+		return "", fmt.Errorf("failed to execute filename template: %w", err)
+	}
+
+	return b.String(), nil
+}
+
+type captureInterface struct {
 	*Interface
 
-	PCAPInterfaceIndex int
-	Handle             handle
+	pcapInterfaceIndex int
+	pcapInterface      pcapgo.NgInterface
 
 	StartTime time.Time
 
+	source PacketSource
 	logger *zap.Logger
 }
 
-type CapturePacket struct {
-	gopacket.Packet
-
-	Interface *CaptureInterface
-}
-
-func (p CapturePacket) Time() time.Time {
-	return p.Metadata().Timestamp
-}
-
-type CaptureStats struct {
-	PacketsReceived int
-	PacketsDropped  int
+type captureStats struct {
+	PacketsReceived uint64
+	PacketsDropped  uint64
 }
 
 type CaptureOption interface {
-	Apply(n *Capture)
+	ApplyCapture(n *Capture)
 }
 
 type Capture struct {
 	// Options
-	CaptureLength int
-	Promiscuous   bool
-	Comment       string
-	Timeout       time.Duration
-	LogKeys       bool
+	SnapshotLength int
+	Promiscuous    bool
+	Comment        string
+	Timeout        time.Duration
+	LogKeys        bool
+	FlushEach      uint64
 
 	// Filter options
 	FilterInterface    CaptureFilterInterfaceFunc
@@ -77,121 +93,49 @@ type Capture struct {
 	FilterInstructions []bpf.Instruction
 
 	// Output options
-	File     *os.File
-	Filename string
-	Channel  chan CapturePacket
-	Callback CaptureCallbackFunc
+	Files       []*os.File
+	Filenames   []string
+	Channels    []chan CapturePacket
+	Callbacks   []CaptureCallbackFunc
+	Pipenames   []string
+	ListenAddrs []string
 
-	writer *pcapgo.NgWriter
-
-	stop chan any
-
-	queue *prque.PriorityQueue
-	count atomic.Uint64
-
-	interfaces []*CaptureInterface
-
-	logger *zap.Logger
+	writer     *pcapgo.NgWriter
+	stop       chan any
+	queue      *prque.PriorityQueue
+	count      atomic.Uint64
+	interfaces []*captureInterface
+	closables  []io.Closer
+	logger     *zap.Logger
 }
 
-func (c *Capture) Apply(i *Interface) {
+func (c *Capture) ApplyInterface(i *Interface) {
 	i.Captures = append(i.Captures, c)
 }
 
-func NewCapture() *Capture {
-	return &Capture{
+func (c *Capture) ApplyBaseNode(n *BaseNode) {
+	n.Captures = append(n.Captures, c)
+}
+
+func (c *Capture) ApplyNetwork(n *Network) {
+	n.Captures = append(n.Captures, c)
+}
+
+func NewCapture(opts ...CaptureOption) *Capture {
+	c := &Capture{
 		// Default options
-		CaptureLength: 1600,
+		SnapshotLength: 1600,
 
 		stop:   make(chan any),
 		queue:  prque.New(),
-		logger: zap.L().Named("pcap"),
-	}
-}
-
-func (c *Capture) Start(i *Interface) error {
-	var err error
-	var hdl handle
-
-	if err := i.Node.RunFunc(func() error {
-		hdl, err = c.createHandle(i.Name)
-		return err
-	}); err != nil {
-		return fmt.Errorf("failed to get PCAP handle: %w", err)
+		logger: zap.L().Named("capture"),
 	}
 
-	ci := &CaptureInterface{
-		Interface: i,
-		Handle:    hdl,
-		logger:    c.logger.With(zap.String("intf", i.Name)),
+	for _, opt := range opts {
+		opt.ApplyCapture(c)
 	}
 
-	intf := pcapgo.NgInterface{
-		Name:        fmt.Sprintf("%s/%s", i.Node.Name(), i.Name),
-		Filter:      c.FilterExpression,
-		LinkType:    hdl.LinkType(),
-		SnapLength:  uint32(c.CaptureLength),
-		OS:          "Linux",
-		Description: "Linux veth pair",
-		Comment:     fmt.Sprintf("Gont Network: '%s'", i.Node.Network().Name),
-	}
-
-	if c.writer == nil {
-		f := c.File
-		if f == nil {
-			tpl, err := template.New("filename").Parse(c.Filename)
-			if err != nil {
-				return fmt.Errorf("invalid filename template: %w", err)
-			}
-
-			var fn bytes.Buffer
-			if err := tpl.Execute(&fn, filenameTemplate{
-				Network:   i.Node.Network().Name,
-				Host:      i.Node.Name(),
-				Interface: i.Name,
-			}); err != nil {
-				return fmt.Errorf("failed to execute filename template: %w", err)
-			}
-
-			if f, err = os.OpenFile(fn.String(), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755); err != nil {
-				return fmt.Errorf("failed to open file: %w", err)
-			}
-		}
-
-		comment := c.Comment
-		if comment == "" {
-			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.Node.Network().Name)
-		}
-
-		opts := pcapgo.NgWriterOptions{
-			SectionInfo: pcapgo.NgSectionInfo{
-				OS:          "Linux",
-				Application: "Gont",
-				Comment:     comment,
-			},
-		}
-
-		// The first interface has always id 0
-		ci.PCAPInterfaceIndex = 0
-
-		if c.writer, err = pcapgo.NewNgWriterInterface(f, intf, opts); err != nil {
-			return fmt.Errorf("failed to create PCAPng writer: %w", err)
-		}
-
-		go c.writePackets()
-	} else {
-		if ci.PCAPInterfaceIndex, err = c.writer.AddInterface(intf); err != nil {
-			return fmt.Errorf("failed to add interface: %w", err)
-		}
-	}
-
-	ci.StartTime = time.Now()
-
-	c.interfaces = append(c.interfaces, ci)
-
-	go ci.readPackets(c.queue, c.FilterPackets)
-
-	return nil
+	return c
 }
 
 // Count returns the total number of captured packets
@@ -203,7 +147,9 @@ func (c *Capture) Flush() error {
 	for c.queue.Len() > 0 {
 		p := c.queue.Pop().(CapturePacket)
 
-		c.writePacket(p)
+		if err := c.writePacket(p); err != nil {
+			return err
+		}
 	}
 
 	for _, ci := range c.interfaces {
@@ -222,58 +168,56 @@ func (c *Capture) Close() error {
 		return fmt.Errorf("failed to flush: %w", err)
 	}
 
+	for _, closable := range c.closables {
+		if err := closable.Close(); err != nil {
+			return fmt.Errorf("failed to close: %w", err)
+		}
+	}
+
 	return nil
 }
 
-func (c *Capture) Reader() (*pcapgo.NgReader, error) {
-	if err := c.Flush(); err != nil {
-		return nil, fmt.Errorf("failed to flush capture: %w", err)
-	}
-
-	if _, err := c.File.Seek(0, 0); err != nil {
-		return nil, fmt.Errorf("failed to rewind file: %w", err)
-	}
-
-	rd, err := pcapgo.NewNgReader(c.File, pcapgo.DefaultNgReaderOptions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read PCAPng file: %w", err)
-	}
-
-	return rd, nil
+func (c *Capture) writeDecryptionSecret(typ uint32, payload []byte) error {
+	return c.writer.WriteDecryptionSecretsBlock(typ, payload)
 }
 
 func (c *Capture) writePacket(p CapturePacket) error {
-	ci := p.Metadata().CaptureInfo
-	ci.InterfaceIndex = p.Interface.PCAPInterfaceIndex
+	ci := p.CaptureInfo
+	ci.InterfaceIndex = p.Interface.pcapInterfaceIndex
 
-	c.count.Add(1)
-
-	if err := c.writer.WritePacket(ci, p.Data()); err != nil {
-		c.logger.Error("Failed to write packet", zap.Error(err))
+	if err := c.writer.WritePacket(ci, p.Data); err != nil {
+		return fmt.Errorf("failed to write packet: %w", err)
 	}
 
-	if c.Channel != nil {
-		c.Channel <- p
+	count := c.count.Add(1)
+	if c.FlushEach > 0 && count%c.FlushEach == 0 {
+		if err := c.writer.Flush(); err != nil {
+			return fmt.Errorf("failed to flush: %w", err)
+		}
 	}
 
-	if c.Callback != nil {
-		c.Callback(p)
+	for _, ch := range c.Channels {
+		ch <- p
+	}
+
+	for _, cb := range c.Callbacks {
+		cb(p)
 	}
 
 	return nil
 }
 
-func (c *Capture) writeStats(ci *CaptureInterface) error {
-	counters, err := ci.Handle.Stats()
+func (c *Capture) writeStats(ci *captureInterface) error {
+	counters, err := ci.source.Stats()
 	if err != nil {
 		ci.logger.Error("Failed to get interface statistics", zap.Error(err))
 	}
 
-	return c.writer.WriteInterfaceStats(ci.PCAPInterfaceIndex, pcapgo.NgInterfaceStatistics{
+	return c.writer.WriteInterfaceStats(ci.pcapInterfaceIndex, pcapgo.NgInterfaceStatistics{
 		StartTime:       ci.StartTime,
 		LastUpdate:      time.Now(),
-		PacketsReceived: uint64(counters.PacketsReceived),
-		PacketsDropped:  uint64(counters.PacketsDropped),
+		PacketsReceived: counters.PacketsReceived,
+		PacketsDropped:  counters.PacketsDropped,
 	})
 }
 
@@ -281,6 +225,7 @@ func (c *Capture) writePackets() {
 	tickerPackets := time.NewTicker(1 * time.Second)
 	tickerStats := time.NewTicker(10 * time.Second)
 
+out:
 	for {
 		select {
 		case <-tickerStats.C:
@@ -305,7 +250,8 @@ func (c *Capture) writePackets() {
 				p := c.queue.Pop().(CapturePacket)
 
 				if err := c.writePacket(p); err != nil {
-					c.logger.Error("Failed to handle packet", zap.Error(err))
+					c.logger.Error("Failed to handle packet. Stop capturing...", zap.Error(err))
+					break out
 				}
 			}
 
@@ -315,27 +261,248 @@ func (c *Capture) writePackets() {
 	}
 }
 
-func (c *Capture) WriteDecryptionSecret(typ uint32, payload []byte) error {
-	return c.writer.WriteDecryptionSecretsBlock(typ, payload)
-}
+func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
+	var err error
+	wrs := []io.Writer{}
 
-func (ci *CaptureInterface) readPackets(queue *prque.PriorityQueue, filter CaptureFilterPacketFunc) {
-	src := gopacket.NewPacketSource(ci.Handle, ci.Handle.LinkType())
+	// File handlers
+	for _, file := range c.Files {
+		wrs = append(wrs, file)
+	}
 
-	for {
-		p, err := src.NextPacket()
+	// Filenames
+	for _, filename := range c.Filenames {
+		file, err := c.openFile(filename, i)
 		if err != nil {
-			ci.logger.Error("Failed to decode next packet", zap.Error(err))
-			continue
+			return nil, fmt.Errorf("failed to open file: %w", err)
 		}
 
-		cp := CapturePacket{
-			Packet:    p,
-			Interface: ci,
+		wrs = append(wrs, file)
+		c.closables = append(c.closables, file)
+	}
+
+	// Pipenames
+	for _, pipename := range c.Pipenames {
+		pipe, err := c.createAndOpenPipe(pipename)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create pipe: %w", err)
 		}
 
-		if filter == nil || filter(&cp) {
-			queue.Push(cp)
+		wrs = append(wrs, pipe)
+		c.closables = append(c.closables, pipe)
+	}
+
+	// Listeners
+	for _, lAddr := range c.ListenAddrs {
+		listener, err := c.createListener(lAddr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create listener: %w", err)
+		}
+
+		wrs = append(wrs, listener)
+		c.closables = append(c.closables, listener)
+	}
+
+	wr := io.MultiWriter(wrs...)
+
+	comment := c.Comment
+	if comment == "" {
+		if i.Interface == nil {
+			comment = "Captured with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)"
+		} else {
+			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.node.Network().Name)
 		}
 	}
+
+	opts := pcapgo.NgWriterOptions{
+		SectionInfo: pcapgo.NgSectionInfo{
+			OS:          "Linux",
+			Application: "Gont",
+			Comment:     comment,
+		},
+	}
+
+	// The first interface has always id 0
+	i.pcapInterfaceIndex = 0
+
+	writer, err := pcapgo.NewNgWriterInterface(wr, i.pcapInterface, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create PCAPng writer: %w", err)
+	}
+
+	return writer, err
+}
+
+func (c *Capture) readPackets(ci *captureInterface) {
+	var err error
+
+	for {
+		var cp CapturePacket
+		cp.Data, cp.CaptureInfo, err = ci.source.ReadPacketData()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			} else {
+				c.logger.Error("Failed to read packet data", zap.Error(err))
+				continue
+			}
+		}
+
+		cp.Interface = ci
+
+		if c.FilterPackets == nil || c.FilterPackets(&cp) {
+			c.queue.Push(cp)
+		}
+	}
+}
+
+func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
+	var err error
+	var hdl PacketSource
+
+	if err := i.node.RunFunc(func() error {
+		hdl, err = c.createPCAPHandle(i.Name)
+		return err
+	}); err != nil {
+		return nil, fmt.Errorf("failed to get PCAP handle: %w", err)
+	}
+
+	ci := &captureInterface{
+		Interface: i,
+		source:    hdl,
+		pcapInterface: pcapgo.NgInterface{
+			Name:        fmt.Sprintf("%s/%s", i.node.Name(), i.Name),
+			Filter:      c.FilterExpression,
+			LinkType:    hdl.LinkType(),
+			SnapLength:  uint32(c.SnapshotLength),
+			OS:          "Linux",
+			Description: "Linux veth pair",
+			Comment:     fmt.Sprintf("Gont Network: '%s'", i.node.Network().Name),
+		},
+		logger: c.logger.With(zap.String("intf", i.Name)),
+	}
+
+	if c.writer == nil {
+		if c.writer, err = c.createWriter(ci); err != nil {
+			return nil, err
+		}
+
+		go c.writePackets()
+	} else {
+		if ci.pcapInterfaceIndex, err = c.writer.AddInterface(ci.pcapInterface); err != nil {
+			return nil, fmt.Errorf("failed to add interface: %w", err)
+		}
+	}
+
+	ci.StartTime = time.Now()
+
+	c.interfaces = append(c.interfaces, ci)
+
+	go c.readPackets(ci)
+
+	return ci, nil
+}
+
+func (c *Capture) startTrace() (*captureInterface, *traceEventPacketSource, error) {
+	var err error
+
+	tps := newTracepointPacketSource()
+
+	ci := &captureInterface{
+		pcapInterface: pcapgo.NgInterface{
+			Name:        "tracer",
+			LinkType:    LinkTypeTrace,
+			SnapLength:  uint32(c.SnapshotLength),
+			OS:          "Debug",
+			Description: "Trace output",
+		},
+		source: tps,
+		logger: c.logger.With(zap.String("intf", "tracer")),
+	}
+
+	if c.writer == nil {
+		if c.writer, err = c.createWriter(ci); err != nil {
+			return nil, nil, err
+		}
+
+		go c.writePackets()
+	} else {
+		if ci.pcapInterfaceIndex, err = c.writer.AddInterface(ci.pcapInterface); err != nil {
+			return nil, nil, fmt.Errorf("failed to add interface: %w", err)
+		}
+	}
+
+	ci.StartTime = time.Now()
+
+	c.interfaces = append(c.interfaces, ci)
+
+	go c.readPackets(ci)
+
+	return ci, tps, nil
+}
+
+func (c *Capture) createListener(lAddr string) (*captureListener, error) {
+	listener, err := newCaptureListener(lAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for first connection before proceeding
+	c.logger.Info("Opened listener. Waiting for a reader...", zap.String("addr", lAddr))
+	<-listener.Conns
+
+	return listener, nil
+}
+
+func (c *Capture) createAndOpenPipe(pipename string) (*os.File, error) {
+	logger := c.logger.With(zap.String("path", pipename))
+
+	if stat, err := os.Stat(pipename); err != nil { //nolint:nestif
+		if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("failed to stat pipe %s: %w", pipename, err)
+		}
+
+		logger.Debug("Pipe does not exist yet. Creating..")
+		if err := syscall.Mkfifo(pipename, 0o644); err != nil {
+			return nil, fmt.Errorf("failed to create fifo: %w", err)
+		}
+	} else if stat.Mode()&os.ModeNamedPipe == 0 {
+		logger.Debug("Non-pipe exists. Removing before recreating")
+		if err := os.RemoveAll(pipename); err != nil {
+			return nil, fmt.Errorf("failed to delete: %w", err)
+		}
+
+		if err := syscall.Mkfifo(pipename, 0o644); err != nil {
+			return nil, fmt.Errorf("failed to create fifo: %w", err)
+		}
+	}
+
+	logger.Info("Opening named pipe. Waiting for a reader...")
+
+	pipe, err := os.OpenFile(pipename, os.O_WRONLY, 0o300)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open fifo: %w", err)
+	}
+
+	logger.Info("Reader opened remote site of the fifo. Continuing execution")
+
+	return pipe, nil
+}
+
+func (c *Capture) openFile(filename string, i *captureInterface) (*os.File, error) {
+	var err error
+
+	if i.Interface != nil {
+		tpl := filenameTemplate{
+			Network:   i.node.Network().Name,
+			Node:      i.node.Name(),
+			Interface: i.Name,
+		}
+
+		if filename, err = tpl.execute(filename); err != nil {
+			return nil, err
+		}
+	}
+
+	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 }

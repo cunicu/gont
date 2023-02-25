@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+# SPDX-License-Identifier: Apache-2.0
+
+linters:
+  enable:
+  - errname
+  - exportloopref
+  - gci
+  - gochecknoglobals
+  - gocognit
+  - gofmt
+  - misspell
+  - tagliatelle
+  - whitespace
+  - revive
+  - gosec
+  - nestif
+  - nolintlint
+  - prealloc
+
+linters-settings:
+  revive:
+    severity: warning
+    

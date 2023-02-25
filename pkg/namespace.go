@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -9,7 +12,6 @@ import (
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
-
 	"golang.org/x/sys/unix"
 )
 
@@ -41,7 +43,7 @@ func NewNamespace(name string) (*Namespace, error) {
 	defer runtime.UnlockOSThread()
 
 	// Save fd to current network namespace
-	curNetNs, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0777)
+	curNetNs, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0o777)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +93,7 @@ func (ns *Namespace) Enter() (func(), error) {
 	runtime.LockOSThread()
 
 	// Save fd to current network namespace
-	curNetNs, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0777)
+	curNetNs, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0o777)
 	if err != nil {
 		return nil, err
 	}

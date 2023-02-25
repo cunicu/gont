@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
@@ -10,7 +13,7 @@ import (
 	"github.com/go-ping/ping"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
-	tcopt "github.com/stv0g/gont/pkg/options/tc"
+	tco "github.com/stv0g/gont/pkg/options/tc"
 )
 
 func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
@@ -34,9 +37,9 @@ func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
 	}
 
 	if err := n.AddLink(
-		o.Interface("veth0", h1, ne,
+		g.NewInterface("veth0", h1, ne,
 			o.AddressIP("10.0.0.1/24")),
-		o.Interface("veth0", h2,
+		g.NewInterface("veth0", h2,
 			o.AddressIP("10.0.0.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to connect hosts: %s", err)
@@ -51,15 +54,13 @@ func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
 // h1 <-> h2
 func TestNetemLatency(t *testing.T) {
 	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
-		// GitHubs Azure based CI environment is to unreliable
-		// for this test to success consistently
-		t.Skip()
+		t.Skip("GitHubs Azure based CI environment is too unreliable for this test to succeed consistently")
 	}
 
 	latency := 50 * time.Millisecond
 
 	ne := o.WithNetem(
-		tcopt.Latency(latency),
+		tco.Latency(latency),
 	)
 
 	stats, err := testNetem(t, ne)
@@ -81,13 +82,11 @@ func TestNetemLatency(t *testing.T) {
 
 func TestNetemLoss(t *testing.T) {
 	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
-		// GitHubs Azure based CI environment is to unreliable
-		// for this test to success consistently
-		t.Skip()
+		t.Skip("GitHubs Azure based CI environment is too unreliable for this test to success consistently")
 	}
 
 	ne := o.WithNetem(
-		tcopt.Loss{Probability: 10.0},
+		tco.Loss{Probability: 10.0},
 	)
 
 	stats, err := testNetem(t, ne)
@@ -104,13 +103,11 @@ func TestNetemLoss(t *testing.T) {
 
 func TestNetemDuplication(t *testing.T) {
 	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
-		// GitHubs Azure based CI environment is to unreliable
-		// for this test to success consistently
-		t.Skip()
+		t.Skip("GitHubs Azure based CI environment is to unreliable for this test to success consistently")
 	}
 
 	ne := o.WithNetem(
-		tcopt.Duplicate{Probability: 50.0},
+		tco.Duplicate{Probability: 50.0},
 	)
 
 	stats, err := testNetem(t, ne)

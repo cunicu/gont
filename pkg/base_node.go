@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -17,7 +20,7 @@ import (
 )
 
 type BaseNodeOption interface {
-	Apply(b *BaseNode)
+	ApplyBaseNode(n *BaseNode)
 }
 
 type BaseNode struct {
@@ -33,11 +36,13 @@ type BaseNode struct {
 
 	// Options
 	ConfiguredInterfaces    []*Interface
+	Tracer                  *Tracer
+	Debugger                *Debugger
 	ExistingNamespace       string
 	ExistingDockerContainer string
-	LogToDebug              bool
+	RedirectToLog           bool
 	EmptyDirs               []string
-	Env                     map[string]any
+	Captures                []*Capture
 
 	logger *zap.Logger
 }
@@ -48,7 +53,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 	basePath := filepath.Join(n.VarPath, "nodes", name)
 	for _, path := range []string{"ns", "files"} {
 		path = filepath.Join(basePath, path)
-		if err := os.MkdirAll(path, 0755); err != nil {
+		if err := os.MkdirAll(path, 0o755); err != nil {
 			return nil, err
 		}
 	}
@@ -57,18 +62,17 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		name:     name,
 		network:  n,
 		BasePath: basePath,
-		Env:      map[string]any{},
 		logger:   zap.L().Named("node").With(zap.String("node", name)),
 	}
 
 	node.logger.Info("Adding new node")
 
 	// Enable log if level is debug
-	node.LogToDebug = node.logger.Core().Enabled(zap.DebugLevel)
+	node.RedirectToLog = node.logger.Core().Enabled(zap.DebugLevel)
 
 	for _, opt := range opts {
-		if nopt, ok := opt.(BaseNodeOption); ok {
-			nopt.Apply(node)
+		if nOpt, ok := opt.(BaseNodeOption); ok {
+			nOpt.ApplyBaseNode(node)
 		}
 	}
 
@@ -76,14 +80,14 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 	for _, ed := range node.EmptyDirs {
 		path := filepath.Join(basePath, "files", ed)
 
-		if err := os.MkdirAll(path, 0755); err != nil {
+		if err := os.MkdirAll(path, 0o755); err != nil {
 			return nil, fmt.Errorf("failed to create directory: %w", err)
 		}
 
 		// Create non-existing empty dirs
 		// TODO: Should we cleanup in Close()?
 		if _, err := os.Stat(ed); err != nil && errors.Is(err, os.ErrNotExist) {
-			if err := os.MkdirAll(ed, 0755); err != nil {
+			if err := os.MkdirAll(ed, 0o755); err != nil {
 				return nil, fmt.Errorf("failed to create directory '%s': %w", ed, err)
 			}
 		}
@@ -96,7 +100,8 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
-	if node.ExistingNamespace != "" {
+	switch {
+	case node.ExistingNamespace != "":
 		// Use an existing namespace created by "ip netns add"
 		nsh, err := netns.GetFromName(node.ExistingNamespace)
 		if err != nil {
@@ -107,7 +112,8 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 			Name:     node.ExistingNamespace,
 			NsHandle: nsh,
 		}
-	} else if node.ExistingDockerContainer != "" {
+
+	case node.ExistingDockerContainer != "":
 		// Use an existing net namespace from a Docker container
 		nsh, err := netns.GetFromDocker(node.ExistingDockerContainer)
 		if err != nil {
@@ -118,7 +124,8 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 			Name:     node.ExistingDockerContainer,
 			NsHandle: nsh,
 		}
-	} else {
+
+	default:
 		// Create a new network namespace
 		nsName := fmt.Sprintf("%s%s-%s", n.NSPrefix, n.Name, name)
 		if node.Namespace, err = NewNamespace(nsName); err != nil {
@@ -272,13 +279,14 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 	}
 
 	// Start packet capturing if requested on network or host level
-	allCaptures := []*Capture{}
-	allCaptures = append(allCaptures, n.network.Captures...)
-	allCaptures = append(allCaptures, i.Captures...)
+	captures := []*Capture{}
+	captures = append(captures, n.network.Captures...)
+	captures = append(captures, n.Captures...)
+	captures = append(captures, i.Captures...)
 
-	for _, c := range allCaptures {
+	for _, c := range captures {
 		if c != nil && (c.FilterInterface == nil || c.FilterInterface(i)) {
-			if err := c.Start(i); err != nil {
+			if _, err := c.startInterface(i); err != nil {
 				return fmt.Errorf("failed to capture interface: %w", err)
 			}
 		}
@@ -295,10 +303,8 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 
 func (n *BaseNode) Close() error {
 	for _, i := range n.Interfaces {
-		for _, c := range i.Captures {
-			if err := c.Close(); err != nil {
-				return fmt.Errorf("failed to close capture: %w", err)
-			}
+		if err := i.Close(); err != nil {
+			return err
 		}
 	}
 

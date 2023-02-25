@@ -1,5 +1,8 @@
 //go:build cgo
 
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -10,11 +13,11 @@ import (
 
 const CGoPCAP = true
 
-type pcapHandle struct {
+type pcapPacketSource struct {
 	*pcap.Handle
 }
 
-func (c *Capture) createHandle(name string) (handle, error) {
+func (c *Capture) createPCAPHandle(name string) (PacketSource, error) {
 	if c.Timeout.Microseconds() == 0 {
 		c.Timeout = pcap.BlockForever
 	}
@@ -28,7 +31,7 @@ func (c *Capture) createHandle(name string) (handle, error) {
 		return nil, fmt.Errorf("failed to set: %w", err)
 	}
 
-	if err := ihdl.SetSnapLen(c.CaptureLength); err != nil {
+	if err := ihdl.SetSnapLen(c.SnapshotLength); err != nil {
 		return nil, fmt.Errorf("failed to set: %w", err)
 	}
 
@@ -68,19 +71,19 @@ func (c *Capture) createHandle(name string) (handle, error) {
 		}
 	}
 
-	return &pcapHandle{
+	return &pcapPacketSource{
 		Handle: hdl,
 	}, nil
 }
 
-func (h pcapHandle) Stats() (CaptureStats, error) {
+func (h pcapPacketSource) Stats() (captureStats, error) {
 	s, err := h.Handle.Stats()
 	if err != nil {
-		return CaptureStats{}, err
+		return captureStats{}, err
 	}
 
-	return CaptureStats{
-		PacketsReceived: s.PacketsReceived,
-		PacketsDropped:  s.PacketsDropped,
+	return captureStats{
+		PacketsReceived: uint64(s.PacketsReceived),
+		PacketsDropped:  uint64(s.PacketsDropped),
 	}, nil
 }

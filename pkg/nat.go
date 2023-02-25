@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -10,7 +13,7 @@ import (
 )
 
 type NATOption interface {
-	Apply(n *NAT)
+	ApplyNAT(n *NAT)
 }
 
 type NAT struct {
@@ -29,8 +32,8 @@ type NAT struct {
 	SourcePortMax int
 }
 
-func (n *NAT) Apply(i *Interface) {
-	i.Node = n
+func (n *NAT) ApplyInterface(i *Interface) {
+	i.node = n
 }
 
 func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
@@ -47,7 +50,7 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 	for _, o := range opts {
 		switch opt := o.(type) {
 		case NATOption:
-			opt.Apply(nat)
+			opt.ApplyNAT(nat)
 		}
 	}
 
@@ -79,9 +82,9 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 	for _, o := range opts {
 		switch opt := o.(type) {
 		case NATOption:
-			opt.Apply(nat)
+			opt.ApplyNAT(nat)
 		case BaseNodeOption:
-			opt.Apply(host.BaseNode)
+			opt.ApplyBaseNode(host.BaseNode)
 		}
 	}
 
@@ -135,7 +138,6 @@ func (n *NAT) setupTable(c *nft.Conn) error {
 
 	// We do not install input & forward chains for a HostNAT
 	if n.Host != n.network.HostNode {
-
 		// Input chain
 		n.Input = c.AddChain(&nft.Chain{
 			Name:     "input",

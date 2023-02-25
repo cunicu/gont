@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -10,7 +13,7 @@ import (
 )
 
 type HostOption interface {
-	Apply(h *Host)
+	ApplyHost(h *Host)
 }
 
 type Host struct {
@@ -24,8 +27,8 @@ type Host struct {
 }
 
 // Options
-func (h *Host) Apply(i *Interface) {
-	i.Node = h
+func (h *Host) ApplyInterface(i *Interface) {
+	i.node = h
 }
 
 func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
@@ -44,14 +47,14 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 
 	// Apply host options
 	for _, opt := range opts {
-		if hopt, ok := opt.(HostOption); ok {
-			hopt.Apply(host)
+		if hOpt, ok := opt.(HostOption); ok {
+			hOpt.ApplyHost(host)
 		}
 	}
 
 	// Configure loopback device
 	lo := loopbackInterface
-	lo.Node = host
+	lo.node = host
 	if lo.Link, err = host.nlHandle.LinkByName("lo"); err != nil {
 		return nil, fmt.Errorf("failed to get loopback interface: %w", err)
 	}
@@ -94,11 +97,11 @@ func (h *Host) ConfigureLinks() error {
 
 		right := &Interface{
 			Name: peerDev,
-			Node: intf.Node,
+			node: intf.node,
 		}
 
 		left := intf
-		left.Node = h
+		left.node = h
 
 		if err := h.network.AddLink(left, right); err != nil {
 			return err
@@ -121,6 +124,7 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 	}
 
 	for _, addr := range i.Addresses {
+		addr := addr
 		if err := i.AddAddress(&addr); err != nil {
 			return fmt.Errorf("failed to add link address: %s", err)
 		}
@@ -135,7 +139,7 @@ func (h *Host) Traceroute(o *Host, opts ...any) error {
 	}
 
 	opts = append(opts, o)
-	_, _, err := h.Run("traceroute", opts...)
+	_, err := h.Run("traceroute", opts...)
 	return err
 }
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package options
 
 import (
@@ -10,7 +13,7 @@ import (
 // Address assigns an network address (IP layer) to the interface.
 type Address net.IPNet
 
-func (a Address) Apply(i *g.Interface) {
+func (a Address) ApplyInterface(i *g.Interface) {
 	i.Addresses = append(i.Addresses, net.IPNet(a))
 }
 
@@ -33,16 +36,4 @@ func AddressIP(fmts string, args ...any) Address {
 		IP:   ip,
 		Mask: n.Mask,
 	}
-}
-
-func Capture(opts ...g.Option) *g.Capture {
-	c := g.NewCapture()
-
-	for _, o := range opts {
-		if o, ok := o.(g.CaptureOption); ok {
-			o.Apply(c)
-		}
-	}
-
-	return c
 }

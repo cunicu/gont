@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -12,11 +15,11 @@ import (
 )
 
 type VethOption interface {
-	Apply(ve *nl.Veth)
+	ApplyVeth(ve *nl.Veth)
 }
 
 type LinkOption interface {
-	Apply(a *nl.LinkAttrs)
+	ApplyLink(a *nl.LinkAttrs)
 }
 
 func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
@@ -26,15 +29,15 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 		return fmt.Errorf("interface names are too long. max_len=%d", syscall.IFNAMSIZ-1)
 	}
 
-	if l.Node == nil || r.Node == nil {
+	if l.node == nil || r.node == nil {
 		return errors.New("cant establish link between interfaces without node")
 	}
 
-	if l.Node == r.Node {
+	if l.node == r.node {
 		return errors.New("failed to link the node with itself")
 	}
 
-	if l.Node.Network() != r.Node.Network() {
+	if l.node.Network() != r.node.Network() {
 		return errors.New("nodes are belonging to different networks")
 	}
 
@@ -62,12 +65,12 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 	for _, opt := range opts {
 		switch opt := opt.(type) {
 		case VethOption:
-			opt.Apply(veth)
+			opt.ApplyVeth(veth)
 		}
 	}
 
-	lHandle := l.Node.NetlinkHandle()
-	rHandle := r.Node.NetlinkHandle()
+	lHandle := l.node.NetlinkHandle()
+	rHandle := r.node.NetlinkHandle()
 
 	// Create veth pair
 	if err = lHandle.LinkAdd(veth); err != nil {
@@ -80,14 +83,14 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 	}
 
 	// Move one side into the target netns
-	if err := lHandle.LinkSetNsFd(rLink, int(r.Node.NetNSHandle())); err != nil {
-		lHandle.LinkDel(veth)
+	if err := lHandle.LinkSetNsFd(rLink, int(r.node.NetNSHandle())); err != nil {
+		lHandle.LinkDel(veth) //nolint:errcheck
 		return fmt.Errorf("failed to move interface to namespace: %w", err)
 	}
 
 	// Rename veth
 	if err := lHandle.LinkSetName(veth, l.Name); err != nil {
-		lHandle.LinkDel(veth)
+		lHandle.LinkDel(veth) //nolint:errcheck
 		return fmt.Errorf("failed to rename interface: %w", err)
 	}
 
@@ -102,7 +105,7 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 
 	// Configure interface (link state, attaching to bridge, adding addresses)
 	for _, i := range []*Interface{l, r} {
-		if err := i.Node.ConfigureInterface(i); err != nil {
+		if err := i.node.ConfigureInterface(i); err != nil {
 			return fmt.Errorf("failed to configure endpoint: %w", err)
 		}
 	}

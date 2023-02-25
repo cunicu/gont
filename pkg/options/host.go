@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package options
 
 import (
@@ -14,7 +17,7 @@ type Route struct {
 	nl.Route
 }
 
-func (r Route) Apply(h *g.Host) {
+func (r Route) ApplyHost(h *g.Host) {
 	h.Routes = append(h.Routes, &r.Route)
 }
 

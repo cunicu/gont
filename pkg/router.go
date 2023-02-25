@@ -1,15 +1,18 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 type RouterOption interface {
-	Apply(r *Router)
+	ApplyRouter(r *Router)
 }
 
 type Router struct {
 	*Host
 }
 
-func (h *Router) Apply(i *Interface) {
-	i.Node = h
+func (h *Router) ApplyInterface(i *Interface) {
+	i.node = h
 }
 
 func (n *Network) AddRouter(name string, opts ...Option) (*Router, error) {

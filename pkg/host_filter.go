@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -19,7 +22,7 @@ type FilterRule struct {
 	Hook FilterHook
 }
 
-func (fr FilterRule) Apply(h *Host) {
+func (fr FilterRule) ApplyHost(h *Host) {
 	h.FilterRules = append(h.FilterRules, &fr)
 }
 

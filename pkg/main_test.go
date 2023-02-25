@@ -1,10 +1,10 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
-	crand "crypto/rand"
-	"encoding/binary"
 	"flag"
-	"math/rand"
 	"os"
 	"testing"
 
@@ -15,10 +15,13 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var globalNetworkOptions = []g.Option{}
-var nname = flag.String("name", "", "Network name")
-var persist = flag.Bool("persist", false, "Do not teardown networks after test")
-var capture = flag.String("capture", "", "Capture network traffic to PCAPng file")
+//nolint:gochecknoglobals
+var (
+	globalNetworkOptions = []g.NetworkOption{}
+	nname                = flag.String("name", "", "Network name")
+	persist              = flag.Bool("persist", false, "Do not teardown networks after test")
+	capture              = flag.String("capture", "", "Capture network traffic to PCAPng file")
+)
 
 func setupLogging() *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()
@@ -38,22 +41,9 @@ func setupLogging() *zap.Logger {
 	return logger
 }
 
-func setupRand() error {
-	var seed int64
-
-	if err := binary.Read(crand.Reader, binary.LittleEndian, &seed); err != nil {
-		return err
-	}
-
-	rand.Seed(seed)
-
-	return nil
-}
-
 func TestMain(m *testing.M) {
-	setupRand()
 	logger := setupLogging()
-	defer logger.Sync()
+	defer logger.Sync() //nolint:errcheck
 
 	// Handle global flags
 	if *persist {
@@ -64,7 +54,7 @@ func TestMain(m *testing.M) {
 
 	if *capture != "" {
 		globalNetworkOptions = append(globalNetworkOptions,
-			o.CaptureAll(
+			g.NewCapture(
 				co.Filename(*capture),
 			),
 		)

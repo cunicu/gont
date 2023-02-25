@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -9,9 +12,8 @@ import (
 	"strings"
 )
 
-var (
-	IPv4loopback = net.IPv4(127, 0, 0, 1)
-)
+// IPv4loopback is the IPv4 loopback address (127.0.0.1)
+var IPv4loopback = net.IPv4(127, 0, 0, 1) //nolint:gochecknoglobals
 
 // GenerateHostsFile writes the addresses and host names of all nodes
 // into a file located at /run/gont/<network>/files/etc/hosts
@@ -23,11 +25,11 @@ func (n *Network) GenerateHostsFile() error {
 	defer n.hostsFileLock.Unlock()
 
 	fn := filepath.Join(n.VarPath, "files", "etc", "hosts")
-	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fn), 0o755); err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}
@@ -95,19 +97,23 @@ func (n *Network) GenerateConfigFiles() error {
 
 func (n *Network) GenerateIProute2Files() error {
 	fn := filepath.Join(n.VarPath, "files/etc/iproute2/group")
-	if err := os.MkdirAll(filepath.Dir(fn), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fn), 0o755); err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
 	if contentsOrig, err := os.ReadFile("/etc/iproute2/group"); err == nil {
-		f.Write(contentsOrig)
-		f.WriteString("\n")
+		if _, err := f.Write(contentsOrig); err != nil {
+			return err
+		}
+		if _, err := f.WriteString("\n"); err != nil {
+			return err
+		}
 	}
 
 	groups := map[DeviceGroup]string{

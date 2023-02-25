@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
@@ -12,12 +15,12 @@ import (
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
 	g "github.com/stv0g/gont/pkg"
-	gopt "github.com/stv0g/gont/pkg/options"
-	copt "github.com/stv0g/gont/pkg/options/capture"
+	o "github.com/stv0g/gont/pkg/options"
+	co "github.com/stv0g/gont/pkg/options/capture"
 	"go.uber.org/zap"
 )
 
-func TestCaptureNetwork(t *testing.T) {
+func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 	var (
 		err    error
 		n      *g.Network
@@ -34,15 +37,16 @@ func TestCaptureNetwork(t *testing.T) {
 	go func() {
 		logger := zap.L().Named("channel")
 		for p := range ch {
+			pp := p.Decode(gopacket.DecodeOptions{})
+
 			layers := []string{}
-			for _, layer := range p.Layers() {
+			for _, layer := range pp.Layers() {
 				layers = append(layers, layer.LayerType().String())
 			}
 
 			logger.Info("Packet",
 				zap.Strings("layers", layers),
-				zap.String("node", p.Interface.Node.Name()),
-				zap.String("intf", p.Interface.Name))
+				zap.Any("intf", p.Interface))
 		}
 	}()
 
@@ -63,33 +67,34 @@ func TestCaptureNetwork(t *testing.T) {
 	// 	bpf.RetConstant{Val: 0},                                                 // 8
 	// }
 
-	c1 := gopt.CaptureAll(
-		copt.ToFile(tmpPCAP),
-		copt.ToChannel(ch),
-		copt.Callback(cb),
-		copt.CaptureLength(1600),
-		copt.Promiscuous(true),
-		copt.FilterExpression("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
-		// copt.FilterInstructions(instrs),
-		copt.FilterInterfaces(func(i *g.Interface) bool {
+	c1 := g.NewCapture(
+		co.ToFile(tmpPCAP),
+		co.ToChannel(ch),
+		co.Callback(cb),
+		co.SnapshotLength(1600),
+		co.Promiscuous(true),
+		co.FilterExpression("icmp6[icmp6type]=icmp6-echo || icmp6[icmp6type]=icmp6-echoreply"),
+		// co.FilterInstructions(instrs),
+		co.FilterInterfaces(func(i *g.Interface) bool {
 			return strings.HasPrefix(i.Name, "veth")
 		}),
-		copt.FilterPackets(func(p *g.CapturePacket) bool {
-			if layer := p.Layer(layers.LayerTypeICMPv6); layer != nil {
+		co.FilterPackets(func(p *g.CapturePacket) bool {
+			pp := p.Decode(gopacket.DecodeOptions{})
+			if layer := pp.Layer(layers.LayerTypeICMPv6); layer != nil {
 				typec := layer.(*layers.ICMPv6).TypeCode.Type()
 
 				return typec == layers.ICMPv6TypeEchoRequest || typec == layers.ICMPv6TypeEchoReply
-			} else {
-				return false
 			}
+
+			return false
 		}),
-		copt.Comment("Some random comment which will be included in the capture file"),
+		co.Comment("Some random comment which will be included in the capture file"),
 	)
 
 	if n, err = g.NewNetwork(*nname,
-		gopt.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
-			gopt.CaptureAll(
-				copt.ToFilename("all.pcapng"), // We can create a file
+		o.Customize[g.NetworkOption](globalNetworkOptions, c1, // Also multiple capturers are supported
+			g.NewCapture(
+				co.ToFilename("all.pcapng"), // We can create a file
 			),
 		)...,
 	); err != nil {
@@ -101,10 +106,10 @@ func TestCaptureNetwork(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		gopt.Interface("veth0", sw1,
-			gopt.AddressIP("fc::1/64"),
-			gopt.Capture(
-				copt.Filename("{{ .Host }}_{{ .Interface }}.pcapng"),
+		g.NewInterface("veth0", sw1,
+			o.AddressIP("fc::1/64"),
+			g.NewCapture(
+				co.Filename("{{ .Node }}_{{ .Interface }}.pcapng"),
 			),
 		),
 	); err != nil {
@@ -112,8 +117,8 @@ func TestCaptureNetwork(t *testing.T) {
 	}
 
 	if h2, err = n.AddHost("h2",
-		gopt.Interface("veth0", sw1,
-			gopt.AddressIP("fc::2/64"),
+		g.NewInterface("veth0", sw1,
+			o.AddressIP("fc::2/64"),
 		),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
@@ -123,12 +128,21 @@ func TestCaptureNetwork(t *testing.T) {
 		t.Fatalf("Failed to ping: %s", err)
 	}
 
+	// Read-back PCAP file
 	// We need to wait some time until PCAP has captured the packets
 	time.Sleep(1 * time.Second)
 
-	rd, err := c1.Reader()
+	if err := c1.Flush(); err != nil {
+		t.Fatalf("Failed to flush capture: %s", err)
+	}
+
+	if _, err := tmpPCAP.Seek(0, 0); err != nil {
+		t.Fatalf("Failed to rewind file: %s", err)
+	}
+
+	rd, err := pcapgo.NewNgReader(tmpPCAP, pcapgo.DefaultNgReaderOptions)
 	if err != nil {
-		t.Fatalf("Failed to get reader for PCAPng file: %s", err)
+		t.Fatalf("Failed to read PCAPng file: %s", err)
 	}
 
 	h1veth0 := h1.Interface("veth0")

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package options
 
 import (
@@ -9,7 +12,7 @@ import (
 // MulticastSnooping configures multicast snooping.
 type MulticastSnooping bool
 
-func (mcs MulticastSnooping) Apply(b *nl.Bridge) {
+func (mcs MulticastSnooping) ApplyBridge(b *nl.Bridge) {
 	v := bool(mcs)
 	b.MulticastSnooping = &v
 }
@@ -18,7 +21,7 @@ func (mcs MulticastSnooping) Apply(b *nl.Bridge) {
 // When disabled, the bridge will not consider the VLAN tag when handling packets
 type VLANFiltering bool
 
-func (vf VLANFiltering) Apply(b *nl.Bridge) {
+func (vf VLANFiltering) ApplyBridge(b *nl.Bridge) {
 	v := bool(vf)
 	b.VlanFiltering = &v
 }
@@ -27,7 +30,7 @@ func (vf VLANFiltering) Apply(b *nl.Bridge) {
 // After this time has passed, entries are cleaned up.
 type AgingTime time.Duration
 
-func (at AgingTime) Apply(b *nl.Bridge) {
+func (at AgingTime) ApplyBridge(b *nl.Bridge) {
 	att := time.Duration(at)
 	v := uint32(att.Seconds())
 	b.AgeingTime = &v
@@ -37,7 +40,7 @@ func (at AgingTime) Apply(b *nl.Bridge) {
 // Only relevant if STP is enabled. Valid values are between 1 and 10 seconds.
 type HelloTime time.Duration
 
-func (ht HelloTime) Apply(b *nl.Bridge) {
+func (ht HelloTime) ApplyBridge(b *nl.Bridge) {
 	htt := time.Duration(ht)
 	v := uint32(htt.Seconds())
 	b.HelloTime = &v

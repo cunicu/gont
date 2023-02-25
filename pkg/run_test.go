@@ -1,11 +1,15 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
+	"bytes"
 	"fmt"
-	"io"
 	"testing"
 
 	g "github.com/stv0g/gont/pkg"
+	co "github.com/stv0g/gont/pkg/options/cmd"
 	"github.com/vishvananda/netns"
 )
 
@@ -28,13 +32,15 @@ func TestRun(t *testing.T) {
 	defer n.Close()
 
 	// Run
-	out, _, err := n1.Run("ip", "netns", "identify")
-	if err != nil {
+	outp := &bytes.Buffer{}
+	if _, err := n1.Run("ip", "netns", "identify",
+		co.Stdout(outp),
+	); err != nil {
 		t.Errorf("Failed to run identify: %s", err)
 	}
 
-	if string(out) != n1.Namespace.Name+"\n" {
-		t.Errorf("Got invalid namespace: %s", string(out))
+	if outp.String() != n1.Namespace.Name+"\n" {
+		t.Errorf("Got invalid namespace: %s", outp.String())
 	}
 }
 
@@ -63,7 +69,10 @@ func TestRunGo(t *testing.T) {
 	n, n1 := prepare(t)
 	defer n.Close()
 
-	out, cmd, err := n1.RunGo("../cmd/gontc/gontc.go", "identify")
+	outp := &bytes.Buffer{}
+	cmd, err := n1.RunGo("../cmd/gontc/gontc.go", "identify",
+		co.Stdout(outp),
+	)
 	if err != nil {
 		t.Fatalf("Failed to run Go script: %s", err)
 	}
@@ -72,7 +81,7 @@ func TestRunGo(t *testing.T) {
 		t.FailNow()
 	}
 
-	if string(out) != fmt.Sprintf("%s\n", n1) {
+	if outp.String() != fmt.Sprintf("%s\n", n1) {
 		t.FailNow()
 	}
 }
@@ -101,11 +110,11 @@ func TestRunSimple(t *testing.T) {
 	n, n1 := prepare(t)
 	defer n.Close()
 
-	if _, _, err := n1.Run("true"); err != nil {
+	if _, err := n1.Run("true"); err != nil {
 		t.Fail()
 	}
 
-	if _, _, err := n1.Run("false"); err == nil {
+	if _, err := n1.Run("false"); err == nil {
 		t.Fail()
 	}
 }
@@ -114,23 +123,23 @@ func TestStart(t *testing.T) {
 	n, n1 := prepare(t)
 	defer n.Close()
 
-	stdout, _, cmd, err := n1.Start("ip", "netns", "identify")
+	outp := &bytes.Buffer{}
+	cmd, err := n1.Start("ip", "netns", "identify",
+		co.Stdout(outp),
+	)
 	if err != nil {
 		t.Errorf("Failed to run identify: %s", err)
 	}
 
-	var out []byte
-	if out, err = io.ReadAll(stdout); err != nil {
-		t.Errorf("Failed to read all: %s", err)
+	if err := cmd.Wait(); err != nil {
+		t.Fatal(err)
 	}
-
-	cmd.Wait()
 
 	if !cmd.ProcessState.Exited() || !cmd.ProcessState.Success() {
 		t.FailNow()
 	}
 
-	if string(out) != n1.Namespace.Name+"\n" {
-		t.Errorf("Got invalid namespace: %s", string(out))
+	if outp.String() != n1.Namespace.Name+"\n" {
+		t.Errorf("Got invalid namespace: %s", outp.String())
 	}
 }

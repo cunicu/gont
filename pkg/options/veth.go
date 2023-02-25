@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package options
 
 import (
@@ -8,6 +11,6 @@ import (
 
 type PeerHardwareAddress net.HardwareAddr
 
-func (p PeerHardwareAddress) Apply(v *nl.Veth) {
+func (p PeerHardwareAddress) ApplyVeth(v *nl.Veth) {
 	v.PeerHardwareAddr = net.HardwareAddr(p)
 }

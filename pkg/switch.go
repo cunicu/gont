@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont
 
 import (
@@ -8,11 +11,11 @@ import (
 )
 
 type SwitchOption interface {
-	Apply(sw *Switch)
+	ApplySwitch(sw *Switch)
 }
 
 type BridgeOption interface {
-	Apply(br *nl.Bridge)
+	ApplyBridge(br *nl.Bridge)
 }
 
 // Switch is an abstraction for a Linux virtual bridge
@@ -22,8 +25,8 @@ type Switch struct {
 
 // Options
 
-func (sw *Switch) Apply(i *Interface) {
-	i.Node = sw
+func (sw *Switch) ApplyInterface(i *Interface) {
+	i.node = sw
 }
 
 // AddSwitch adds a new Linux virtual bridge in a dedicated namespace
@@ -50,11 +53,11 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 	for _, opt := range opts {
 		switch opt := opt.(type) {
 		case SwitchOption:
-			opt.Apply(sw)
+			opt.ApplySwitch(sw)
 		case BridgeOption:
-			opt.Apply(br)
+			opt.ApplyBridge(br)
 		case LinkOption:
-			opt.Apply(&br.LinkAttrs)
+			opt.ApplyLink(&br.LinkAttrs)
 		}
 	}
 
@@ -76,14 +79,16 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		peerDev := fmt.Sprintf("veth-%s", name)
 
 		left := intf
-		left.Node = sw
+		left.node = sw
 
 		right := &Interface{
 			Name: peerDev,
-			Node: intf.Node,
+			node: intf.node,
 		}
 
-		n.AddLink(left, right)
+		if err := n.AddLink(left, right); err != nil {
+			return nil, fmt.Errorf("failed to add link: %w", err)
+		}
 	}
 
 	return sw, nil

@@ -1,6 +1,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 ---
 
+# SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+# SPDX-License-Identifier: CC0-1.0
+
 name: Build and Test
 
 on:
@@ -15,7 +18,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: sudo apt-get install traceroute make libpcap-dev tshark
@@ -43,7 +47,7 @@ jobs:
       run: |
         sudo --preserve-env \
           env "PATH=$PATH" \
-          go test -coverprofile coverage.out -v ./...
+          go test -coverprofile coverage.out -v ./pkg ./internal/...
 
     - name: Run codacy-coverage-reporter
       uses: codacy/codacy-coverage-reporter-action@v1

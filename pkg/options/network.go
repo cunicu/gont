@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package options
 
 import (
@@ -6,25 +9,13 @@ import (
 
 type NSPrefix string
 
-func (pfx NSPrefix) Apply(n *g.Network) {
+func (pfx NSPrefix) ApplyNetwork(n *g.Network) {
 	n.NSPrefix = string(pfx)
 }
 
-// Persistent keeps a network from beeing torn down.
+// Persistent keeps a network from being torn down.
 type Persistent bool
 
-func (p Persistent) Apply(n *g.Network) {
+func (p Persistent) ApplyNetwork(n *g.Network) {
 	n.Persistent = bool(p)
-}
-
-type CaptureNetwork struct {
-	*g.Capture
-}
-
-func (c CaptureNetwork) Apply(n *g.Network) {
-	n.Captures = append(n.Captures, c.Capture)
-}
-
-func CaptureAll(opts ...g.Option) CaptureNetwork {
-	return CaptureNetwork{Capture(opts...)}
 }

@@ -1,10 +1,12 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
 	"testing"
 
 	g "github.com/stv0g/gont/pkg"
-	o "github.com/stv0g/gont/pkg/options"
 )
 
 func TestLink(t *testing.T) {
@@ -28,8 +30,8 @@ func TestLink(t *testing.T) {
 	}
 
 	if err = n.AddLink(
-		o.Interface("veth0", h1),
-		o.Interface("veth0", h2),
+		g.NewInterface("veth0", h1),
+		g.NewInterface("veth0", h2),
 	); err != nil {
 		t.Errorf("Failed to link nodes: %s", err)
 	}

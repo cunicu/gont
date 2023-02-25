@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
@@ -11,7 +14,7 @@ func TestNamespace(t *testing.T) {
 	nsName := "gont-testing-ns"
 
 	// delete stale namespaces from previous runs
-	netns.DeleteNamed(nsName)
+	netns.DeleteNamed(nsName) //nolint:errcheck
 
 	n, err := g.NewNamespace(nsName)
 	if err != nil {

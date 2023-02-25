@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+// SPDX-License-Identifier: Apache-2.0
+
 package gont_test
 
 import (
@@ -33,22 +36,22 @@ func TestPingCascadedSwitches(t *testing.T) {
 	}
 
 	if h1, err = n.AddHost("h1",
-		o.Interface("veth0", sw1,
+		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.0.1/24")),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if h2, err = n.AddHost("h2",
-		o.Interface("veth0", sw2,
+		g.NewInterface("veth0", sw2,
 			o.AddressIP("10.0.0.2/24")),
 	); err != nil {
 		t.Fatalf("Failed to add host: %s", err)
 	}
 
 	if err = n.AddLink(
-		o.Interface("br-sw2", sw1),
-		o.Interface("br-sw1", sw2),
+		g.NewInterface("br-sw2", sw1),
+		g.NewInterface("br-sw1", sw2),
 	); err != nil {
 		t.Fatalf("Failed to add link: %s", err)
 	}
