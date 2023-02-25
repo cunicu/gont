@@ -40,8 +40,21 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
 -   Configuration of per-host nftables firewall rules
 -   Built-in Ping & Traceroute diagnostic tools
 -   Built-in packet tracing with [PCAPng](https://wiki.wireshark.org/Development/PcapNg) output
+    - Real-time streaming of PCAPng data to WireShark via [TCP sockets or named-pipes](https://wiki.wireshark.org/CaptureSetup/Pipes.md)
     - Automatic decryption of captured trafic using Wireshark/thark by including session secrets in PCAPng file
     - Automatic instrumentation of sub-processes using [`SSLKEYLOGFILE` environment variable](https://everything.curl.dev/usingcurl/tls/sslkeylogfile)
+- Distributed tracing of events
+  - Support for emitting [zap](https://github.com/uber-go/zap) log messages as trace events
+  - Cedicated [gont/trace](https://pkg.go.dev/github.com/stv0g/gont/pkg/trace) package for emitting trace events
+  - Capturing of trace events in PCAPng files
+  - WireShark Lua dissector for decoding events
+- Built-in [Delve](https://github.com/go-delve/delve) debugger
+  - Simultaneous attachment to multiple processes
+  - Tracing via HW watch- & breakpoints to emit tracer events (see above)
+    - Capture and investigate tracepoints in WireShark
+  - Remote debugging via [DAP](https://microsoft.github.io/debug-adapter-protocol/)
+  - Generation of VS Code [compound launch configurations](https://code.visualstudio.com/docs/editor/debugging#_compound-launch-configurations)
+    - Start Gont test and attach to all processes at once
 
 ## Examples
 
@@ -139,12 +152,12 @@ classDiagram
 <img alt="European Flag" src="https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg" align="left" style="margin-right: 10px"/> The development of [Gont][gont] has been supported by the [ERIGrid 2.0][erigrid] project \
 of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.eu/project/id/870620)
 
-[erigrid]: https://erigrid2.eu
-[gont]: https://github.com/stv0g/gont
-
 ## License
 
 Gont is [REUSE compliant](https://reuse.software/) and mainly licensed under the [Apache 2.0 license](LICENSES/Apache-2.0.txt)
 
-SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
-SPDX-License-Identifier: Apache-2.0
+- SPDX-FileCopyrightText: 2023 Steffen Vogel \<post@steffenvogel.de\>
+- SPDX-License-Identifier: Apache-2.0
+
+[erigrid]: https://erigrid2.eu
+[gont]: https://github.com/stv0g/gont
