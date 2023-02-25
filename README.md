@@ -1,4 +1,4 @@
-# Gont - A Go network testing toolkit
+# Gont - A testing framework for distributed Go applications
 
 [![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/stv0g/gont/Build%20and%20Test/master)](https://github.com/stv0g/gont/actions)
 [![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
