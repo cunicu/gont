@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	do "github.com/stv0g/gont/pkg/options/debug"
@@ -36,12 +36,12 @@ func TestDebugger(t *testing.T) {
 			})
 			enc.SetIndent("", "  ")
 			err := enc.Encode(e)
-			assert.NoError(t, err, "Failed to encode")
+			require.NoError(t, err, "Failed to encode")
 		}),
 	)
 
 	err := s.Start()
-	assert.NoError(t, err, "Failed to start tracer")
+	require.NoError(t, err, "Failed to start tracer")
 
 	d := g.NewDebugger(
 		do.ListenAddr(":1234"),
@@ -79,19 +79,19 @@ func TestDebugger(t *testing.T) {
 			o.RedirectToLog(true),
 			d,
 		)...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 
 	h1, err := n.AddHost("h1")
-	assert.NoError(t, err, "Failed to add host")
+	require.NoError(t, err, "Failed to add host")
 
 	_, err = h1.StartGo("../test/tracee2", 1)
-	assert.NoError(t, err, "Failed to run tracee")
+	require.NoError(t, err, "Failed to run tracee")
 
 	_, err = h1.StartGo("../test/tracee2", 2)
-	assert.NoError(t, err, "Failed to run tracee")
+	require.NoError(t, err, "Failed to run tracee")
 
 	err = d.WriteVSCodeConfigs("", false)
-	assert.NoError(t, err, "Failed to write VSCode config")
+	require.NoError(t, err, "Failed to write VSCode config")
 
 	select {}
 }

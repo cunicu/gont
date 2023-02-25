@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	co "github.com/stv0g/gont/pkg/options/cmd"
@@ -19,25 +19,25 @@ func TestDocker(t *testing.T) {
 	t.Skip("Test is currently broken")
 
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
 	sw, err := n.AddSwitch("sw")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	// h1 is a normal Gont node
 	h1, err := n.AddHost("h1",
 		g.NewInterface("veth0", sw,
 			o.AddressIP("10.0.0.1/24"),
 			o.AddressIP("fc::1/64")))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	// h2 is a Docker container
 	outp := &bytes.Buffer{}
 	_, err = n.HostNode.Run("docker", "run", "--detach", "nginx",
 		co.Stdout(outp),
 	)
-	assert.NoError(t, err, "Failed to start Docker container")
+	require.NoError(t, err, "Failed to start Docker container")
 
 	id := strings.TrimSpace(outp.String())
 
@@ -49,16 +49,16 @@ func TestDocker(t *testing.T) {
 			o.AddressIP("10.0.0.2/24"),
 			o.AddressIP("fc::2/64")),
 	)
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	_, err = h2.Run("hostname")
-	assert.NoError(t, err, "Failed to run")
+	require.NoError(t, err, "Failed to run")
 
 	u, err := url.Parse("http://h2/")
-	assert.NoError(t, err, "Failed to parse URL")
+	require.NoError(t, err, "Failed to parse URL")
 
 	_, err = h1.Run("curl", u)
-	assert.NoError(t, err, "Failed to run")
+	require.NoError(t, err, "Failed to run")
 	_, err = h2.Ping(h1)
-	assert.NoError(t, err, "Failed to run")
+	require.NoError(t, err, "Failed to run")
 }

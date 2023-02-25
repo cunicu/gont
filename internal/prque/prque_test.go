@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stv0g/gont/internal/prque"
 )
 
@@ -33,22 +33,22 @@ func TestPriorityQueue(t *testing.T) {
 	q.Push(itf(2))
 	q.Push(itf(3))
 
-	assert.Equal(t, q.Len(), 4)
+	require.Equal(t, q.Len(), 4)
 
 	it := q.Pop()
-	assert.Equal(t, it.Time().Second(), 1)
+	require.Equal(t, it.Time().Second(), 1)
 
 	it = q.Pop()
-	assert.Equal(t, it.Time().Second(), 2)
+	require.Equal(t, it.Time().Second(), 2)
 
 	o := q.Oldest()
-	assert.EqualValues(t, o.Unix(), 3)
+	require.EqualValues(t, o.Unix(), 3)
 
 	it = q.Pop()
-	assert.Equal(t, it.Time().Second(), 3)
+	require.Equal(t, it.Time().Second(), 3)
 
 	it = q.Pop()
-	assert.Equal(t, it.Time().Second(), 4)
+	require.Equal(t, it.Time().Second(), 4)
 
-	assert.Zero(t, q.Len())
+	require.Zero(t, q.Len())
 }

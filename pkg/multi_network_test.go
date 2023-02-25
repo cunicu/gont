@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 )
@@ -20,20 +20,20 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 	}
 
 	n, err := g.NewNetwork("", globalNetworkOptions...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 
 	sw, err := n.AddSwitch(pfx + "sw")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	_, err = n.AddHost(pfx+"h1",
 		g.NewInterface("veth0", sw,
 			address(1)))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	_, err = n.AddHost(pfx+"h2",
 		g.NewInterface("veth0", sw,
 			address(2)))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	return n
 }
@@ -47,14 +47,14 @@ func TestMultipleNetworks(t *testing.T) {
 
 	// Connectivity within the network must succeed
 	err := g.TestConnectivity(n1.Hosts()...)
-	assert.NoError(t, err, "Connectivity tests between hosts on same network must succeed")
+	require.NoError(t, err, "Connectivity tests between hosts on same network must succeed")
 
 	// Connectivity within the network must succeed
 	err = g.TestConnectivity(n2.Hosts()...)
-	assert.NoError(t, err, "Connectivity tests between hosts on same network must succeed")
+	require.NoError(t, err, "Connectivity tests between hosts on same network must succeed")
 
 	// Connectivity between the networks must fail
 	all := append(n1.Hosts(), n2.Hosts()...)
 	err = g.TestConnectivity(all...)
-	assert.Error(t, err, "Connectivity tests between hosts on different networks must fail")
+	require.Error(t, err, "Connectivity tests between hosts on different networks must fail")
 }

@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	co "github.com/stv0g/gont/pkg/options/cmd"
 	"github.com/vishvananda/netns"
@@ -15,10 +15,10 @@ import (
 
 func prepare(t *testing.T) (*g.Network, *g.BaseNode) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
-	assert.NoError(t, err, "Failed to create new network")
+	require.NoError(t, err, "Failed to create new network")
 
 	n1, err := n.AddNode("n1")
-	assert.NoError(t, err, "Failed to create node")
+	require.NoError(t, err, "Failed to create node")
 
 	return n, n1
 }
@@ -31,8 +31,8 @@ func TestRun(t *testing.T) {
 	outp := &bytes.Buffer{}
 	_, err := n1.Run("ip", "netns", "identify",
 		co.Stdout(outp))
-	assert.NoError(t, err, "Failed to run identify")
-	assert.Equal(t, outp.String(), n1.Namespace.Name+"\n", "Got invalid namespace")
+	require.NoError(t, err, "Failed to run identify")
+	require.Equal(t, outp.String(), n1.Namespace.Name+"\n", "Got invalid namespace")
 }
 
 func TestRunFunc(t *testing.T) {
@@ -46,11 +46,11 @@ func TestRunFunc(t *testing.T) {
 			return err
 		}
 
-		assert.True(t, handle.Equal(n1.NsHandle), "Mismatching netns handles")
+		require.True(t, handle.Equal(n1.NsHandle), "Mismatching netns handles")
 
 		return nil
 	})
-	assert.NoError(t, err, "Failed to run identify")
+	require.NoError(t, err, "Failed to run identify")
 }
 
 func TestRunGo(t *testing.T) {
@@ -60,11 +60,11 @@ func TestRunGo(t *testing.T) {
 	outp := &bytes.Buffer{}
 	cmd, err := n1.RunGo("../cmd/gontc/gontc.go", "identify",
 		co.Stdout(outp))
-	assert.NoError(t, err, "Failed to run Go script")
+	require.NoError(t, err, "Failed to run Go script")
 
-	assert.True(t, cmd.ProcessState.Exited(), "Process did not exit")
-	assert.True(t, cmd.ProcessState.Success(), "Process did not succeed")
-	assert.Equal(t, outp.String(), n1.String()+"\n")
+	require.True(t, cmd.ProcessState.Exited(), "Process did not exit")
+	require.True(t, cmd.ProcessState.Success(), "Process did not succeed")
+	require.Equal(t, outp.String(), n1.String()+"\n")
 }
 
 func TestEnter(t *testing.T) {
@@ -72,12 +72,12 @@ func TestEnter(t *testing.T) {
 	defer n.Close()
 
 	exit, err := n1.Enter()
-	assert.NoError(t, err, "Failed to enter namespace")
+	require.NoError(t, err, "Failed to enter namespace")
 	defer exit()
 
 	handle, err := netns.Get()
-	assert.NoError(t, err, "Failed to get netns handle")
-	assert.True(t, handle.Equal(n1.NsHandle), "Mismatching netns handles")
+	require.NoError(t, err, "Failed to get netns handle")
+	require.True(t, handle.Equal(n1.NsHandle), "Mismatching netns handles")
 }
 
 func TestRunSimple(t *testing.T) {
@@ -85,10 +85,10 @@ func TestRunSimple(t *testing.T) {
 	defer n.Close()
 
 	_, err := n1.Run("true")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = n1.Run("false")
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestStart(t *testing.T) {
@@ -98,13 +98,13 @@ func TestStart(t *testing.T) {
 	outp := &bytes.Buffer{}
 	cmd, err := n1.Start("ip", "netns", "identify",
 		co.Stdout(outp))
-	assert.NoError(t, err, "Failed to run identify")
+	require.NoError(t, err, "Failed to run identify")
 
 	err = cmd.Wait()
-	assert.NoError(t, err, "Failed to wait")
+	require.NoError(t, err, "Failed to wait")
 
-	assert.True(t, cmd.ProcessState.Exited(), "Process did not exit")
-	assert.True(t, cmd.ProcessState.Success(), "Process did not succeed")
+	require.True(t, cmd.ProcessState.Exited(), "Process did not exit")
+	require.True(t, cmd.ProcessState.Success(), "Process did not succeed")
 
-	assert.Equal(t, outp.String(), n1.Namespace.Name+"\n", "Got invalid namespace")
+	require.Equal(t, outp.String(), n1.Namespace.Name+"\n", "Got invalid namespace")
 }

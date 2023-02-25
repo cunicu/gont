@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	"github.com/vishvananda/netns"
@@ -27,17 +27,17 @@ func TestNamedNetwork(t *testing.T) {
 	ns := fmt.Sprintf("gont-%s-h1", name)
 
 	n, err := g.NewNetwork(name)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
-	assert.Equal(t, n.Name, name, "Mismatching names")
-	assert.True(t, hasNetwork(name))
+	require.Equal(t, n.Name, name, "Mismatching names")
+	require.True(t, hasNetwork(name))
 
 	_, err = n.AddHost("h1")
-	assert.NoError(t, err, "Failed to add host")
+	require.NoError(t, err, "Failed to add host")
 
 	_, err = netns.GetFromName(ns)
-	assert.NoError(t, err, "Failed to get ns from name")
+	require.NoError(t, err, "Failed to get ns from name")
 }
 
 func TestNetworkNSPrefix(t *testing.T) {
@@ -46,26 +46,26 @@ func TestNetworkNSPrefix(t *testing.T) {
 	ns := fmt.Sprintf("%s%s-h1", prefix, name)
 
 	n, err := g.NewNetwork(name, o.NSPrefix(prefix))
-	assert.NoError(t, err, "Failed to create network: %s", err)
+	require.NoError(t, err, "Failed to create network: %s", err)
 	defer n.Close()
 
-	assert.Equal(t, n.Name, name, "Mismatching names")
-	assert.True(t, hasNetwork(name))
+	require.Equal(t, n.Name, name, "Mismatching names")
+	require.True(t, hasNetwork(name))
 
 	_, err = n.AddHost("h1")
-	assert.NoError(t, err, "Failed to add host")
+	require.NoError(t, err, "Failed to add host")
 
 	_, err = netns.GetFromName(ns)
-	assert.NoError(t, err, "Failed to get ns from name")
+	require.NoError(t, err, "Failed to get ns from name")
 }
 
 func TestNetworkGeneratedName(t *testing.T) {
 	n1, err := g.NewNetwork("")
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n1.Close()
 
 	n2, err := g.NewNetwork("")
-	assert.NoError(t, err, "Failed to create another network")
+	require.NoError(t, err, "Failed to create another network")
 	defer n2.Close()
 }
 
@@ -73,12 +73,12 @@ func TestNetworkExists(t *testing.T) {
 	name := g.GenerateNetworkName()
 
 	n1, err := g.NewNetwork(name)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n1.Close()
 
 	n2, err := g.NewNetwork(name)
 	if err == nil {
 		defer n2.Close()
 	}
-	assert.Error(t, err, "Created network with existing name")
+	require.Error(t, err, "Created network with existing name")
 }

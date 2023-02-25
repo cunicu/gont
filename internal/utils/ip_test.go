@@ -7,32 +7,32 @@ import (
 	"net"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stv0g/gont/internal/utils"
 )
 
 func TestIPAddressRangeV4(t *testing.T) {
 	_, src, err := net.ParseCIDR("192.168.0.0/24")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	fromAddr, toAddr := utils.AddressRange(src)
 
 	expFromAddr := net.ParseIP("192.168.0.0")
 	expToAddr := net.ParseIP("192.168.1.0")
 
-	assert.True(t, fromAddr.Equal(expFromAddr))
-	assert.True(t, toAddr.Equal(expToAddr))
+	require.True(t, fromAddr.Equal(expFromAddr))
+	require.True(t, toAddr.Equal(expToAddr))
 }
 
 func TestIPAddressRangeV6(t *testing.T) {
 	_, src, err := net.ParseCIDR("fc00::/8")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	fromAddr, toAddr := utils.AddressRange(src)
 
 	expFromAddr := net.ParseIP("fc00::")
 	expToAddr := net.ParseIP("fd00::")
 
-	assert.True(t, fromAddr.Equal(expFromAddr))
-	assert.True(t, toAddr.Equal(expToAddr))
+	require.True(t, fromAddr.Equal(expFromAddr))
+	require.True(t, toAddr.Equal(expToAddr))
 }

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	co "github.com/stv0g/gont/pkg/options/capture"
@@ -22,7 +22,7 @@ import (
 // TestCaptureKeyLog tests the decryption of captured traffic
 func TestCaptureKeyLog(t *testing.T) {
 	tmpPCAP, err := os.CreateTemp(t.TempDir(), "gont-capture-*.pcapng")
-	assert.NoError(t, err, "Failed to open temporary file")
+	require.NoError(t, err, "Failed to open temporary file")
 
 	c1 := g.NewCapture(
 		co.ToFile(tmpPCAP),
@@ -35,30 +35,30 @@ func TestCaptureKeyLog(t *testing.T) {
 			g.NewCapture(
 				co.ToFilename("all.pcapng")), // We can create a file
 		)...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 
 	server, err := AddWebServer(n, "server")
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	client, err := n.AddHost("client")
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	err = n.AddLink(
 		g.NewInterface("veth0", client,
 			o.AddressIP("fc::1:2/112")),
 		g.NewInterface("veth0", server,
 			o.AddressIP("fc::1:1/112")))
-	assert.NoError(t, err, "Failed to add link")
+	require.NoError(t, err, "Failed to add link")
 
 	_, err = client.Run("curl", "--http2", "--silent", "--insecure", "--connect-timeout", 5, "https://server")
-	assert.NoError(t, err, "cURL Request failed: %s")
+	require.NoError(t, err, "cURL Request failed: %s")
 
 	// Wait until all traffic propagates through PCAP
 	time.Sleep(time.Second)
 
 	// We must close here so all decryption secrets are written to the PCAP files
 	err = n.Close()
-	assert.NoError(t, err, "Failed to close network")
+	require.NoError(t, err, "Failed to close network")
 
 	t.Logf("PCAPng file: %s", tmpPCAP.Name())
 
@@ -68,14 +68,14 @@ func TestCaptureKeyLog(t *testing.T) {
 	c.Stdout = out
 
 	err = c.Run()
-	assert.NoError(t, err, "Failed to run tshark")
+	require.NoError(t, err, "Failed to run tshark")
 
 	hostPortBytes, err := hex.DecodeString(strings.TrimSpace(out.String()))
-	assert.NoError(t, err, "Failed to decode HTTP response body")
+	require.NoError(t, err, "Failed to decode HTTP response body")
 
 	hostPort := string(hostPortBytes)
 	ip, _, err := net.SplitHostPort(hostPort)
-	assert.NoError(t, err, "Failed to split host:port")
+	require.NoError(t, err, "Failed to split host:port")
 
-	assert.Equal(t, ip, "fc::1:2", "Got wrong IP")
+	require.Equal(t, ip, "fc::1:2", "Got wrong IP")
 }

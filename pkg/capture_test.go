@@ -14,7 +14,7 @@ import (
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	co "github.com/stv0g/gont/pkg/options/capture"
@@ -30,7 +30,7 @@ func TestCaptureNetwork(t *testing.T) {
 	)
 
 	tmpPCAP, err := os.CreateTemp(t.TempDir(), "gont-capture-*.pcapng")
-	assert.NoError(t, err, "Failed to open temporary file")
+	require.NoError(t, err, "Failed to open temporary file")
 
 	ch := make(chan g.CapturePacket)
 	go func() {
@@ -95,101 +95,101 @@ func TestCaptureNetwork(t *testing.T) {
 			g.NewCapture(
 				co.ToFilename("all.pcapng")), // We can create a file
 		)...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 
 	sw1, err = n.AddSwitch("sw1")
-	assert.NoError(t, err, "Failed to add switch")
+	require.NoError(t, err, "Failed to add switch")
 
 	h1, err = n.AddHost("h1",
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("fc::1/64"),
 			g.NewCapture(
 				co.Filename("{{ .Node }}_{{ .Interface }}.pcapng"))))
-	assert.NoError(t, err, "Failed to add host")
+	require.NoError(t, err, "Failed to add host")
 
 	h2, err = n.AddHost("h2",
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("fc::2/64")))
-	assert.NoError(t, err, "Failed to add host")
+	require.NoError(t, err, "Failed to add host")
 
 	_, err = h1.Ping(h2)
-	assert.NoError(t, err, "Failed to ping")
+	require.NoError(t, err, "Failed to ping")
 
 	// Read-back PCAP file
 	// We need to wait some time until PCAP has captured the packets
 	time.Sleep(1 * time.Second)
 
 	err = c1.Flush()
-	assert.NoError(t, err, "Failed to flush capture")
+	require.NoError(t, err, "Failed to flush capture")
 
 	_, err = tmpPCAP.Seek(0, 0)
-	assert.NoError(t, err, "Failed to rewind file")
+	require.NoError(t, err, "Failed to rewind file")
 
 	rd, err := pcapgo.NewNgReader(tmpPCAP, pcapgo.DefaultNgReaderOptions)
-	assert.NoError(t, err, "Failed to read PCAPng file")
+	require.NoError(t, err, "Failed to read PCAPng file")
 
 	h1veth0 := h1.Interface("veth0")
 	h2veth0 := h2.Interface("veth0")
 
 	pkt, _, intf, eof := nextPacket(t, rd)
-	assert.Equal(t, eof, false, "Expected more packets")
+	require.Equal(t, eof, false, "Expected more packets")
 
-	assert.Equal(t, intf.Name, "h1/veth0", "Invalid 1st packet")
+	require.Equal(t, intf.Name, "h1/veth0", "Invalid 1st packet")
 
 	v6, ok := pkt.NetworkLayer().(*layers.IPv6)
-	assert.True(t, ok, "Wrong network layer: %s", pkt.NetworkLayer().LayerType().String())
+	require.True(t, ok, "Wrong network layer: %s", pkt.NetworkLayer().LayerType().String())
 
-	assert.True(t, v6.SrcIP.Equal(h1veth0.Addresses[0].IP),
+	require.True(t, v6.SrcIP.Equal(h1veth0.Addresses[0].IP),
 		"Invalid source IP: %s != %s",
 		v6.SrcIP.String(),
 		h1veth0.Addresses[0].IP.String(),
 	)
 
-	assert.True(t, v6.DstIP.Equal(h2veth0.Addresses[0].IP),
+	require.True(t, v6.DstIP.Equal(h2veth0.Addresses[0].IP),
 		"Invalid source IP: %s != %s",
 		v6.SrcIP.String(),
 		h1veth0.Addresses[0].IP.String(),
 	)
 
 	_, _, intf, eof = nextPacket(t, rd)
-	assert.False(t, eof, "Expected more packets")
-	assert.Equal(t, intf.Name, "sw1/veth-h1", "Invalid 2nd packet")
+	require.False(t, eof, "Expected more packets")
+	require.Equal(t, intf.Name, "sw1/veth-h1", "Invalid 2nd packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	assert.False(t, eof, "Expected more packets")
-	assert.Equal(t, intf.Name, "sw1/veth-h2", "Invalid 3rd packet")
+	require.False(t, eof, "Expected more packets")
+	require.Equal(t, intf.Name, "sw1/veth-h2", "Invalid 3rd packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	assert.False(t, eof, "Expected more packets")
-	assert.Equal(t, intf.Name, "h2/veth0", "Invalid 4th packet")
+	require.False(t, eof, "Expected more packets")
+	require.Equal(t, intf.Name, "h2/veth0", "Invalid 4th packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	assert.False(t, eof, "Expected more packets")
-	assert.Equal(t, intf.Name, "h2/veth0", "Invalid 5th packet")
+	require.False(t, eof, "Expected more packets")
+	require.Equal(t, intf.Name, "h2/veth0", "Invalid 5th packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	assert.False(t, eof, "Expected more packets")
-	assert.Equal(t, intf.Name, "sw1/veth-h2", "Invalid 6th packet: %s", intf.Name)
+	require.False(t, eof, "Expected more packets")
+	require.Equal(t, intf.Name, "sw1/veth-h2", "Invalid 6th packet: %s", intf.Name)
 
 	_, _, intf, eof = nextPacket(t, rd)
-	assert.False(t, eof, "Expected more packets")
-	assert.Equal(t, intf.Name, "sw1/veth-h1", "Invalid 7th packet")
+	require.False(t, eof, "Expected more packets")
+	require.Equal(t, intf.Name, "sw1/veth-h1", "Invalid 7th packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	assert.False(t, eof, "Expected more packets")
-	assert.Equal(t, intf.Name, "h1/veth0", "Invalid 7th packet")
+	require.False(t, eof, "Expected more packets")
+	require.Equal(t, intf.Name, "h1/veth0", "Invalid 7th packet")
 
 	_, _, _, eof = nextPacket(t, rd)
-	assert.True(t, eof, "Expected EOF")
+	require.True(t, eof, "Expected EOF")
 
-	assert.Equal(t, rd.NInterfaces(), 4, "Invalid number of interfaces")
-	assert.EqualValues(t, c1.Count(), 8, "Invalid number of packets")
+	require.Equal(t, rd.NInterfaces(), 4, "Invalid number of interfaces")
+	require.EqualValues(t, c1.Count(), 8, "Invalid number of packets")
 
 	err = n.Close()
-	assert.NoError(t, err, "Failed to close network")
+	require.NoError(t, err, "Failed to close network")
 
 	err = tmpPCAP.Close()
-	assert.NoError(t, err, "Failed to close file")
+	require.NoError(t, err, "Failed to close file")
 }
 
 func nextPacket(t *testing.T, rd *pcapgo.NgReader) (gopacket.Packet, *gopacket.CaptureInfo, *pcapgo.NgInterface, bool) {
@@ -199,11 +199,11 @@ func nextPacket(t *testing.T, rd *pcapgo.NgReader) (gopacket.Packet, *gopacket.C
 			return nil, nil, nil, true
 		}
 
-		assert.NoError(t, err, "Failed to read packet data")
+		require.NoError(t, err, "Failed to read packet data")
 	}
 
 	intf, err := rd.Interface(ci.InterfaceIndex)
-	assert.NoError(t, err, "Received packet from unknown interface")
+	require.NoError(t, err, "Received packet from unknown interface")
 
 	return gopacket.NewPacket(data, layers.LinkTypeEthernet, gopacket.Default), &ci, &intf, false
 }

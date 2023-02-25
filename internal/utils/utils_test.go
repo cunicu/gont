@@ -8,29 +8,29 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stv0g/gont/internal/utils"
 )
 
 func TestRandStringRunes(t *testing.T) {
 	rnd := utils.RandStringRunes(16)
-	assert.Len(t, rnd, 16)
+	require.Len(t, rnd, 16)
 }
 
 func TestTouch(t *testing.T) {
 	dir, err := os.MkdirTemp("", "gont-test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
 	fn := filepath.Join(dir, "test-file")
 
 	err = utils.Touch(fn)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	fi, err := os.Stat(fn)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.False(t, fi.IsDir())
+	require.False(t, fi.IsDir())
 
-	assert.Zero(t, fi.Size())
+	require.Zero(t, fi.Size())
 }

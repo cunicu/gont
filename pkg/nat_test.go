@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 )
@@ -18,39 +18,39 @@ import (
 //	h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
 func TestPingNATIPv4(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
 	sw1, err := n.AddSwitch("sw1")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	sw2, err := n.AddSwitch("sw2")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	h1, err := n.AddHost("h1",
 		o.DefaultGatewayIP("10.0.1.1"),
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.1.2/24")))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	h2, err := n.AddHost("h2",
 		o.DefaultGatewayIP("10.0.2.1"),
 		g.NewInterface("veth0", sw2,
 			o.AddressIP("10.0.2.2/24")))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	_, err = n.AddNAT("nat1",
 		g.NewInterface("veth0", sw1, o.SouthBound,
 			o.AddressIP("10.0.1.1/24")),
 		g.NewInterface("veth1", sw2, o.NorthBound,
 			o.AddressIP("10.0.2.1/24")))
-	assert.NoError(t, err, "Failed to create NAT")
+	require.NoError(t, err, "Failed to create NAT")
 
 	_, err = h1.Ping(h2)
-	assert.NoError(t, err, "Failed to ping h1 -> h2")
+	require.NoError(t, err, "Failed to ping h1 -> h2")
 
 	err = h1.Traceroute(h2)
-	assert.NoError(t, err, "Failed to traceroute h1 -> h2")
+	require.NoError(t, err, "Failed to traceroute h1 -> h2")
 }
 
 // TestPingNATIPv6 performs and end-to-end ping test
@@ -59,39 +59,39 @@ func TestPingNATIPv4(t *testing.T) {
 //	h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
 func TestPingNATIPv6(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
 	sw1, err := n.AddSwitch("sw1")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	sw2, err := n.AddSwitch("sw2")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	h1, err := n.AddHost("h1",
 		o.DefaultGatewayIP("fc::1:1"),
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("fc::1:2/112")))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	h2, err := n.AddHost("h2",
 		o.DefaultGatewayIP("fc::2:1"),
 		g.NewInterface("veth0", sw2,
 			o.AddressIP("fc::2:2/112")))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	_, err = n.AddNAT("nat1",
 		g.NewInterface("veth0", sw1, o.SouthBound,
 			o.AddressIP("fc::1:1/112")),
 		g.NewInterface("veth1", sw2, o.NorthBound,
 			o.AddressIP("fc::2:1/112")))
-	assert.NoError(t, err, "Failed to create NAT")
+	require.NoError(t, err, "Failed to create NAT")
 
 	_, err = h1.PingWithNetwork(h2, "ip6")
-	assert.NoError(t, err, "Failed to ping h1 -> h2")
+	require.NoError(t, err, "Failed to ping h1 -> h2")
 
 	err = h1.Traceroute(h2, "-6")
-	assert.NoError(t, err, "Failed to traceroute h1 -> h2")
+	require.NoError(t, err, "Failed to traceroute h1 -> h2")
 }
 
 // TestPingDoubleNAT performs and end-to-end ping test
@@ -100,29 +100,29 @@ func TestPingNATIPv6(t *testing.T) {
 //	h1 <-> sw1 <-> nat1 <-> sw2 <-> nat2 <-> sw3 <-> h2
 func TestPingDoubleNAT(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
 	sw1, err := n.AddSwitch("sw1")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	sw2, err := n.AddSwitch("sw2")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	sw3, err := n.AddSwitch("sw3")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	h1, err := n.AddHost("h1",
 		o.DefaultGatewayIP("10.0.1.1"),
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.1.2/24")))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	h2, err := n.AddHost("h2",
 		o.DefaultGatewayIP("10.0.2.1"),
 		g.NewInterface("veth0", sw3,
 			o.AddressIP("10.0.2.2/24")))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	_, err = n.AddNAT("nat1",
 		o.DefaultGatewayIP("10.0.3.1"),
@@ -130,20 +130,20 @@ func TestPingDoubleNAT(t *testing.T) {
 			o.AddressIP("10.0.1.1/24")),
 		g.NewInterface("veth0", sw2, o.NorthBound,
 			o.AddressIP("10.0.3.2/24")))
-	assert.NoError(t, err, "Failed to create NAT router")
+	require.NoError(t, err, "Failed to create NAT router")
 
 	_, err = n.AddNAT("nat2",
 		g.NewInterface("veth1", sw2, o.SouthBound,
 			o.AddressIP("10.0.3.1/24")),
 		g.NewInterface("veth0", sw3, o.NorthBound,
 			o.AddressIP("10.0.2.1/24")))
-	assert.NoError(t, err, "Failed to create NAT router")
+	require.NoError(t, err, "Failed to create NAT router")
 
 	_, err = h1.Ping(h2)
-	assert.NoError(t, err, "Failed to ping h1 <-> h2")
+	require.NoError(t, err, "Failed to ping h1 <-> h2")
 
 	err = h1.Traceroute(h2)
-	assert.NoError(t, err, "Failed to traceroute h1 -> h2")
+	require.NoError(t, err, "Failed to traceroute h1 -> h2")
 }
 
 // TestPingHostNAT performs and end-to-end ping test
@@ -156,29 +156,29 @@ func TestPingHostNAT(t *testing.T) {
 	}
 
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
 	sw1, err := n.AddSwitch("sw1")
-	assert.NoError(t, err, "Failed to create switch")
+	require.NoError(t, err, "Failed to create switch")
 
 	h1, err := n.AddHost("h1",
 		o.DefaultGatewayIP("10.0.0.1"),
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("10.0.0.2/24")))
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	_, err = n.AddHostNAT("n1",
 		g.NewInterface("veth0", sw1, o.SouthBound,
 			o.AddressIP("10.0.0.1/24")))
-	assert.NoError(t, err, "Failed to create host NAT")
+	require.NoError(t, err, "Failed to create host NAT")
 
 	_, err = h1.Run("ping", "-c", 1, "1.1.1.1")
-	assert.NoError(t, err, "Failed to ping")
+	require.NoError(t, err, "Failed to ping")
 
 	_, err = h1.Run("ping", "-c", 1, "www.rwth-aachen.de")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = h1.Ping(n.HostNode)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }

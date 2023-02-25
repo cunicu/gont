@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	co "github.com/stv0g/gont/pkg/options/cmd"
@@ -32,44 +32,44 @@ import (
 //	h1 <-> nat1 <-> h2
 func TestGetMyIP(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
-	assert.NoError(t, err, "Failed to create network")
+	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
 	server, err := AddWebServer(n, "server")
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	client, err := n.AddHost("client")
-	assert.NoError(t, err, "Failed to create host")
+	require.NoError(t, err, "Failed to create host")
 
 	nat, err := n.AddNAT("n1")
-	assert.NoError(t, err, "Failed to create NAT")
+	require.NoError(t, err, "Failed to create NAT")
 
 	err = n.AddLink(
 		g.NewInterface("veth0", client,
 			o.AddressIP("fc::1:2/112")),
 		g.NewInterface("veth0", nat, o.SouthBound,
 			o.AddressIP("fc::1:1/112")))
-	assert.NoError(t, err, "Failed to add link")
+	require.NoError(t, err, "Failed to add link")
 
 	err = n.AddLink(
 		g.NewInterface("veth0", server,
 			o.AddressIP("fc::2:2/112")),
 		g.NewInterface("veth1", nat, o.NorthBound,
 			o.AddressIP("fc::2:1/112")))
-	assert.NoError(t, err, "Failed to add link")
+	require.NoError(t, err, "Failed to add link")
 
 	err = client.AddDefaultRoute(net.ParseIP("fc::1:1"))
-	assert.NoError(t, err, "Failed to setup default route")
+	require.NoError(t, err, "Failed to setup default route")
 
 	outp := &bytes.Buffer{}
 	_, err = client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server",
 		co.Stdout(outp))
-	assert.NoError(t, err, "Request failed")
+	require.NoError(t, err, "Request failed")
 
 	ip, _, err := net.SplitHostPort(outp.String())
-	assert.NoError(t, err, "Failed to split host:port")
+	require.NoError(t, err, "Failed to split host:port")
 
-	assert.Equal(t, ip, "fc::2:1", "Got wrong IP")
+	require.Equal(t, ip, "fc::2:1", "Got wrong IP")
 }
 
 type HTTPServer struct {
