@@ -6,12 +6,12 @@ package gont_test
 import (
 	"flag"
 	"os"
-	"reflect"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	co "github.com/stv0g/gont/pkg/options/capture"
@@ -24,11 +24,7 @@ import (
 var captureSocketAddr = flag.String("trace-socket", "tcp:[::1]:42125", "Listen address for capture socket")
 
 func TestTraceSubProcess(t *testing.T) {
-	var (
-		event *trace.Event
-		err   error
-		n     *g.Network
-	)
+	var event *trace.Event
 
 	t1 := g.NewTracer(
 		to.Callback(func(e trace.Event) {
@@ -36,66 +32,38 @@ func TestTraceSubProcess(t *testing.T) {
 		}),
 	)
 
-	if n, err = g.NewNetwork(*nname,
-		o.Customize[g.NetworkOption](globalNetworkOptions, t1)...,
-	); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname,
+		o.Customize[g.NetworkOption](globalNetworkOptions, t1)...)
+	assert.NoError(t, err, "Failed to create network")
 
-	if err := t1.Start(); err != nil {
-		t.Fatalf("Failed to start tracer: %s", err)
-	}
+	err = t1.Start()
+	assert.NoError(t, err, "Failed to start tracer")
 
 	cmd, err := n.HostNode.RunGo("../test/tracee1")
-	if err != nil {
-		t.Fatalf("Failed to run sub-process: %s", err)
-	}
+	assert.NoError(t, err, "Failed to run sub-process")
 
 	time.Sleep(100 * time.Millisecond)
 
-	if err := t1.Close(); err != nil {
-		t.Fatalf("Failed to close tracer")
-	}
-
-	if event == nil {
-		t.Fatal("No trace event received")
-	}
-
-	if event.Type != "tracepoint" {
-		t.Fatalf("Unexpected event type: %s", event.Type)
-	}
-
-	if event.Message != "This is my first trace message: Hurra" {
-		t.Fatal("Wrong message")
-	}
+	err = t1.Close()
+	assert.NoError(t, err, "Failed to close tracer")
 
 	myData := map[string]any{
 		"Hello": "World",
 	}
 
-	if !reflect.DeepEqual(event.Data, myData) {
-		t.Fatalf("Mismatching data: %+#v != %+#v", event.Data, myData)
-	}
-
 	filename := "test/tracee1/main.go"
-	if !strings.HasSuffix(event.File, filename) {
-		t.Fatalf("Mismatching filename: %s != %s", event.File, filename)
-	}
 
-	if event.Line == 0 {
-		t.Fatal("Empty line number")
-	}
-
-	if event.PID != cmd.Process.Pid {
-		t.Fatal("Wrong PID")
-	}
-
-	if event.Function != "main.main" {
-		t.Fatalf("Wrong function name: %s != %s", event.Function, "main.main")
-	}
+	assert.NotNil(t, event, "No trace event received")
+	assert.Equal(t, event.Type, "tracepoint", "Unexpected event type")
+	assert.Equal(t, event.Message, "This is my first trace message: Hurra", "Wrong message")
+	assert.Equal(t, event.Data, myData, "Mismatching data")
+	assert.True(t, strings.HasSuffix(event.File, filename), "Mismatching filename")
+	assert.NotEqual(t, event.Line, 0, "Empty line number")
+	assert.Equal(t, event.PID, cmd.Process.Pid, "Wrong PID")
+	assert.Equal(t, event.Function, "main.main", "Wrong function name")
 }
 
-func TestTracerInSameProcess(t *testing.T) {
+func TestTraceInSameProcess(t *testing.T) {
 	var event *trace.Event
 
 	t1 := g.NewTracer(
@@ -104,54 +72,32 @@ func TestTracerInSameProcess(t *testing.T) {
 		}),
 	)
 
-	if err := t1.Start(); err != nil {
-		t.Fatalf("Failed to start tracer: %s", err)
-	}
+	err := t1.Start()
+	assert.NoError(t, err, "Failed to start tracer")
 
 	myData := map[string]string{
 		"Hello": "World",
 	}
 
-	if err := trace.PrintfWithData(myData, "This is my first trace message: %s", "Hurra"); err != nil {
-		t.Fatalf("Failed to write trace: %s", err)
-	}
+	err = trace.PrintfWithData(myData, "This is my first trace message: %s", "Hurra")
+	assert.NoError(t, err, "Failed to write trace")
 
-	if err := t1.Close(); err != nil {
-		t.Fatalf("Failed to close tracer")
-	}
+	err = t1.Close()
+	assert.NoError(t, err, "Failed to close tracer")
 
-	if event == nil {
-		t.Fatal("No trace event received")
-	}
+	filename := "pkg/trace_test.go"
 
-	if event.Type != "tracepoint" {
-		t.Fatalf("Unexpected event type: %s", event.Type)
-	}
-
-	if !reflect.DeepEqual(event.Data, myData) {
-		t.Fatal("Mismatching data")
-	}
-
-	_, filename, _, _ := runtime.Caller(0)
-	if event.File != filename {
-		t.Fatalf("Mismatching filename: %s != %s", event.File, filename)
-	}
-
-	if event.Line == 0 {
-		t.Fatal("Empty line number")
-	}
-
-	if event.PID != os.Getpid() {
-		t.Fatal("Wrong PID")
-	}
-
-	function := "github.com/stv0g/gont/pkg_test.TestTracerInSameProcess"
-	if event.Function != function {
-		t.Fatalf("Wrong function name: %s != %s", event.Function, function)
-	}
+	assert.NotNil(t, event, "No trace event received")
+	assert.Equal(t, event.Type, "tracepoint", "Unexpected event type")
+	assert.Equal(t, event.Message, "This is my first trace message: Hurra", "Wrong message")
+	assert.Equal(t, event.Data, myData, "Mismatching data")
+	assert.True(t, strings.HasSuffix(event.File, filename), "Mismatching filename")
+	assert.NotEqual(t, event.Line, 0, "Empty line number")
+	assert.Equal(t, event.PID, os.Getpid(), "Wrong PID")
+	assert.Equal(t, event.Function, "github.com/stv0g/gont/pkg_test.TestTraceInSameProcess", "Wrong function name")
 }
 
-func TestTracerLog(t *testing.T) {
+func TestTraceLog(t *testing.T) {
 	var event *trace.Event
 
 	t1 := g.NewTracer(
@@ -160,9 +106,8 @@ func TestTracerLog(t *testing.T) {
 		}),
 	)
 
-	if err := t1.Start(); err != nil {
-		t.Fatalf("Failed to start tracer: %s", err)
-	}
+	err := t1.Start()
+	assert.NoError(t, err, "Failed to start tracer")
 
 	logger := zap.L()
 
@@ -179,63 +124,33 @@ func TestTracerLog(t *testing.T) {
 		zap.String("string", "mystring"),
 		zap.Int("number", 1234))
 
-	if err := t1.Close(); err != nil {
-		t.Fatalf("Failed to close tracer")
-	}
-
-	if event == nil {
-		t.Fatal("No trace event received")
-	}
-
-	if event.Type != "log" {
-		t.Fatalf("Unexpected event type: %s", event.Type)
-	}
+	err = t1.Close()
+	assert.NoError(t, err, "Failed to close tracer")
 
 	data := map[string]any{
 		"string": "mystring",
 		"number": int64(1234), // zap is adding zap.Int() as an int64 internally
 	}
-	if !reflect.DeepEqual(event.Data, data) {
-		t.Fatalf("Mismatching data: %+#v != %+#v", event.Data, data)
-	}
 
 	_, filename, _, _ := runtime.Caller(0)
-	if event.File != filename {
-		t.Fatalf("Mismatching filename: %s != %s", event.File, filename)
-	}
 
-	if event.Line == 0 {
-		t.Fatal("Empty line number")
-	}
+	function := "github.com/stv0g/gont/pkg_test.TestTraceLog"
 
-	if event.PID != os.Getpid() {
-		t.Fatal("Wrong PID")
-	}
-
-	if event.Source != "my-test-logger" {
-		t.Fatal("Wrong logger name")
-	}
-
-	if event.Level != uint8(zap.DebugLevel+2) {
-		t.Fatal("Wrong level")
-	}
-
-	function := "github.com/stv0g/gont/pkg_test.TestTracerLog"
-	if event.Function != function {
-		t.Fatalf("Wrong function name: %s != %s", event.Function, function)
-	}
+	assert.NotNil(t, event, "No trace event received")
+	assert.Equal(t, event.Type, "log", "Unexpected event type")
+	assert.Equal(t, event.Data, data, "Mismatching data")
+	assert.Equal(t, event.File, filename, "Mismatching filename")
+	assert.NotEqual(t, event.Line, 0, "Empty line number")
+	assert.Equal(t, event.PID, os.Getpid(), "Wrong PID")
+	assert.Equal(t, event.Source, "my-test-logger", "Wrong logger name")
+	assert.Equal(t, event.Level, uint8(zap.DebugLevel+2), "Wrong level")
+	assert.Equal(t, event.Function, function, "Wrong function name")
 }
 
-func TestTracerWithCapture(t *testing.T) {
+func TestTraceWithCapture(t *testing.T) {
 	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
 		t.Skip("Requires WireShark")
 	}
-
-	var (
-		err error
-		n   *g.Network
-		h1  *g.Host
-	)
 
 	c1 := g.NewCapture(
 		co.ListenAddr(*captureSocketAddr),
@@ -246,25 +161,18 @@ func TestTracerWithCapture(t *testing.T) {
 		to.ToCapture(c1),
 	)
 
-	if err := t1.Start(); err != nil {
-		t.Fatalf("Failed to start: %s", err)
-	}
+	err := t1.Start()
+	assert.NoError(t, err, "Failed to start")
 
-	if n, err = g.NewNetwork(*nname,
-		o.Customize[g.NetworkOption](globalNetworkOptions, t1, c1)...,
-	); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname,
+		o.Customize[g.NetworkOption](globalNetworkOptions, t1, c1)...)
+	assert.NoError(t, err, "Failed to create network")
 
-	if h1, err = n.AddHost("h1",
-		o.RedirectToLog(true),
-	); err != nil {
-		t.Fatalf("Failed to add host: %s", err)
-	}
+	h1, err := n.AddHost("h1")
+	assert.NoError(t, err, "Failed to add host")
 
 	for i := 0; i < 5; i++ {
-		if _, err = h1.RunGo("../test/tracee2", i); err != nil {
-			t.Fatalf("Failed to run tracee: %s", err)
-		}
+		_, err = h1.RunGo("../test/tracee2", i)
+		assert.NoError(t, err, "Failed to run tracee")
 	}
 }

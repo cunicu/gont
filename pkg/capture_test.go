@@ -14,13 +14,14 @@ import (
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	co "github.com/stv0g/gont/pkg/options/capture"
 	"go.uber.org/zap"
 )
 
-func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
+func TestCaptureNetwork(t *testing.T) {
 	var (
 		err    error
 		n      *g.Network
@@ -29,9 +30,7 @@ func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 	)
 
 	tmpPCAP, err := os.CreateTemp(t.TempDir(), "gont-capture-*.pcapng")
-	if err != nil {
-		t.Fatalf("Failed to open temporary file: %s", err)
-	}
+	assert.NoError(t, err, "Failed to open temporary file")
 
 	ch := make(chan g.CapturePacket)
 	go func() {
@@ -91,164 +90,106 @@ func TestCaptureNetwork(t *testing.T) { //nolint:gocognit
 		co.Comment("Some random comment which will be included in the capture file"),
 	)
 
-	if n, err = g.NewNetwork(*nname,
+	n, err = g.NewNetwork(*nname,
 		o.Customize[g.NetworkOption](globalNetworkOptions, c1, // Also multiple capturers are supported
 			g.NewCapture(
-				co.ToFilename("all.pcapng"), // We can create a file
-			),
-		)...,
-	); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+				co.ToFilename("all.pcapng")), // We can create a file
+		)...)
+	assert.NoError(t, err, "Failed to create network")
 
-	if sw1, err = n.AddSwitch("sw1"); err != nil {
-		t.Fatalf("Failed to add switch: %s", err)
-	}
+	sw1, err = n.AddSwitch("sw1")
+	assert.NoError(t, err, "Failed to add switch")
 
-	if h1, err = n.AddHost("h1",
+	h1, err = n.AddHost("h1",
 		g.NewInterface("veth0", sw1,
 			o.AddressIP("fc::1/64"),
 			g.NewCapture(
-				co.Filename("{{ .Node }}_{{ .Interface }}.pcapng"),
-			),
-		),
-	); err != nil {
-		t.Fatalf("Failed to add host: %s", err)
-	}
+				co.Filename("{{ .Node }}_{{ .Interface }}.pcapng"))))
+	assert.NoError(t, err, "Failed to add host")
 
-	if h2, err = n.AddHost("h2",
+	h2, err = n.AddHost("h2",
 		g.NewInterface("veth0", sw1,
-			o.AddressIP("fc::2/64"),
-		),
-	); err != nil {
-		t.Fatalf("Failed to add host: %s", err)
-	}
+			o.AddressIP("fc::2/64")))
+	assert.NoError(t, err, "Failed to add host")
 
-	if _, err := h1.Ping(h2); err != nil {
-		t.Fatalf("Failed to ping: %s", err)
-	}
+	_, err = h1.Ping(h2)
+	assert.NoError(t, err, "Failed to ping")
 
 	// Read-back PCAP file
 	// We need to wait some time until PCAP has captured the packets
 	time.Sleep(1 * time.Second)
 
-	if err := c1.Flush(); err != nil {
-		t.Fatalf("Failed to flush capture: %s", err)
-	}
+	err = c1.Flush()
+	assert.NoError(t, err, "Failed to flush capture")
 
-	if _, err := tmpPCAP.Seek(0, 0); err != nil {
-		t.Fatalf("Failed to rewind file: %s", err)
-	}
+	_, err = tmpPCAP.Seek(0, 0)
+	assert.NoError(t, err, "Failed to rewind file")
 
 	rd, err := pcapgo.NewNgReader(tmpPCAP, pcapgo.DefaultNgReaderOptions)
-	if err != nil {
-		t.Fatalf("Failed to read PCAPng file: %s", err)
-	}
+	assert.NoError(t, err, "Failed to read PCAPng file")
 
 	h1veth0 := h1.Interface("veth0")
 	h2veth0 := h2.Interface("veth0")
 
 	pkt, _, intf, eof := nextPacket(t, rd)
-	if eof == true {
-		t.Fatalf("Expected more packets")
-	}
-	if intf.Name != "h1/veth0" {
-		t.Fatalf("Invalid 1st packet")
-	}
-	if v6, ok := pkt.NetworkLayer().(*layers.IPv6); !ok {
-		t.Fatalf("Wrong network layer: %s", pkt.NetworkLayer().LayerType().String())
-	} else {
-		if !v6.SrcIP.Equal(h1veth0.Addresses[0].IP) {
-			t.Fatalf("Invalid source IP: %s != %s",
-				v6.SrcIP.String(),
-				h1veth0.Addresses[0].IP.String(),
-			)
-		}
+	assert.Equal(t, eof, false, "Expected more packets")
 
-		if !v6.DstIP.Equal(h2veth0.Addresses[0].IP) {
-			t.Fatalf("Invalid source IP: %s != %s",
-				v6.SrcIP.String(),
-				h1veth0.Addresses[0].IP.String(),
-			)
-		}
-	}
+	assert.Equal(t, intf.Name, "h1/veth0", "Invalid 1st packet")
+
+	v6, ok := pkt.NetworkLayer().(*layers.IPv6)
+	assert.True(t, ok, "Wrong network layer: %s", pkt.NetworkLayer().LayerType().String())
+
+	assert.True(t, v6.SrcIP.Equal(h1veth0.Addresses[0].IP),
+		"Invalid source IP: %s != %s",
+		v6.SrcIP.String(),
+		h1veth0.Addresses[0].IP.String(),
+	)
+
+	assert.True(t, v6.DstIP.Equal(h2veth0.Addresses[0].IP),
+		"Invalid source IP: %s != %s",
+		v6.SrcIP.String(),
+		h1veth0.Addresses[0].IP.String(),
+	)
 
 	_, _, intf, eof = nextPacket(t, rd)
-	if eof == true {
-		t.Fatalf("Expected more packets")
-	}
-	if intf.Name != "sw1/veth-h1" {
-		t.Fatalf("Invalid 2nd packet")
-	}
+	assert.False(t, eof, "Expected more packets")
+	assert.Equal(t, intf.Name, "sw1/veth-h1", "Invalid 2nd packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	if eof == true {
-		t.Fatalf("Expected more packets")
-	}
-	if intf.Name != "sw1/veth-h2" {
-		t.Fatalf("Invalid 3rd packet")
-	}
+	assert.False(t, eof, "Expected more packets")
+	assert.Equal(t, intf.Name, "sw1/veth-h2", "Invalid 3rd packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	if eof == true {
-		t.Fatalf("Expected more packets")
-	}
-	if intf.Name != "h2/veth0" {
-		t.Fatalf("Invalid 4th packet")
-	}
+	assert.False(t, eof, "Expected more packets")
+	assert.Equal(t, intf.Name, "h2/veth0", "Invalid 4th packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	if eof == true {
-		t.Fatalf("Expected more packets")
-	}
-	if intf.Name != "h2/veth0" {
-		t.Fatalf("Invalid 5th packet")
-	}
+	assert.False(t, eof, "Expected more packets")
+	assert.Equal(t, intf.Name, "h2/veth0", "Invalid 5th packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	if eof == true {
-		t.Fatalf("Expected more packets")
-	}
-	if intf.Name != "sw1/veth-h2" {
-		t.Fatalf("Invalid 6th packet: %s", intf.Name)
-	}
+	assert.False(t, eof, "Expected more packets")
+	assert.Equal(t, intf.Name, "sw1/veth-h2", "Invalid 6th packet: %s", intf.Name)
 
 	_, _, intf, eof = nextPacket(t, rd)
-	if eof == true {
-		t.Fatalf("Expected more packets")
-	}
-	if intf.Name != "sw1/veth-h1" {
-		t.Fatalf("Invalid 7th packet")
-	}
+	assert.False(t, eof, "Expected more packets")
+	assert.Equal(t, intf.Name, "sw1/veth-h1", "Invalid 7th packet")
 
 	_, _, intf, eof = nextPacket(t, rd)
-	if eof == true {
-		t.Fatalf("Expected more packets")
-	}
-	if intf.Name != "h1/veth0" {
-		t.Fatalf("Invalid 7th packet")
-	}
+	assert.False(t, eof, "Expected more packets")
+	assert.Equal(t, intf.Name, "h1/veth0", "Invalid 7th packet")
 
 	_, _, _, eof = nextPacket(t, rd)
-	if eof != true {
-		t.Fatalf("Did not expect EOF")
-	}
+	assert.True(t, eof, "Expected EOF")
 
-	if rd.NInterfaces() != 4 {
-		t.Fatalf("Invalid number of interfaces: %d != 4", rd.NInterfaces())
-	}
+	assert.Equal(t, rd.NInterfaces(), 4, "Invalid number of interfaces")
+	assert.EqualValues(t, c1.Count(), 8, "Invalid number of packets")
 
-	if c1.Count() != 8 {
-		t.Fatalf("Invalid number of packets: %d != 8", c1.Count())
-	}
+	err = n.Close()
+	assert.NoError(t, err, "Failed to close network")
 
-	if err := n.Close(); err != nil {
-		t.Fatalf("Failed to close network: %s", err)
-	}
-
-	if err := tmpPCAP.Close(); err != nil {
-		t.Fatalf("Failed to close file: %s", err)
-	}
+	err = tmpPCAP.Close()
+	assert.NoError(t, err, "Failed to close file")
 }
 
 func nextPacket(t *testing.T, rd *pcapgo.NgReader) (gopacket.Packet, *gopacket.CaptureInfo, *pcapgo.NgInterface, bool) {
@@ -258,13 +199,11 @@ func nextPacket(t *testing.T, rd *pcapgo.NgReader) (gopacket.Packet, *gopacket.C
 			return nil, nil, nil, true
 		}
 
-		t.Fatalf("Failed to read packet data: %s", err)
+		assert.NoError(t, err, "Failed to read packet data")
 	}
 
 	intf, err := rd.Interface(ci.InterfaceIndex)
-	if err != nil {
-		t.Fatalf("Received packet from unknown interface: %s", err)
-	}
+	assert.NoError(t, err, "Received packet from unknown interface")
 
 	return gopacket.NewPacket(data, layers.LinkTypeEthernet, gopacket.Default), &ci, &intf, false
 }

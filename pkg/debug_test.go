@@ -17,13 +17,9 @@ import (
 )
 
 func TestDebugger(t *testing.T) {
-	t.Skip("Requires interactive debugger")
-
-	var (
-		err error
-		n   *g.Network
-		h1  *g.Host
-	)
+	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
+		t.Skip("Requires WireShark")
+	}
 
 	// c := g.NewCapture(
 	// 	co.Listener("tcp:0.0.0.0:5678"),
@@ -37,15 +33,13 @@ func TestDebugger(t *testing.T) {
 				Level: zap.InfoLevel,
 			})
 			enc.SetIndent("", "  ")
-			if err := enc.Encode(e); err != nil {
-				t.Fatal(err)
-			}
+			err := enc.Encode(e)
+			assert.NoError(t, err, "Failed to encode")
 		}),
 	)
 
-	if err := s.Start(); err != nil {
-		t.Fatal(err)
-	}
+	err := s.Start()
+	assert.NoError(t, err, "Failed to start tracer")
 
 	d := g.NewDebugger(
 		do.ListenAddr(":1234"),
@@ -78,30 +72,24 @@ func TestDebugger(t *testing.T) {
 		do.ToTracer(s),
 	)
 
-	if n, err = g.NewNetwork(*nname,
-		// o.Customize[g.NetworkOption](globalNetworkOptions,
-		o.RedirectToLog(true),
-		d,
-		// )...,
-	); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname,
+		o.Customize[g.NetworkOption](globalNetworkOptions,
+			o.RedirectToLog(true),
+			d,
+		)...)
+	assert.NoError(t, err, "Failed to create network")
 
-	if h1, err = n.AddHost("h1"); err != nil {
-		t.Fatalf("Failed to add host: %s", err)
-	}
+	h1, err := n.AddHost("h1")
+	assert.NoError(t, err, "Failed to add host")
 
-	if _, err = h1.StartGo("../test/tracee2", 1); err != nil {
-		t.Fatalf("Failed to run tracee: %s", err)
-	}
+	_, err = h1.StartGo("../test/tracee2", 1)
+	assert.NoError(t, err, "Failed to run tracee")
 
-	if _, err = h1.StartGo("../test/tracee2", 2); err != nil {
-		t.Fatalf("Failed to run tracee: %s", err)
-	}
+	_, err = h1.StartGo("../test/tracee2", 2)
+	assert.NoError(t, err, "Failed to run tracee")
 
-	if err := d.WriteVSCodeConfigs("", false); err != nil {
-		t.Fatal(err)
-	}
+	err = d.WriteVSCodeConfigs("", false)
+	assert.NoError(t, err, "Failed to write VSCode config")
 
 	select {}
 }

@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	co "github.com/stv0g/gont/pkg/options/cmd"
@@ -30,68 +31,45 @@ import (
 //
 //	h1 <-> nat1 <-> h2
 func TestGetMyIP(t *testing.T) {
-	var (
-		err    error
-		n      *g.Network
-		server *HTTPServer
-		client *g.Host
-		nat    *g.NAT
-	)
-
-	if n, err = g.NewNetwork(*nname, globalNetworkOptions...); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	assert.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
-	if server, err = AddWebServer(n, "server"); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+	server, err := AddWebServer(n, "server")
+	assert.NoError(t, err, "Failed to create host")
 
-	if client, err = n.AddHost("client"); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+	client, err := n.AddHost("client")
+	assert.NoError(t, err, "Failed to create host")
 
-	if nat, err = n.AddNAT("n1"); err != nil {
-		t.Fatalf("Failed to create nat: %s", err)
-	}
+	nat, err := n.AddNAT("n1")
+	assert.NoError(t, err, "Failed to create NAT")
 
-	if err := n.AddLink(
+	err = n.AddLink(
 		g.NewInterface("veth0", client,
 			o.AddressIP("fc::1:2/112")),
 		g.NewInterface("veth0", nat, o.SouthBound,
-			o.AddressIP("fc::1:1/112")),
-	); err != nil {
-		t.Fatalf("Failed to add link: %s", err)
-	}
+			o.AddressIP("fc::1:1/112")))
+	assert.NoError(t, err, "Failed to add link")
 
-	if err := n.AddLink(
+	err = n.AddLink(
 		g.NewInterface("veth0", server,
 			o.AddressIP("fc::2:2/112")),
 		g.NewInterface("veth1", nat, o.NorthBound,
-			o.AddressIP("fc::2:1/112")),
-	); err != nil {
-		t.Fatalf("Failed to add link: %s", err)
-	}
+			o.AddressIP("fc::2:1/112")))
+	assert.NoError(t, err, "Failed to add link")
 
-	if err := client.AddDefaultRoute(net.ParseIP("fc::1:1")); err != nil {
-		t.Fatalf("Failed to setup default route: %s", err)
-	}
+	err = client.AddDefaultRoute(net.ParseIP("fc::1:1"))
+	assert.NoError(t, err, "Failed to setup default route")
 
 	outp := &bytes.Buffer{}
-	if _, err = client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server",
-		co.Stdout(outp),
-	); err != nil {
-		t.Fatalf("Request failed: %s", err)
-	}
+	_, err = client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server",
+		co.Stdout(outp))
+	assert.NoError(t, err, "Request failed")
 
 	ip, _, err := net.SplitHostPort(outp.String())
-	if err != nil {
-		t.Fatalf("Failed to split host:port: %s", err)
-	}
+	assert.NoError(t, err, "Failed to split host:port")
 
-	if ip != "fc::2:1" {
-		t.Fatalf("Got wrong IP: %s", ip)
-	}
+	assert.Equal(t, ip, "fc::2:1", "Got wrong IP")
 }
 
 type HTTPServer struct {

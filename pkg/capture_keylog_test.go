@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	co "github.com/stv0g/gont/pkg/options/capture"
@@ -20,17 +21,8 @@ import (
 
 // TestCaptureKeyLog tests the decryption of captured traffic
 func TestCaptureKeyLog(t *testing.T) {
-	var (
-		err    error
-		n      *g.Network
-		client *g.Host
-		server *HTTPServer
-	)
-
 	tmpPCAP, err := os.CreateTemp(t.TempDir(), "gont-capture-*.pcapng")
-	if err != nil {
-		t.Fatalf("Failed to open temporary file: %s", err)
-	}
+	assert.NoError(t, err, "Failed to open temporary file")
 
 	c1 := g.NewCapture(
 		co.ToFile(tmpPCAP),
@@ -38,44 +30,35 @@ func TestCaptureKeyLog(t *testing.T) {
 		co.Comment("This PCAPng file contains TLS decryption secrets"),
 	)
 
-	if n, err = g.NewNetwork(*nname,
+	n, err := g.NewNetwork(*nname,
 		o.Customize[g.NetworkOption](globalNetworkOptions, c1, // Also multiple capturers are supported
 			g.NewCapture(
-				co.ToFilename("all.pcapng"), // We can create a file
-			),
-		)...,
-	); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+				co.ToFilename("all.pcapng")), // We can create a file
+		)...)
+	assert.NoError(t, err, "Failed to create network")
 
-	if server, err = AddWebServer(n, "server"); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+	server, err := AddWebServer(n, "server")
+	assert.NoError(t, err, "Failed to create host")
 
-	if client, err = n.AddHost("client"); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+	client, err := n.AddHost("client")
+	assert.NoError(t, err, "Failed to create host")
 
-	if err := n.AddLink(
+	err = n.AddLink(
 		g.NewInterface("veth0", client,
 			o.AddressIP("fc::1:2/112")),
 		g.NewInterface("veth0", server,
-			o.AddressIP("fc::1:1/112")),
-	); err != nil {
-		t.Fatalf("Failed to add link: %s", err)
-	}
+			o.AddressIP("fc::1:1/112")))
+	assert.NoError(t, err, "Failed to add link")
 
-	if _, err = client.Run("curl", "--http2", "--silent", "--insecure", "--connect-timeout", 5, "https://server"); err != nil {
-		t.Fatalf("cURL Request failed: %s", err)
-	}
+	_, err = client.Run("curl", "--http2", "--silent", "--insecure", "--connect-timeout", 5, "https://server")
+	assert.NoError(t, err, "cURL Request failed: %s")
 
 	// Wait until all traffic propagates through PCAP
 	time.Sleep(time.Second)
 
 	// We must close here so all decryption secrets are written to the PCAP files
-	if err := n.Close(); err != nil {
-		t.Fatalf("Failed to close network: %s", err)
-	}
+	err = n.Close()
+	assert.NoError(t, err, "Failed to close network")
 
 	t.Logf("PCAPng file: %s", tmpPCAP.Name())
 
@@ -84,22 +67,15 @@ func TestCaptureKeyLog(t *testing.T) {
 	out := &bytes.Buffer{}
 	c.Stdout = out
 
-	if err := c.Run(); err != nil {
-		t.Fatalf("Failed to run tshark: %s", err)
-	}
+	err = c.Run()
+	assert.NoError(t, err, "Failed to run tshark")
 
 	hostPortBytes, err := hex.DecodeString(strings.TrimSpace(out.String()))
-	if err != nil {
-		t.Fatalf("Failed to decode HTTP response body: %s", err)
-	}
+	assert.NoError(t, err, "Failed to decode HTTP response body")
 
 	hostPort := string(hostPortBytes)
 	ip, _, err := net.SplitHostPort(hostPort)
-	if err != nil {
-		t.Fatalf("Failed to split host:port: %s", err)
-	}
+	assert.NoError(t, err, "Failed to split host:port")
 
-	if ip != "fc::1:2" {
-		t.Fatalf("Got wrong IP: %s", ip)
-	}
+	assert.Equal(t, ip, "fc::1:2", "Got wrong IP")
 }

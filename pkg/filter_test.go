@@ -7,6 +7,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	fo "github.com/stv0g/gont/pkg/options/filters"
@@ -14,117 +15,77 @@ import (
 )
 
 func TestFilterIPv4(t *testing.T) {
-	var (
-		err        error
-		n          *g.Network
-		sw         *g.Switch
-		h1, h2, h3 *g.Host
-	)
-
-	if n, err = g.NewNetwork(*nname, globalNetworkOptions...); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	assert.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
-	if sw, err = n.AddSwitch("sw"); err != nil {
-		t.Fatalf("Failed to create switch: %s", err)
-	}
+	sw, err := n.AddSwitch("sw")
+	assert.NoError(t, err, "Failed to create switch")
 
 	_, flt, err := net.ParseCIDR("10.0.3.0/24")
-	if err != nil {
-		t.Fail()
-	}
+	assert.NoError(t, err, "Failed to parse CIDR")
 
-	if h1, err = n.AddHost("h1",
+	h1, err := n.AddHost("h1",
 		o.Filter(g.FilterInput,
 			fo.Protocol(unix.AF_INET),
 			fo.TransportProtocol(unix.IPPROTO_ICMP),
 			fo.Source(flt),
-			fo.Drop,
-		),
+			fo.Drop),
 		g.NewInterface("veth0", sw,
-			o.AddressIP("10.0.1.1/16")),
-	); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+			o.AddressIP("10.0.1.1/16")))
+	assert.NoError(t, err, "Failed to create host")
 
-	if h2, err = n.AddHost("h2",
+	h2, err := n.AddHost("h2",
 		g.NewInterface("veth0", sw,
-			o.AddressIP("10.0.2.1/16")),
-	); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+			o.AddressIP("10.0.2.1/16")))
+	assert.NoError(t, err, "Failed to create host")
 
-	if h3, err = n.AddHost("h3",
+	h3, err := n.AddHost("h3",
 		g.NewInterface("veth0", sw,
-			o.AddressIP("10.0.3.1/16")),
-	); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+			o.AddressIP("10.0.3.1/16")))
+	assert.NoError(t, err, "Failed to create host")
 
-	if _, err := h1.Ping(h2); err != nil {
-		t.Fail()
-	}
+	_, err = h1.Ping(h2)
+	assert.NoError(t, err, "Failed to ping h2")
 
-	if _, err := h1.Ping(h3); err == nil {
-		t.Fail()
-	}
+	_, err = h1.Ping(h3)
+	assert.Error(t, err, "Succeeded to ping h1")
 }
 
 func TestFilterIPv6(t *testing.T) {
-	var (
-		err        error
-		n          *g.Network
-		sw         *g.Switch
-		h1, h2, h3 *g.Host
-	)
-
-	if n, err = g.NewNetwork(*nname, globalNetworkOptions...); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	assert.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
-	if sw, err = n.AddSwitch("sw"); err != nil {
-		t.Fatalf("Failed to create switch: %s", err)
-	}
+	sw, err := n.AddSwitch("sw")
+	assert.NoError(t, err, "Failed to create switch")
 
 	_, flt, err := net.ParseCIDR("fc00:0:0:3::1/64")
-	if err != nil {
-		t.Fail()
-	}
+	assert.NoError(t, err, "Failed to parse CIDR")
 
-	if h1, err = n.AddHost("h1",
+	h1, err := n.AddHost("h1",
 		o.Filter(g.FilterInput,
 			fo.Protocol(unix.AF_INET6),
 			fo.TransportProtocol(unix.IPPROTO_ICMPV6),
 			fo.Source(flt),
-			fo.Drop,
-		),
+			fo.Drop),
 		g.NewInterface("veth0", sw,
-			o.AddressIP("fc00:0:0:1::1/56")),
-	); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+			o.AddressIP("fc00:0:0:1::1/56")))
+	assert.NoError(t, err, "Failed to create host")
 
-	if h2, err = n.AddHost("h2",
+	h2, err := n.AddHost("h2",
 		g.NewInterface("veth0", sw,
-			o.AddressIP("fc00:0:0:2::1/56")),
-	); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+			o.AddressIP("fc00:0:0:2::1/56")))
+	assert.NoError(t, err, "Failed to create host")
 
-	if h3, err = n.AddHost("h3",
+	h3, err := n.AddHost("h3",
 		g.NewInterface("veth0", sw,
-			o.AddressIP("fc00:0:0:3::1/56")),
-	); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+			o.AddressIP("fc00:0:0:3::1/56")))
+	assert.NoError(t, err, "Failed to create host")
 
-	if _, err := h1.Ping(h2); err != nil {
-		t.Fail()
-	}
+	_, err = h1.Ping(h2)
+	assert.NoError(t, err, "Failed to ping h2")
 
-	if _, err := h1.Ping(h3); err == nil {
-		t.Fail()
-	}
+	_, err = h1.Ping(h3)
+	assert.Error(t, err, "Succeeded to ping h3")
 }

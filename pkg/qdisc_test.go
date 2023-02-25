@@ -11,39 +11,29 @@ import (
 	"time"
 
 	"github.com/go-ping/ping"
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 	tco "github.com/stv0g/gont/pkg/options/tc"
 )
 
 func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
-	var (
-		err    error
-		n      *g.Network
-		h1, h2 *g.Host
-	)
-
-	if n, err = g.NewNetwork(*nname, globalNetworkOptions...); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	assert.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
-	if h1, err = n.AddHost("h1"); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+	h1, err := n.AddHost("h1")
+	assert.NoError(t, err, "Failed to create host")
 
-	if h2, err = n.AddHost("h2"); err != nil {
-		t.Fatalf("Failed to create host: %s", err)
-	}
+	h2, err := n.AddHost("h2")
+	assert.NoError(t, err, "Failed to create host")
 
-	if err := n.AddLink(
+	err = n.AddLink(
 		g.NewInterface("veth0", h1, ne,
 			o.AddressIP("10.0.0.1/24")),
 		g.NewInterface("veth0", h2,
-			o.AddressIP("10.0.0.2/24")),
-	); err != nil {
-		t.Fatalf("Failed to connect hosts: %s", err)
-	}
+			o.AddressIP("10.0.0.2/24")))
+	assert.NoError(t, err, "Failed to connect hosts")
 
 	return h1.PingWithOptions(h2, "ip", 1000, 2000*time.Millisecond, time.Millisecond, false)
 }
@@ -64,9 +54,7 @@ func TestNetemLatency(t *testing.T) {
 	)
 
 	stats, err := testNetem(t, ne)
-	if err != nil {
-		t.Errorf("Failed to ping: %s", err)
-	}
+	assert.NoError(t, err, "Failed to ping")
 
 	t.Logf("AvgRtt: %s", stats.AvgRtt)
 
@@ -75,9 +63,7 @@ func TestNetemLatency(t *testing.T) {
 		diff *= -1
 	}
 
-	if diff > 10*time.Millisecond {
-		t.Fail()
-	}
+	assert.Less(t, diff, 10*time.Millisecond, "Latency deviation too large")
 }
 
 func TestNetemLoss(t *testing.T) {
@@ -90,15 +76,11 @@ func TestNetemLoss(t *testing.T) {
 	)
 
 	stats, err := testNetem(t, ne)
-	if err != nil && !strings.Contains(err.Error(), "lost") {
-		t.Errorf("Failed to ping: %s", err)
-	}
+	assert.False(t, err != nil && !strings.Contains(err.Error(), "lost"), "Failed to ping")
 
 	t.Logf("Loss: %f", stats.PacketLoss)
 
-	if math.Abs(stats.PacketLoss-float64(ne.Loss)) > 20 {
-		t.Fail()
-	}
+	assert.Less(t, math.Abs(stats.PacketLoss-float64(ne.Loss)), 20)
 }
 
 func TestNetemDuplication(t *testing.T) {
@@ -111,16 +93,12 @@ func TestNetemDuplication(t *testing.T) {
 	)
 
 	stats, err := testNetem(t, ne)
-	if err != nil {
-		t.Errorf("Failed to ping: %s", err)
-	}
+	assert.NoError(t, err, "Failed to ping")
 
 	duplicatePercentage := 100.0 * float64(stats.PacketsRecvDuplicates) / float64(stats.PacketsSent)
 
 	t.Logf("Duplicate packets: %d", stats.PacketsRecvDuplicates)
 	t.Logf("Duplicate percentage: %.2f %%", duplicatePercentage)
 
-	if math.Abs(duplicatePercentage-float64(ne.Duplicate)) > 10 {
-		t.Fail()
-	}
+	assert.Less(t, math.Abs(duplicatePercentage-float64(ne.Duplicate)), 10)
 }

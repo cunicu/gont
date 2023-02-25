@@ -55,8 +55,7 @@ func TestMain(m *testing.M) {
 	if *capture != "" {
 		globalNetworkOptions = append(globalNetworkOptions,
 			g.NewCapture(
-				co.Filename(*capture),
-			),
+				co.Filename(*capture)),
 		)
 	}
 

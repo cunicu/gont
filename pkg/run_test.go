@@ -5,9 +5,9 @@ package gont_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	co "github.com/stv0g/gont/pkg/options/cmd"
 	"github.com/vishvananda/netns"
@@ -15,14 +15,10 @@ import (
 
 func prepare(t *testing.T) (*g.Network, *g.BaseNode) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
-	if err != nil {
-		t.Fatalf("Failed to create new network: %s", err)
-	}
+	assert.NoError(t, err, "Failed to create new network")
 
 	n1, err := n.AddNode("n1")
-	if err != nil {
-		t.Fatalf("Failed to create node: %s", err)
-	}
+	assert.NoError(t, err, "Failed to create node")
 
 	return n, n1
 }
@@ -33,15 +29,10 @@ func TestRun(t *testing.T) {
 
 	// Run
 	outp := &bytes.Buffer{}
-	if _, err := n1.Run("ip", "netns", "identify",
-		co.Stdout(outp),
-	); err != nil {
-		t.Errorf("Failed to run identify: %s", err)
-	}
-
-	if outp.String() != n1.Namespace.Name+"\n" {
-		t.Errorf("Got invalid namespace: %s", outp.String())
-	}
+	_, err := n1.Run("ip", "netns", "identify",
+		co.Stdout(outp))
+	assert.NoError(t, err, "Failed to run identify")
+	assert.Equal(t, outp.String(), n1.Namespace.Name+"\n", "Got invalid namespace")
 }
 
 func TestRunFunc(t *testing.T) {
@@ -49,20 +40,17 @@ func TestRunFunc(t *testing.T) {
 	defer n.Close()
 
 	// Run
-	if err := n1.RunFunc(func() error {
+	err := n1.RunFunc(func() error {
 		handle, err := netns.Get()
 		if err != nil {
 			return err
 		}
 
-		if !handle.Equal(n1.NsHandle) {
-			t.Fatalf("mismatching netns handles")
-		}
+		assert.True(t, handle.Equal(n1.NsHandle), "Mismatching netns handles")
 
 		return nil
-	}); err != nil {
-		t.Errorf("Failed to run identify: %s", err)
-	}
+	})
+	assert.NoError(t, err, "Failed to run identify")
 }
 
 func TestRunGo(t *testing.T) {
@@ -71,19 +59,12 @@ func TestRunGo(t *testing.T) {
 
 	outp := &bytes.Buffer{}
 	cmd, err := n1.RunGo("../cmd/gontc/gontc.go", "identify",
-		co.Stdout(outp),
-	)
-	if err != nil {
-		t.Fatalf("Failed to run Go script: %s", err)
-	}
+		co.Stdout(outp))
+	assert.NoError(t, err, "Failed to run Go script")
 
-	if !cmd.ProcessState.Exited() || !cmd.ProcessState.Success() {
-		t.FailNow()
-	}
-
-	if outp.String() != fmt.Sprintf("%s\n", n1) {
-		t.FailNow()
-	}
+	assert.True(t, cmd.ProcessState.Exited(), "Process did not exit")
+	assert.True(t, cmd.ProcessState.Success(), "Process did not succeed")
+	assert.Equal(t, outp.String(), n1.String()+"\n")
 }
 
 func TestEnter(t *testing.T) {
@@ -91,32 +72,23 @@ func TestEnter(t *testing.T) {
 	defer n.Close()
 
 	exit, err := n1.Enter()
-	if err != nil {
-		t.FailNow()
-	}
+	assert.NoError(t, err, "Failed to enter namespace")
 	defer exit()
 
 	handle, err := netns.Get()
-	if err != nil {
-		t.FailNow()
-	}
-
-	if !handle.Equal(n1.NsHandle) {
-		t.Fatalf("mismatching netns handles")
-	}
+	assert.NoError(t, err, "Failed to get netns handle")
+	assert.True(t, handle.Equal(n1.NsHandle), "Mismatching netns handles")
 }
 
 func TestRunSimple(t *testing.T) {
 	n, n1 := prepare(t)
 	defer n.Close()
 
-	if _, err := n1.Run("true"); err != nil {
-		t.Fail()
-	}
+	_, err := n1.Run("true")
+	assert.NoError(t, err)
 
-	if _, err := n1.Run("false"); err == nil {
-		t.Fail()
-	}
+	_, err = n1.Run("false")
+	assert.Error(t, err)
 }
 
 func TestStart(t *testing.T) {
@@ -125,21 +97,14 @@ func TestStart(t *testing.T) {
 
 	outp := &bytes.Buffer{}
 	cmd, err := n1.Start("ip", "netns", "identify",
-		co.Stdout(outp),
-	)
-	if err != nil {
-		t.Errorf("Failed to run identify: %s", err)
-	}
+		co.Stdout(outp))
+	assert.NoError(t, err, "Failed to run identify")
 
-	if err := cmd.Wait(); err != nil {
-		t.Fatal(err)
-	}
+	err = cmd.Wait()
+	assert.NoError(t, err, "Failed to wait")
 
-	if !cmd.ProcessState.Exited() || !cmd.ProcessState.Success() {
-		t.FailNow()
-	}
+	assert.True(t, cmd.ProcessState.Exited(), "Process did not exit")
+	assert.True(t, cmd.ProcessState.Success(), "Process did not succeed")
 
-	if outp.String() != n1.Namespace.Name+"\n" {
-		t.Errorf("Got invalid namespace: %s", outp.String())
-	}
+	assert.Equal(t, outp.String(), n1.Namespace.Name+"\n", "Got invalid namespace")
 }

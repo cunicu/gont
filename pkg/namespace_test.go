@@ -6,6 +6,7 @@ package gont_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	"github.com/vishvananda/netns"
 )
@@ -17,21 +18,16 @@ func TestNamespace(t *testing.T) {
 	netns.DeleteNamed(nsName) //nolint:errcheck
 
 	n, err := g.NewNamespace(nsName)
-	if err != nil {
-		t.Fatalf("Failed to create new namespace: %s", err)
-	}
+	assert.NoError(t, err, "Failed to create new namespace")
 	defer n.Close()
 
-	if err := n.RunFunc(func() error {
+	err = n.RunFunc(func() error {
 		nsh, err := netns.Get()
 		if err != nil {
 			return err
 		}
-		if !nsh.Equal(n.NsHandle) {
-			t.Errorf("NShandle mismatch: %v != %v", nsh, n.NsHandle)
-		}
+		assert.True(t, nsh.Equal(n.NsHandle), "NShandle mismatch: %v != %v", nsh, n.NsHandle)
 		return nil
-	}); err != nil {
-		t.Errorf("Failed to run func: %s", err)
-	}
+	})
+	assert.NoError(t, err, "Failed to run func")
 }

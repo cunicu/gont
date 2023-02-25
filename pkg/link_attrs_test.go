@@ -4,34 +4,26 @@
 package gont_test
 
 import (
-	"bytes"
+	"net"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 )
 
 func TestLinkAttrs(t *testing.T) {
-	var (
-		err    error
-		n      *g.Network
-		h1, h2 *g.Host
-	)
-
-	if n, err = g.NewNetwork(*nname, globalNetworkOptions...); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	assert.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
-	if h1, err = n.AddHost("h1"); err != nil {
-		t.Fatalf("Failed to add host: %s", err)
-	}
+	h1, err := n.AddHost("h1")
+	assert.NoError(t, err, "Failed to add host")
 
-	if h2, err = n.AddHost("h2"); err != nil {
-		t.Fatalf("Failed to add host: %s", err)
-	}
+	h2, err := n.AddHost("h2")
+	assert.NoError(t, err, "Failed to add host")
 
-	if err := n.AddLink(
+	err = n.AddLink(
 		g.NewInterface("veth0", h1,
 			o.AddressIP("10.0.0.1/24"),
 			o.AddressIP("fc::1/64"),
@@ -43,42 +35,20 @@ func TestLinkAttrs(t *testing.T) {
 			o.AddressIP("fc::2/64"),
 			o.Group(5678),
 			o.MTU(2000),
-			o.AddressMACBytes([]byte{0, 0, 0, 0, 0, 2})),
-	); err != nil {
-		t.Errorf("Failed to setup link: %s", err)
-	}
+			o.AddressMACBytes([]byte{0, 0, 0, 0, 0, 2})))
+	assert.NoError(t, err, "Failed to setup link")
 
 	h1Link, err := h1.NetlinkHandle().LinkByName("veth0")
-	if err != nil {
-		t.Errorf("Failed to get link details: %s", err)
-	}
+	assert.NoError(t, err, "Failed to get link details")
 
-	if h1Link.Attrs().MTU != 1000 {
-		t.Errorf("Mismatching MTU")
-	}
-
-	if h1Link.Attrs().Group != 1234 {
-		t.Errorf("Mismatching device group")
-	}
-
-	if !bytes.Equal(h1Link.Attrs().HardwareAddr, []byte{0, 0, 0, 0, 0, 1}) {
-		t.Errorf("Mismatching MAC address")
-	}
+	assert.Equal(t, h1Link.Attrs().MTU, 1000, "Mismatching MTU")
+	assert.Equal(t, h1Link.Attrs().Group, uint32(1234), "Mismatching device group")
+	assert.Equal(t, h1Link.Attrs().HardwareAddr, net.HardwareAddr([]byte{0, 0, 0, 0, 0, 1}), "Mismatching MAC address")
 
 	h2Link, err := h2.NetlinkHandle().LinkByName("veth0")
-	if err != nil {
-		t.Errorf("Failed to get link details: %s", err)
-	}
+	assert.NoError(t, err, "Failed to get link details")
 
-	if h2Link.Attrs().MTU != 2000 {
-		t.Errorf("Mismatching MTU")
-	}
-
-	if h2Link.Attrs().Group != 5678 {
-		t.Errorf("Mismatching device group")
-	}
-
-	if !bytes.Equal(h2Link.Attrs().HardwareAddr, []byte{0, 0, 0, 0, 0, 2}) {
-		t.Errorf("Mismatching MAC address")
-	}
+	assert.Equal(t, h2Link.Attrs().MTU, 2000, "Mismatching MTU")
+	assert.Equal(t, h2Link.Attrs().Group, uint32(5678), "Mismatching device group")
+	assert.Equal(t, h2Link.Attrs().HardwareAddr, net.HardwareAddr([]byte{0, 0, 0, 0, 0, 2}), "Mismatching MAC address")
 }

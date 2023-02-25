@@ -6,6 +6,7 @@ package gont_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	g "github.com/stv0g/gont/pkg"
 	o "github.com/stv0g/gont/pkg/options"
 )
@@ -15,48 +16,31 @@ import (
 //
 //	h1 <-> sw1 <-> sw2 <-> h2
 func TestPingCascadedSwitches(t *testing.T) {
-	var (
-		err      error
-		n        *g.Network
-		sw1, sw2 *g.Switch
-		h1, h2   *g.Host
-	)
-
-	if n, err = g.NewNetwork(*nname, globalNetworkOptions...); err != nil {
-		t.Fatalf("Failed to create network: %s", err)
-	}
+	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	assert.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
-	if sw1, err = n.AddSwitch("sw1"); err != nil {
-		t.Fatalf("Failed to add switch: %s", err)
-	}
+	sw1, err := n.AddSwitch("sw1")
+	assert.NoError(t, err, "Failed to add switch")
 
-	if sw2, err = n.AddSwitch("sw2"); err != nil {
-		t.Fatalf("Failed to add switch: %s", err)
-	}
+	sw2, err := n.AddSwitch("sw2")
+	assert.NoError(t, err, "Failed to add switch")
 
-	if h1, err = n.AddHost("h1",
+	h1, err := n.AddHost("h1",
 		g.NewInterface("veth0", sw1,
-			o.AddressIP("10.0.0.1/24")),
-	); err != nil {
-		t.Fatalf("Failed to add host: %s", err)
-	}
+			o.AddressIP("10.0.0.1/24")))
+	assert.NoError(t, err, "Failed to add host")
 
-	if h2, err = n.AddHost("h2",
+	h2, err := n.AddHost("h2",
 		g.NewInterface("veth0", sw2,
-			o.AddressIP("10.0.0.2/24")),
-	); err != nil {
-		t.Fatalf("Failed to add host: %s", err)
-	}
+			o.AddressIP("10.0.0.2/24")))
+	assert.NoError(t, err, "Failed to add host")
 
-	if err = n.AddLink(
+	err = n.AddLink(
 		g.NewInterface("br-sw2", sw1),
-		g.NewInterface("br-sw1", sw2),
-	); err != nil {
-		t.Fatalf("Failed to add link: %s", err)
-	}
+		g.NewInterface("br-sw1", sw2))
+	assert.NoError(t, err, "Failed to add link")
 
-	if err := g.TestConnectivity(h1, h2); err != nil {
-		t.Errorf("Failed to check connectivity: %s", err)
-	}
+	err = g.TestConnectivity(h1, h2)
+	assert.NoError(t, err, "Failed to check connectivity")
 }

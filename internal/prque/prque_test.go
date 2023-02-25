@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stv0g/gont/internal/prque"
 )
 
@@ -21,42 +22,33 @@ func (i item) Time() time.Time {
 func TestPriorityQueue(t *testing.T) {
 	q := prque.New()
 
-	it := func(t int) prque.Item {
+	itf := func(t int) prque.Item {
 		return item{
 			ts: time.Unix(int64(t), 0),
 		}
 	}
 
-	q.Push(it(4))
-	q.Push(it(1))
-	q.Push(it(2))
-	q.Push(it(3))
+	q.Push(itf(4))
+	q.Push(itf(1))
+	q.Push(itf(2))
+	q.Push(itf(3))
 
-	if q.Len() != 4 {
-		t.Fail()
-	}
+	assert.Equal(t, q.Len(), 4)
 
-	if it := q.Pop(); it.Time().Second() != 1 {
-		t.Fail()
-	}
+	it := q.Pop()
+	assert.Equal(t, it.Time().Second(), 1)
 
-	if it := q.Pop(); it.Time().Second() != 2 {
-		t.Fail()
-	}
+	it = q.Pop()
+	assert.Equal(t, it.Time().Second(), 2)
 
-	if o := q.Oldest(); o.Unix() != 3 {
-		t.Fail()
-	}
+	o := q.Oldest()
+	assert.Equal(t, o.Unix(), 3)
 
-	if it := q.Pop(); it.Time().Second() != 3 {
-		t.Fail()
-	}
+	it = q.Pop()
+	assert.Equal(t, it.Time().Second(), 3)
 
-	if it := q.Pop(); it.Time().Second() != 4 {
-		t.Fail()
-	}
+	it = q.Pop()
+	assert.Equal(t, it.Time().Second(), 4)
 
-	if q.Len() != 0 {
-		t.Fail()
-	}
+	assert.Equal(t, q.Len(), 0)
 }
