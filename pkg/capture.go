@@ -121,6 +121,10 @@ func (c *Capture) ApplyNetwork(n *Network) {
 	n.Captures = append(n.Captures, c)
 }
 
+func (c *Capture) ApplyTracer(n *Tracer) {
+	n.Captures = append(n.Captures, c)
+}
+
 func NewCapture(opts ...CaptureOption) *Capture {
 	c := &Capture{
 		// Default options
