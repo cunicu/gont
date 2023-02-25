@@ -4,51 +4,53 @@
 package cmd
 
 import (
-	"bytes"
+	"io"
 
 	g "github.com/stv0g/gont/pkg"
 )
 
-// StdoutBuffer allows passing a bytes.Buffer which will record
-// all outputs of the standard output of the sub-process.
-type StdoutBuffer struct {
-	*bytes.Buffer
+// StdoutWriter allows passing an io.Writer to which
+// all outputs of the standard output of the sub-process
+// are written.
+type StdoutWriter struct {
+	io.Writer
 }
 
-func (s StdoutBuffer) ApplyCmd(c *g.Cmd) {
+func (s StdoutWriter) ApplyCmd(c *g.Cmd) {
 	c.StdoutWriters = append(c.StdoutWriters, s)
 }
 
-func Stdout(b *bytes.Buffer) StdoutBuffer {
-	return StdoutBuffer{b}
+func Stdout(wr io.Writer) StdoutWriter {
+	return StdoutWriter{wr}
 }
 
-// StderrBuffer allows passing a bytes.Buffer which will record
-// all outputs of the standard error output of the sub-process.
-type StderrBuffer struct {
-	*bytes.Buffer
+// StderrWriter allows passing an io.Writer to which
+// all outputs of the standard error output of the sub-process
+// are written.
+type StderrWriter struct {
+	io.Writer
 }
 
-func (s StderrBuffer) ApplyCmd(c *g.Cmd) {
+func (s StderrWriter) ApplyCmd(c *g.Cmd) {
 	c.StderrWriters = append(c.StderrWriters, s)
 }
 
-func Stderr(b *bytes.Buffer) StderrBuffer {
-	return StderrBuffer{b}
+func Stderr(wr io.Writer) StderrWriter {
+	return StderrWriter{wr}
 }
 
-// CombinedBuffer allows passing a bytes.Buffer which will record
-// the combined outputs of the standard and standard error output
-// of the sub-process.
-type CombinedBuffer struct {
-	*bytes.Buffer
+// CombinedWriter allows passing an io.Writer to which
+// all outputs of the standard and error output of the sub-process
+// are written.
+type CombinedWriter struct {
+	io.Writer
 }
 
-func (s CombinedBuffer) ApplyCmd(c *g.Cmd) {
+func (s CombinedWriter) ApplyCmd(c *g.Cmd) {
 	c.StdoutWriters = append(c.StdoutWriters, s)
 	c.StderrWriters = append(c.StderrWriters, s)
 }
 
-func Combined(b *bytes.Buffer) CombinedBuffer {
-	return CombinedBuffer{b}
+func Combined(wr io.Writer) CombinedWriter {
+	return CombinedWriter{wr}
 }

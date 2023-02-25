@@ -53,7 +53,7 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
     - Automatic instrumentation of sub-processes using [`SSLKEYLOGFILE` environment variable](https://everything.curl.dev/usingcurl/tls/sslkeylogfile)
 - Distributed tracing of events
   - Support for emitting [zap](https://github.com/uber-go/zap) log messages as trace events
-  - Cedicated [gont/trace](https://pkg.go.dev/github.com/stv0g/gont/pkg/trace) package for emitting trace events
+  - Dedicated [gont/trace](https://pkg.go.dev/github.com/stv0g/gont/pkg/trace) package for emitting trace events
   - Capturing of trace events in PCAPng files
   - WireShark Lua dissector for decoding events
 - Built-in [Delve](https://github.com/go-delve/delve) debugger
@@ -76,6 +76,8 @@ Have a look at the unit tests for usage examples:
 -   [Firewall Rules](pkg/filter_test.go)
 -   [Packet tracing](pkg/capture_test.go)
     - [With TLS decryption](pkg/capture_keylog_test.go)
+-   [Event tracing](pkg/trace_test.go)
+-   [Debugging](pkg/debug_test.go)
 
 ## Prerequisites
 
