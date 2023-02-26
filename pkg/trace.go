@@ -198,7 +198,9 @@ func (t *Tracer) writeEvent(e trace.Event) error {
 	}
 
 	for _, file := range t.files {
-		if err := e.Log(file); err != nil {
+		if b, err := e.MarshalJSON(); err != nil {
+			return err
+		} else if _, err := file.Write(b); err != nil {
 			return err
 		}
 	}
