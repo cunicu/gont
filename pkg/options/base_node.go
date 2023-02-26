@@ -27,3 +27,17 @@ type EmptyDir string
 func (ed EmptyDir) ApplyBaseNode(n *g.BaseNode) {
 	n.EmptyDirs = append(n.EmptyDirs, string(ed))
 }
+
+type GoBuildFlags []string
+
+func (bf GoBuildFlags) ApplyGoBuildFlags(d *g.GoBuildFlags) {
+	*d = append(*d, bf...)
+}
+
+func BuildFlags(flags ...string) GoBuildFlags {
+	return GoBuildFlags(flags)
+}
+
+// BuildFlagsDebug builds the Go binary without compiler optimizations like inlining
+// to improve debugging.
+var BuildFlagsDebug = GoBuildFlags{"-gcflags", "-N -l"} //nolint:gochecknoglobals
