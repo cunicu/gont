@@ -60,7 +60,8 @@ func HostNode(n *Network) *Host {
 
 	return &Host{
 		BaseNode: &BaseNode{
-			name: "host",
+			name:       "host",
+			isHostNode: true,
 			Namespace: &Namespace{
 				Name:     "base",
 				NsHandle: baseNs,

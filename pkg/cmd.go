@@ -74,7 +74,7 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 
 	c.Cmd = exec.Command(name, strArgs...)
 
-	if !c.node.NsHandle.Equal(c.node.network.HostNode.NsHandle) {
+	if !c.node.isHostNode {
 		c.Env = os.Environ()
 		if c.node.ExistingDockerContainer == "" {
 			c.Path = "/proc/self/exe"
@@ -335,7 +335,7 @@ func (c *Cmd) stoppedStart() error {
 			zap.Int("trap_cause", ws.TrapCause()))
 
 		if ws.Exited() {
-			return fmt.Errorf("process exited")
+			return fmt.Errorf("process exited prematurely")
 		}
 
 		if !ws.Stopped() {
@@ -344,7 +344,7 @@ func (c *Cmd) stoppedStart() error {
 
 		switch ws.StopSignal() {
 		case syscall.SIGTRAP:
-			if ws.TrapCause() == syscall.PTRACE_EVENT_EXEC {
+			if c.node.isHostNode || ws.TrapCause() == syscall.PTRACE_EVENT_EXEC {
 				if err := syscall.Tgkill(c.Process.Pid, wpid, syscall.SIGSTOP); err != nil {
 					return err
 				}

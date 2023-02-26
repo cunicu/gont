@@ -26,9 +26,9 @@ type BaseNodeOption interface {
 type BaseNode struct {
 	*Namespace
 
-	network *Network
-
-	name string
+	isHostNode bool
+	network    *Network
+	name       string
 
 	BasePath string
 
