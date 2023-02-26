@@ -141,6 +141,12 @@ func (d *debuggerInstance) run() {
 				return
 			}
 
+		case proc.StopUnknown:
+			if !s.Exited {
+				continue
+			}
+			fallthrough
+
 		case proc.StopExited:
 			d.logger.Debug("Process exited")
 

@@ -64,11 +64,11 @@ func (e *Event) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-func (e *Event) MarshalCBOR() ([]byte, error) {
+func (e *Event) Marshal() ([]byte, error) {
 	return em.Marshal(e)
 }
 
-func (e *Event) UnmarshalCBOR(b []byte) error {
+func (e *Event) Unmarshal(b []byte) error {
 	return dm.Unmarshal(b, e)
 }
 

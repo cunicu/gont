@@ -207,6 +207,9 @@ func TestTraceDissector(t *testing.T) {
 
 	t.Logf("PCAPng file: %s", tmpPCAP.Name())
 
+	err = tmpPCAP.Close()
+	require.NoError(t, err, "Failed to close")
+
 	c := exec.Command("tshark", "-Xlua_script:../dissector/dissector.lua", "-r", tmpPCAP.Name(), "-T", "json") //nolint:gosec
 
 	buf := &bytes.Buffer{}
@@ -214,6 +217,9 @@ func TestTraceDissector(t *testing.T) {
 
 	err = c.Run()
 	require.NoError(t, err, "Failed to run tshark")
+
+	// TODO: Figure out why its not flushed
+	time.Sleep(100 * time.Millisecond)
 
 	var tsharkOutput []TsharkOutput
 	err = json.Unmarshal(buf.Bytes(), &tsharkOutput)

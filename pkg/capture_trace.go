@@ -61,7 +61,7 @@ func (tps *traceEventPacketSource) Close() error {
 }
 
 func SerializePacket(t *trace.Event) (data []byte, ci gopacket.CaptureInfo, err error) {
-	buf, err := t.MarshalCBOR()
+	buf, err := t.Marshal()
 	if err != nil {
 		return nil, gopacket.CaptureInfo{}, err
 	}

@@ -4,14 +4,30 @@
 package main
 
 import (
-	"os"
-	"runtime"
+	"fmt"
 )
 
-var myID string //nolint:unused,gochecknoglobals
+type myStruct struct {
+	A int
+}
 
 func main() {
-	myID = os.Args[1]
+	t := myStruct{
+		A: 555,
+	}
+	i := 1337
+	s := "Hello World"
 
-	runtime.Breakpoint()
+	i = myFunction(s, i, t)
+	i = myFunction(s, i, t)
+
+	fmt.Println(i)
+}
+
+func myFunction(s string, i int, t myStruct) int {
+	fmt.Println(s, i, true, "Bla", t)
+
+	i *= 2
+
+	return i
 }
