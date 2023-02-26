@@ -8,15 +8,14 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
-	"time"
 
 	"github.com/go-delve/delve/pkg/proc"
 	"github.com/go-delve/delve/service"
 	"github.com/go-delve/delve/service/api"
 	"github.com/go-delve/delve/service/dap"
 	debug "github.com/go-delve/delve/service/debugger"
-	"github.com/stv0g/gont/pkg/trace"
 	"go.uber.org/zap"
 )
 
@@ -29,14 +28,17 @@ type debuggerInstance struct {
 	listenAddr *net.TCPAddr
 	config     service.Config
 
+	control sync.Mutex
+
 	logger *zap.Logger
 }
 
-func (d *Debugger) Start(c *exec.Cmd) error {
+func (d *Debugger) start(c *exec.Cmd) (*debuggerInstance, error) {
 	var err error
 
 	di := &debuggerInstance{
 		cmd:      c,
+		stop:     make(chan any),
 		debugger: d,
 		config: service.Config{
 			Debugger: debug.Config{
@@ -47,6 +49,7 @@ func (d *Debugger) Start(c *exec.Cmd) error {
 				WorkingDir:           c.Dir,
 			},
 			ProcessArgs: []string{c.Path},
+			AcceptMulti: true,
 		},
 		listenAddr: d.nextListenAddr(),
 		logger: d.logger.With(
@@ -71,120 +74,209 @@ func (d *Debugger) Start(c *exec.Cmd) error {
 	}
 
 	if di.Debugger, err = debug.New(&di.config.Debugger, di.config.ProcessArgs); err != nil {
-		return fmt.Errorf("failed to create debugger: %w", err)
+		return nil, fmt.Errorf("failed to create debugger: %w", err)
 	}
 
 	for _, tp := range d.Tracepoints {
 		tp := tp
 		if err := di.createBreakpoints(&tp); err != nil {
-			return fmt.Errorf("failed to create breakpoints: %w", err)
+			return nil, fmt.Errorf("failed to create breakpoints: %w", err)
 		}
 	}
 
-	if len(d.Tracers) > 0 && len(d.Tracepoints) > 0 {
-		for _, t := range d.Tracers {
-			if err := t.start(); err != nil {
-				return fmt.Errorf("failed to start tracer: %w", err)
-			}
-		}
-
-		go di.run()
-	} else if d.BreakOnEntry {
-		d.logger.Info("Debugger started waiting for connection", zap.Any("addr", di.listenAddr))
-	} else {
-		if _, err := di.Command(&api.DebuggerCommand{Name: api.Continue}, nil); err != nil {
-			return err
+	for _, t := range d.Tracers {
+		if err := t.start(); err != nil {
+			return nil, fmt.Errorf("failed to start tracer: %w", err)
 		}
 	}
 
 	d.instances[c.Process.Pid] = di
 
-	return err
+	if d.DetachOnExit {
+		if _, err = di.CreateBreakpoint(&api.Breakpoint{
+			FunctionName: "runtime.exit",
+		}, "", nil, false); err != nil {
+			return nil, err
+		}
+	}
+
+	if d.BreakOnEntry {
+		di.logger.Info("Setting break on entry break point")
+		if _, err := di.CreateBreakpoint(&api.Breakpoint{
+			FunctionName: "runtime.main",
+		}, "", nil, false); err != nil {
+			return nil, err
+		}
+	}
+
+	go di.run()
+
+	return di, err
 }
 
 func (d *debuggerInstance) run() {
 	for {
+		d.control.Lock()
 		s, err := d.Command(&api.DebuggerCommand{Name: api.Continue}, nil)
+		d.control.Unlock()
 		if err != nil {
 			d.logger.Error("Failed to continue", zap.Error(err))
 			break
 		}
 
-		for _, bp := range s.WatchOutOfScope {
-			d.logger.Debug("Watch out of scope", zap.Any("bp", bp))
-		}
-
 		reason := d.StopReason()
-
 		d.logger.Debug("Stopped",
 			zap.Any("reason", reason),
 			zap.Bool("running", s.Running),
 			zap.Bool("exited", s.Exited),
 		)
 
-		if s.Exited {
-			d.logger.Info("Process exited")
-			break
-		}
+		switch reason {
+		case proc.StopBreakpoint, proc.StopWatchpoint:
+			if d.handleWatchpoints(s) {
+				break
+			}
 
-		if s.Running {
-			d.logger.Warn("Process is still running")
-			continue
-		}
+			if d.handleBreakpoint(s) {
+				return
+			}
 
-		if reason == proc.StopBreakpoint || reason == proc.StopWatchpoint {
-			d.handleBreakpoint(s.CurrentThread)
+		case proc.StopExited:
+			d.logger.Debug("Process exited")
+
+			close(d.stop)
+			return
+
+		case proc.StopManual:
+			d.logger.Debug("Process stopped manually")
+			return
 		}
 	}
 }
 
-func (d *debuggerInstance) handleBreakpoint(thr *api.Thread) {
-	// Creation of delayed watch points
-	if bpi, ok := thr.Breakpoint.UserData.(*breakpointInstance); ok &&
-		bpi.tracepoint.WatchExpr != "" && bpi.tracepoint.WatchType != 0 {
+func (d *debuggerInstance) handleWatchpoints(s *api.DebuggerState) bool {
+	// Re-enable breakpoints for the delayed creation of watchpoints
+	for _, wp := range s.WatchOutOfScope {
+		if wpi, ok := wp.UserData.(*watchpointInstance); !ok {
+			d.logger.Warn("Failed to reenable watchpoint", zap.Any("wp", wp))
+			continue
+		} else if err := wpi.wentOutOfScope(d); err != nil {
+			d.logger.Warn("Failed to enable breakpoint for delayed watchpoint creation", zap.Error(err))
+		}
+	}
+
+	thr := s.CurrentThread
+	if thr.Breakpoint == nil {
+		return false
+	}
+
+	// Delayed creation of watchpoints
+	if bpi, ok := thr.Breakpoint.UserData.(*breakpointInstance); ok && bpi.tracepoint.IsWatchpoint() {
 		if err := bpi.createWatchpoint(d, thr); err != nil {
 			d.logger.Error("Failed to create watchpoint", zap.Error(err))
 		}
 
-		bpi.breakpoint.Disabled = true
-		if err := d.AmendBreakpoint(bpi.breakpoint); err != nil {
+		bp := bpi.Breakpoint
+		bp.Disabled = true
+		if err := d.AmendBreakpoint(bp); err != nil {
 			d.logger.Error("Failed to delete breakpoint", zap.Error(err))
 		}
+
+		return true
 	}
 
+	return false
+}
+
+func (d *debuggerInstance) handleBreakpoint(s *api.DebuggerState) bool {
+	thr := s.CurrentThread
+
+	if thr.Breakpoint == nil || thr.BreakpointInfo == nil {
+		return false
+	}
+
+	// Emit trace events for break- and watchpoints
 	if tep, ok := thr.Breakpoint.UserData.(traceEventPoint); ok {
-		te := tep.traceEvent(thr)
+		te := tep.traceEvent(thr, d)
 		for _, t := range d.debugger.Tracers {
 			t.newEvent(te)
 		}
 	}
+
+	// We detach the debugger here so the final Cmd.Wait() call will
+	// populate Cmd.ProcessState properly
+	switch thr.Breakpoint.FunctionName {
+	case "runtime.exit":
+		if d.debugger.DetachOnExit {
+			if err := d.Detach(false); err != nil {
+				d.logger.Error("Failed to detach", zap.Error(err))
+			}
+
+			close(d.stop)
+			return true
+		}
+
+	case "runtime.main":
+		if d.debugger.BreakOnEntry {
+			d.logger.Info("Breaking on entry. Stop tracing and waiting for debugger to attach...")
+			return true
+		}
+	}
+
+	return false
 }
 
 func (d *debuggerInstance) listen(addr *net.TCPAddr) {
-	listener, err := net.ListenTCP("tcp", addr)
-	if err != nil {
+	var err error
+	if d.config.Listener, err = net.ListenTCP("tcp", addr); err != nil {
 		panic(err)
 	}
-	defer listener.Close()
+	defer d.config.Listener.Close()
 
 	for {
-		conn, err := listener.Accept()
+		conn, err := d.config.Listener.Accept()
 		if err != nil {
 			select {
 			case <-d.stop:
 				// We were supposed to exit, do nothing and return
 				return
 			default:
-				panic(err)
+				d.logger.Fatal("Failed to listen", zap.Error(err))
 			}
 		}
 
-		ds := dap.NewSession(conn, &dap.Config{
+		if err := d.haltIfRunning(); err != nil {
+			conn.Close()
+			d.logger.Error("Failed to take control over process", zap.Error(err))
+		}
+
+		s := dap.NewSession(conn, &dap.Config{
 			Config:        &d.config,
 			StopTriggered: make(chan struct{}),
 		}, d.Debugger)
-		go ds.ServeDAPCodec()
+
+		d.control.Lock()
+		d.logger.Debug("Debug session is now controlled by DAP client")
+
+		s.ServeDAPCodec()
+
+		d.control.Unlock()
+		d.logger.Debug("Debug session is now controlled by Gont tracer")
+
+		go d.run()
 	}
+}
+
+func (d *debuggerInstance) haltIfRunning() error {
+	if s, err := d.State(true); err != nil {
+		return fmt.Errorf("failed to get debugger state: %w", err)
+	} else if s.Running {
+		if _, err := d.Command(&api.DebuggerCommand{Name: api.Halt}, nil); err != nil {
+			return fmt.Errorf("failed to halt process: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (d *debuggerInstance) createBreakpoints(tp *Tracepoint) error {
@@ -202,14 +294,18 @@ func (d *debuggerInstance) createBreakpoint(tp *Tracepoint) error {
 		tracepoint: tp,
 	}
 
+	if err := bpi.prepare(0); err != nil {
+		return err
+	}
+
 	bp := tp.Breakpoint
 	bp.UserData = bpi
 
-	if bpi.breakpoint, err = d.CreateBreakpoint(&bp, "", nil, false); err != nil {
+	if bpi.Breakpoint, err = d.CreateBreakpoint(&bp, "", nil, false); err != nil {
 		return fmt.Errorf("failed to create breakpoint: %w", err)
 	}
 
-	d.logger.Debug("Created new breakpoint", breakpointFields(bpi.breakpoint)...)
+	d.logger.Debug("Created new breakpoint", breakpointFields(bpi.Breakpoint)...)
 
 	return nil
 }
@@ -225,96 +321,25 @@ func (d *debuggerInstance) createBreakpointsForLocation(tp *Tracepoint) error {
 			tracepoint: tp,
 		}
 
+		if err := bpi.prepare(i); err != nil {
+			return err
+		}
+
 		bp := tp.Breakpoint
 		bp.UserData = bpi
 		bp.Addrs = loc.PCs
 		bp.AddrPid = loc.PCPids
 
-		if tp.Message != "" {
-			bpi.message, err = parseDebugMessage(tp.Message)
-			if err != nil {
-				return fmt.Errorf("failed to parse message: %w", err)
-			}
-
-			bp.Variables = append(bp.Variables, bpi.message.args...)
-		}
-
-		if bp.Name == "" {
-			bp.Name = fmt.Sprintf("%s (%d)", tp.Location, i)
-		}
-
-		if bpi.breakpoint, err = d.CreateBreakpoint(&bp, tp.Location, nil, false); err != nil {
+		if bpi.Breakpoint, err = d.CreateBreakpoint(&bp, tp.Location, nil, false); err != nil {
 			return fmt.Errorf("failed to create breakpoint: %w", err)
 		}
 
-		d.logger.Debug("Created new breakpoint for location", breakpointFields(bpi.breakpoint)...)
+		fields := breakpointFields(bpi.Breakpoint)
+		fields = append(fields, zap.Int("num", i))
+		d.logger.Debug("Created new breakpoint for location", fields...)
 	}
 
 	return nil
-}
-
-type traceEventPoint interface {
-	traceEvent(*api.Thread) trace.Event
-}
-
-type breakpointInstance struct {
-	tracepoint *Tracepoint
-	breakpoint *api.Breakpoint
-	message    *debugMessage
-}
-
-type watchpointInstance struct {
-	tracepoint *Tracepoint
-	breakpoint *api.Breakpoint
-}
-
-func (bpi *breakpointInstance) createWatchpoint(d *debuggerInstance, thr *api.Thread) error {
-	wp, err := d.CreateWatchpoint(thr.GoroutineID, 0, 0, bpi.tracepoint.WatchExpr, bpi.tracepoint.WatchType)
-	if err != nil {
-		return fmt.Errorf("failed to create watchpoint: %w", err)
-	}
-
-	wp.UserData = &watchpointInstance{
-		breakpoint: wp,
-		tracepoint: bpi.tracepoint,
-	}
-
-	if err := d.AmendBreakpoint(wp); err != nil {
-		return fmt.Errorf("failed to amend watchpoint: %w", err)
-	}
-
-	d.logger.Debug("Created new watchpoint", breakpointFields(wp)...,
-	)
-
-	return nil
-}
-
-func (bpi *breakpointInstance) TraceEvent(t *api.Thread) trace.Event {
-	var msg string
-	if bpi.message == nil {
-		msg = fmt.Sprintf("Hit breakpoint %d: %s", bpi.breakpoint.ID, bpi.breakpoint.Name)
-	} else {
-		msg = bpi.message.evaluate(t.BreakpointInfo)
-	}
-
-	return trace.Event{
-		Timestamp: time.Now(),
-		Type:      "breakpoint",
-		Message:   msg,
-		Line:      bpi.breakpoint.Line,
-		File:      bpi.breakpoint.File,
-		Function:  bpi.breakpoint.FunctionName,
-		Data:      breakpointData(t.Breakpoint, t.BreakpointInfo),
-	}
-}
-
-func (wpi *watchpointInstance) traceEvent(t *api.Thread) trace.Event {
-	return trace.Event{
-		Timestamp: time.Now(),
-		Type:      "watchpoint",
-		Message:   fmt.Sprintf("Hit watchpoint %d: %s", wpi.breakpoint.ID, wpi.breakpoint.Name),
-		Data:      breakpointData(t.Breakpoint, t.BreakpointInfo),
-	}
 }
 
 func ptrace(request int, pid int, addr uintptr, data uintptr) error {
@@ -323,123 +348,4 @@ func ptrace(request int, pid int, addr uintptr, data uintptr) error {
 	}
 
 	return nil
-}
-
-func breakpointFields(bp *api.Breakpoint) []zap.Field {
-	fields := []zap.Field{}
-
-	if bp.Name != "" {
-		fields = append(fields, zap.String("name", bp.Name))
-	}
-
-	if bp.FunctionName != "" {
-		fields = append(fields, zap.String("function", bp.FunctionName))
-	}
-
-	if bp.File != "" {
-		fields = append(fields, zap.String("file", bp.File))
-	}
-
-	if bp.Line != 0 {
-		fields = append(fields, zap.Int("line", bp.Line))
-	}
-
-	if bp.ID >= 0 {
-		fields = append(fields, zap.Int("id", bp.ID))
-	}
-
-	if bp.Addr != 0 {
-		fields = append(fields, zap.Uint64("addr", bp.Addr))
-	}
-
-	if len(bp.Addrs) > 0 {
-		fields = append(fields, zap.Uint64s("addrs", bp.Addrs))
-	}
-
-	if bp.Cond != "" {
-		fields = append(fields, zap.String("cond", bp.Cond))
-	}
-
-	if bp.WatchExpr != "" {
-		fields = append(fields, zap.String("watch_expr", bp.WatchExpr))
-	}
-
-	return fields
-}
-
-func breakpointData(bp *api.Breakpoint, bpInfo *api.BreakpointInfo) any {
-	data := map[string]any{
-		"id":        bp.ID,
-		"hit_count": bp.TotalHitCount,
-	}
-
-	if bp.Name != "" {
-		data["name"] = bp.Name
-	}
-
-	if bpInfo != nil {
-		data["info"] = breakpointInfoData(bpInfo)
-	}
-
-	switch bpi := bp.UserData.(type) {
-	case *breakpointInstance:
-		data["user"] = bpi.tracepoint.UserData
-	case *watchpointInstance:
-		data["user"] = bpi.tracepoint.UserData
-	}
-
-	return data
-}
-
-func breakpointInfoData(bpInfo *api.BreakpointInfo) any {
-	data := map[string]any{}
-
-	if vars := variableData(bpInfo.Variables); len(vars) > 0 {
-		data["variables"] = vars
-	}
-
-	if args := variableData(bpInfo.Arguments); len(args) > 0 {
-		data["arguments"] = args
-	}
-
-	if locals := variableData(bpInfo.Locals); len(locals) > 0 {
-		data["locals"] = locals
-	}
-
-	if st := stacktraceData(bpInfo.Stacktrace); len(st) > 0 {
-		data["stacktrace"] = st
-	}
-
-	return data
-}
-
-func variableData(varList []api.Variable) map[string]any {
-	vars := map[string]any{}
-
-	for _, v := range varList {
-		vars[v.Name] = v.Value
-	}
-
-	return vars
-}
-
-func stacktraceData(fs []api.Stackframe) []any {
-	ss := []any{}
-
-	for _, f := range fs {
-		s := map[string]any{
-			"arguments": variableData(f.Arguments),
-			"locals":    variableData(f.Locals),
-			"file":      f.File,
-			"line":      f.Line,
-		}
-
-		if name := f.Function.Name_; name != "" {
-			s["function"] = name
-		}
-
-		ss = append(ss, s)
-	}
-
-	return ss
 }

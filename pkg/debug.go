@@ -19,6 +19,7 @@ type DebuggerOption interface {
 type Debugger struct {
 	// Options
 	BreakOnEntry         bool
+	DetachOnExit         bool
 	Tracepoints          []Tracepoint
 	Tracers              []*Tracer
 	ListenAddr           string
@@ -46,9 +47,11 @@ func (d *Debugger) ApplyCmd(c *Cmd) {
 func NewDebugger(opts ...DebuggerOption) *Debugger {
 	d := &Debugger{
 		DebugInfoDirectories: []string{"/usr/lib/debug/.build-id"},
-		instances:            map[int]*debuggerInstance{},
-		stop:                 make(chan struct{}),
-		logger:               zap.L().Named("debug"),
+		DetachOnExit:         true,
+
+		instances: map[int]*debuggerInstance{},
+		stop:      make(chan struct{}),
+		logger:    zap.L().Named("debug"),
 	}
 
 	for _, opt := range opts {

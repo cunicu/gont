@@ -5,7 +5,6 @@ package gont
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -39,8 +38,9 @@ type Cmd struct {
 	StdoutWriters []io.Writer
 	StderrWriters []io.Writer
 
-	node   *BaseNode
-	logger *zap.Logger
+	debuggerInstance *debuggerInstance
+	node             *BaseNode
+	logger           *zap.Logger
 }
 
 func (n *BaseNode) Command(name string, args ...any) *Cmd {
@@ -143,7 +143,7 @@ func (c *Cmd) Start() error {
 		}
 
 		var err error
-		if err = d.Start(c.Cmd); err != nil {
+		if c.debuggerInstance, err = d.start(c.Cmd); err != nil {
 			return err
 		}
 	} else {
@@ -160,17 +160,19 @@ func (c *Cmd) Start() error {
 		updateLogger(logger)
 	}
 
-	logger.Info("Process started")
+	logger.Debug("Process started")
 
 	return nil
 }
 
 func (c *Cmd) Run() error {
 	if err := c.Start(); err != nil {
-		c.logger.Info("Failed to start", zap.Error(err))
 		return err
 	}
-	err := c.Wait()
+
+	if err := c.Wait(); err != nil {
+		return err
+	}
 
 	logger := c.logger.With(
 		zap.Int("pid", c.Process.Pid),
@@ -179,17 +181,17 @@ func (c *Cmd) Run() error {
 	)
 
 	if c.ProcessState.Success() {
-		logger.Info("Process terminated successfully")
+		logger.Debug("Process terminated successfully")
 	} else {
 		logger.Error("Process terminated with error code")
 	}
 
-	return err
+	return nil
 }
 
 func (c *Cmd) Wait() error {
-	if d := c.debugger(); d != nil {
-		return errors.New("cant wait on debugged process")
+	if d := c.debuggerInstance; d != nil {
+		<-d.stop
 	}
 
 	return c.Cmd.Wait()

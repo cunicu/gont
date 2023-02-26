@@ -3,6 +3,7 @@ module github.com/stv0g/gont
 go 1.20
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/go-delve/delve v1.20.1
 	github.com/go-ping/ping v1.1.0
@@ -20,7 +21,6 @@ require (
 
 require (
 	github.com/cilium/ebpf v0.10.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-dap v0.6.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect

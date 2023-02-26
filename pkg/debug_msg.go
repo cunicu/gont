@@ -69,16 +69,16 @@ func parseDebugMessage(msg string) (*debugMessage, error) {
 	}, nil
 }
 
-func (msg *debugMessage) evaluate(bpInfo *api.BreakpointInfo) string {
+func (msg *debugMessage) evaluate(vars []api.Variable) string {
 	evaluated := []any{}
 
-	vars := map[string]string{}
-	for _, v := range bpInfo.Variables {
-		vars[v.Name] = v.Value
+	varMap := map[string]string{}
+	for _, v := range vars {
+		varMap[v.Name] = v.Value
 	}
 
 	for _, arg := range msg.args {
-		if v, ok := vars[arg]; ok {
+		if v, ok := varMap[arg]; ok {
 			evaluated = append(evaluated, v)
 		} else {
 			evaluated = append(evaluated, "<missing>")

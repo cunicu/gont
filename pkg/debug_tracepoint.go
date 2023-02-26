@@ -18,8 +18,8 @@ type Tracepoint struct {
 	Message  string
 }
 
-func (bp Tracepoint) ApplyDebugger(d *Debugger) {
-	d.Tracepoints = append(d.Tracepoints, bp)
+func (tp Tracepoint) ApplyDebugger(d *Debugger) {
+	d.Tracepoints = append(d.Tracepoints, tp)
 }
 
 func NewTracepoint(opts ...TracepointOption) Tracepoint {
@@ -30,4 +30,8 @@ func NewTracepoint(opts ...TracepointOption) Tracepoint {
 	}
 
 	return bp
+}
+
+func (tp *Tracepoint) IsWatchpoint() bool {
+	return tp.WatchExpr != "" && tp.WatchType != 0
 }
