@@ -17,7 +17,7 @@ type pcapPacketSource struct {
 	*pcap.Handle
 }
 
-func (c *Capture) createPCAPHandle(name string) (PacketSource, error) {
+func (c *Capture) createPCAPHandle(name string) (packetSource, error) {
 	if c.Timeout.Microseconds() == 0 {
 		c.Timeout = pcap.BlockForever
 	}

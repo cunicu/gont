@@ -27,7 +27,7 @@ type (
 	CaptureCallbackFunc        func(pkt CapturePacket)
 )
 
-type PacketSource interface {
+type packetSource interface {
 	ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error)
 	Stats() (captureStats, error)
 	LinkType() layers.LinkType
@@ -327,7 +327,7 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 
 func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 	var err error
-	var hdl PacketSource
+	var hdl packetSource
 
 	if err := i.node.RunFunc(func() error {
 		hdl, err = c.createPCAPHandle(i.Name)

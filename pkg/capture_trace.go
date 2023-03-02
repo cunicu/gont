@@ -16,7 +16,7 @@ const (
 	LinkTypeTrace = LinkTypeUser0
 )
 
-var _ PacketSource = (*traceEventPacketSource)(nil)
+var _ packetSource = (*traceEventPacketSource)(nil)
 
 type traceEventPacketSource struct {
 	tracepoints chan trace.Event
@@ -56,7 +56,7 @@ func (tps *traceEventPacketSource) SourceTracepoint(tp trace.Event) {
 }
 
 func (tps *traceEventPacketSource) Close() error {
-	close(tps.tracepoints)
+	// close(tps.tracepoints)
 	return nil
 }
 
