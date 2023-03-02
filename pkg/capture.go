@@ -5,7 +5,6 @@ package gont
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -54,23 +53,6 @@ func (t filenameTemplate) execute(filename string) (string, error) {
 	}
 
 	return b.String(), nil
-}
-
-type captureInterface struct {
-	*Interface
-
-	pcapInterfaceIndex int
-	pcapInterface      pcapgo.NgInterface
-
-	StartTime time.Time
-
-	source PacketSource
-	logger *zap.Logger
-}
-
-type captureStats struct {
-	PacketsReceived uint64
-	PacketsDropped  uint64
 }
 
 type CaptureOption interface {
@@ -179,6 +161,12 @@ func (c *Capture) Close() error {
 	}
 
 	return nil
+}
+
+func (c *Capture) newPacket(cp CapturePacket) {
+	if c.FilterPackets == nil || c.FilterPackets(&cp) {
+		c.queue.Push(cp)
+	}
 }
 
 func (c *Capture) writeDecryptionSecret(typ uint32, payload []byte) error {
@@ -337,29 +325,6 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 	return writer, err
 }
 
-func (c *Capture) readPackets(ci *captureInterface) {
-	var err error
-
-	for {
-		var cp CapturePacket
-		cp.Data, cp.CaptureInfo, err = ci.source.ReadPacketData()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			} else {
-				c.logger.Error("Failed to read packet data", zap.Error(err))
-				continue
-			}
-		}
-
-		cp.Interface = ci
-
-		if c.FilterPackets == nil || c.FilterPackets(&cp) {
-			c.queue.Push(cp)
-		}
-	}
-}
-
 func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 	var err error
 	var hdl PacketSource
@@ -402,7 +367,7 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 
 	c.interfaces = append(c.interfaces, ci)
 
-	go c.readPackets(ci)
+	go ci.readPackets(c)
 
 	return ci, nil
 }
@@ -440,7 +405,7 @@ func (c *Capture) startTrace() (*captureInterface, *traceEventPacketSource, erro
 
 	c.interfaces = append(c.interfaces, ci)
 
-	go c.readPackets(ci)
+	go ci.readPackets(c)
 
 	return ci, tps, nil
 }
