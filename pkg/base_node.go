@@ -67,9 +67,6 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 
 	node.logger.Info("Adding new node")
 
-	// Enable log if level is debug
-	node.RedirectToLog = node.logger.Core().Enabled(zap.DebugLevel)
-
 	for _, opt := range opts {
 		if nOpt, ok := opt.(BaseNodeOption); ok {
 			nOpt.ApplyBaseNode(node)
