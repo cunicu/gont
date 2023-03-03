@@ -33,7 +33,7 @@ type NAT struct {
 }
 
 func (n *NAT) ApplyInterface(i *Interface) {
-	i.node = n
+	i.Node = n
 }
 
 func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {

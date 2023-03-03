@@ -29,15 +29,15 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 		return fmt.Errorf("interface names are too long. max_len=%d", syscall.IFNAMSIZ-1)
 	}
 
-	if l.node == nil || r.node == nil {
+	if l.Node == nil || r.Node == nil {
 		return errors.New("cant establish link between interfaces without node")
 	}
 
-	if l.node == r.node {
+	if l.Node == r.Node {
 		return errors.New("failed to link the node with itself")
 	}
 
-	if l.node.Network() != r.node.Network() {
+	if l.Node.Network() != r.Node.Network() {
 		return errors.New("nodes are belonging to different networks")
 	}
 
@@ -69,8 +69,8 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 		}
 	}
 
-	lHandle := l.node.NetlinkHandle()
-	rHandle := r.node.NetlinkHandle()
+	lHandle := l.Node.NetlinkHandle()
+	rHandle := r.Node.NetlinkHandle()
 
 	// Create veth pair
 	if err = lHandle.LinkAdd(veth); err != nil {
@@ -83,7 +83,7 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 	}
 
 	// Move one side into the target netns
-	if err := lHandle.LinkSetNsFd(rLink, int(r.node.NetNSHandle())); err != nil {
+	if err := lHandle.LinkSetNsFd(rLink, int(r.Node.NetNSHandle())); err != nil {
 		lHandle.LinkDel(veth) //nolint:errcheck
 		return fmt.Errorf("failed to move interface to namespace: %w", err)
 	}
@@ -105,7 +105,7 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 
 	// Configure interface (link state, attaching to bridge, adding addresses)
 	for _, i := range []*Interface{l, r} {
-		if err := i.node.ConfigureInterface(i); err != nil {
+		if err := i.Node.ConfigureInterface(i); err != nil {
 			return fmt.Errorf("failed to configure endpoint: %w", err)
 		}
 	}

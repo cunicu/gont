@@ -40,7 +40,7 @@ func (i *Interface) ApplyBaseNode(n *BaseNode) {
 
 type Interface struct {
 	Name string
-	node Node
+	Node Node
 
 	Link  nl.Link
 	Flags int
@@ -73,8 +73,8 @@ func NewInterface(name string, opts ...Option) *Interface {
 }
 
 func (i Interface) String() string {
-	if i.node != nil {
-		return fmt.Sprintf("%s/%s", i.node, i.Name)
+	if i.Node != nil {
+		return fmt.Sprintf("%s/%s", i.Node, i.Name)
 	}
 
 	return i.Name
@@ -85,23 +85,23 @@ func (i Interface) IsLoopback() bool {
 }
 
 func (i *Interface) AddAddress(a *net.IPNet) error {
-	return i.node.NetlinkHandle().AddrAdd(i.Link, &nl.Addr{
+	return i.Node.NetlinkHandle().AddrAdd(i.Link, &nl.Addr{
 		IPNet: a,
 	})
 }
 
 func (i *Interface) DeleteAddress(a *net.IPNet) error {
-	return i.node.NetlinkHandle().AddrDel(i.Link, &nl.Addr{
+	return i.Node.NetlinkHandle().AddrDel(i.Link, &nl.Addr{
 		IPNet: a,
 	})
 }
 
 func (i *Interface) SetUp() error {
-	return i.node.NetlinkHandle().LinkSetUp(i.Link)
+	return i.Node.NetlinkHandle().LinkSetUp(i.Link)
 }
 
 func (i *Interface) SetDown() error {
-	return i.node.NetlinkHandle().LinkSetDown(i.Link)
+	return i.Node.NetlinkHandle().LinkSetDown(i.Link)
 }
 
 func (i *Interface) Close() error {

@@ -302,7 +302,7 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 		if i.Interface == nil {
 			comment = "Captured with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)"
 		} else {
-			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.node.Network().Name)
+			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.Node.Network().Name)
 		}
 	}
 
@@ -329,7 +329,7 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 	var err error
 	var hdl packetSource
 
-	if err := i.node.RunFunc(func() error {
+	if err := i.Node.RunFunc(func() error {
 		hdl, err = c.createPCAPHandle(i.Name)
 		return err
 	}); err != nil {
@@ -340,13 +340,13 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 		Interface: i,
 		source:    hdl,
 		pcapInterface: pcapgo.NgInterface{
-			Name:        fmt.Sprintf("%s/%s", i.node.Name(), i.Name),
+			Name:        fmt.Sprintf("%s/%s", i.Node.Name(), i.Name),
 			Filter:      c.FilterExpression,
 			LinkType:    hdl.LinkType(),
 			SnapLength:  uint32(c.SnapshotLength),
 			OS:          "Linux",
 			Description: "Linux veth pair",
-			Comment:     fmt.Sprintf("Gont Network: '%s'", i.node.Network().Name),
+			Comment:     fmt.Sprintf("Gont Network: '%s'", i.Node.Network().Name),
 		},
 		logger: c.logger.With(zap.String("intf", i.Name)),
 	}
@@ -463,8 +463,8 @@ func (c *Capture) openFile(filename string, i *captureInterface) (*os.File, erro
 
 	if i.Interface != nil {
 		tpl := filenameTemplate{
-			Network:   i.node.Network().Name,
-			Node:      i.node.Name(),
+			Network:   i.Node.Network().Name,
+			Node:      i.Node.Name(),
 			Interface: i.Name,
 		}
 

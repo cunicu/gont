@@ -26,7 +26,7 @@ type Switch struct {
 // Options
 
 func (sw *Switch) ApplyInterface(i *Interface) {
-	i.node = sw
+	i.Node = sw
 }
 
 // AddSwitch adds a new Linux virtual bridge in a dedicated namespace
@@ -79,11 +79,11 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		peerDev := fmt.Sprintf("veth-%s", name)
 
 		left := intf
-		left.node = sw
+		left.Node = sw
 
 		right := &Interface{
 			Name: peerDev,
-			node: intf.node,
+			Node: intf.Node,
 		}
 
 		if err := n.AddLink(left, right); err != nil {
