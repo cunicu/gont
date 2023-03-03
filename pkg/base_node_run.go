@@ -60,13 +60,13 @@ func (n *BaseNode) BuildGo(fileOrPkg string, args ...any) (*os.File, error) {
 		}
 	}
 
-	bargs := []string{"build"}
+	bArgs := []string{"build"}
 	for _, flag := range flags {
-		bargs = append(bargs, flag)
+		bArgs = append(bArgs, flag)
 	}
-	bargs = append(bargs, "-o", tmp.Name(), fileOrPkg)
+	bArgs = append(bArgs, "-o", tmp.Name(), fileOrPkg)
 
-	c := exec.Command("go", bargs...)
+	c := exec.Command("go", bArgs...)
 	if out, err := c.CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("failed to compile Go code: %w\n%s", err, string(out))
 	}
