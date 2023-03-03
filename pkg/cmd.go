@@ -44,22 +44,33 @@ type Cmd struct {
 }
 
 func (n *BaseNode) Command(name string, args ...any) *Cmd {
+	nonStrArgs := []any{}
+	strArgs := []string{}
+	for _, arg := range args {
+		switch arg := arg.(type) {
+		case ExecCmdOption, CmdOption:
+			nonStrArgs = append(nonStrArgs, arg)
+		default:
+			if strArg, ok := stringifyArg(arg); ok {
+				strArgs = append(strArgs, strArg)
+			}
+		}
+	}
+
 	c := &Cmd{
 		node:          n,
+		Cmd:           exec.Command(name, strArgs...),
 		StdoutWriters: []io.Writer{},
 		StderrWriters: []io.Writer{},
 	}
-	strArgs := []string{}
-	for _, arg := range args {
+
+	for _, arg := range nonStrArgs {
 		switch arg := arg.(type) {
 		case ExecCmdOption:
 			arg.ApplyExecCmd(c.Cmd)
 		case CmdOption:
 			arg.ApplyCmd(c)
 		default:
-			if strArg, ok := stringifyArg(arg); ok {
-				strArgs = append(strArgs, strArg)
-			}
 		}
 	}
 
@@ -71,9 +82,6 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 	// Actual namespace switching is done similar to Docker's reexec
 	// in a forked version of ourself by passing all required details
 	// in environment variables.
-
-	c.Cmd = exec.Command(name, strArgs...)
-
 	if !c.node.isHostNode {
 		c.Env = os.Environ()
 		if c.node.ExistingDockerContainer == "" {

@@ -78,3 +78,10 @@ func (e Env) ApplyExecCmd(c *exec.Cmd) {
 func EnvVar(k, v string) Env {
 	return Env(fmt.Sprintf("%s=%s", k, v))
 }
+
+// Envs appends additional environment variables.
+type Envs []string
+
+func (e Envs) ApplyExecCmd(c *exec.Cmd) {
+	c.Env = append(c.Env, e...)
+}
