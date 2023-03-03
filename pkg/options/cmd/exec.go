@@ -11,13 +11,6 @@ import (
 	"syscall"
 )
 
-// Path is the path to the executable of the sub-process.
-type Path string
-
-func (p Path) ApplyExecCmd(c *exec.Cmd) {
-	c.Path = string(p)
-}
-
 // Arg appends a single argument to the list of arguments
 //
 // This option can be specified multiple times to provide
@@ -36,13 +29,21 @@ func (as Arguments) ApplyExecCmd(c *exec.Cmd) {
 	c.Args = append(c.Args, as...)
 }
 
+func Args(s ...string) Arguments {
+	return Arguments(s)
+}
+
 // Stdin set the standard input reader
-type Stdin struct {
+type StdinReader struct {
 	io.Reader
 }
 
-func (s Stdin) ApplyExecCmd(c *exec.Cmd) {
+func (s StdinReader) ApplyExecCmd(c *exec.Cmd) {
 	c.Stdin = s.Reader
+}
+
+func Stdin(rd io.Reader) StdinReader {
+	return StdinReader{rd}
 }
 
 // ExtraFile appends an additional file to the list of file descriptors

@@ -3,7 +3,11 @@
 
 package cmd
 
-import g "github.com/stv0g/gont/pkg"
+import (
+	"context"
+
+	g "github.com/stv0g/gont/pkg"
+)
 
 // DisableASLR will start the sub-process with
 // Address Space Layout Randomization disabled
@@ -13,4 +17,14 @@ type DisableASLR bool
 
 func (da DisableASLR) ApplyCmd(d *g.Cmd) {
 	d.DisableASLR = bool(da)
+}
+
+// Context will start the process with the provided context
+// See exec.CommandContext()
+type Context struct {
+	context.Context
+}
+
+func (c Context) ApplyCmd(d *g.Cmd) {
+	d.Context = c
 }

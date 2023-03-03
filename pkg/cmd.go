@@ -5,6 +5,7 @@ package gont
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -34,6 +35,7 @@ type Cmd struct {
 	Debugger      *Debugger
 	RedirectToLog bool
 	DisableASLR   bool
+	Context       context.Context
 
 	StdoutWriters []io.Writer
 	StderrWriters []io.Writer
@@ -44,12 +46,16 @@ type Cmd struct {
 }
 
 func (n *BaseNode) Command(name string, args ...any) *Cmd {
-	nonStrArgs := []any{}
+	c := &Cmd{
+		node: n,
+	}
+
 	strArgs := []string{}
 	for _, arg := range args {
 		switch arg := arg.(type) {
-		case ExecCmdOption, CmdOption:
-			nonStrArgs = append(nonStrArgs, arg)
+		case ExecCmdOption:
+		case CmdOption:
+			arg.ApplyCmd(c)
 		default:
 			if strArg, ok := stringifyArg(arg); ok {
 				strArgs = append(strArgs, strArg)
@@ -57,20 +63,16 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 		}
 	}
 
-	c := &Cmd{
-		node:          n,
-		Cmd:           exec.Command(name, strArgs...),
-		StdoutWriters: []io.Writer{},
-		StderrWriters: []io.Writer{},
+	if c.Context != nil {
+		c.Cmd = exec.CommandContext(c.Context, name, strArgs...)
+	} else {
+		c.Cmd = exec.Command(name, strArgs...)
 	}
 
-	for _, arg := range nonStrArgs {
+	for _, arg := range args {
 		switch arg := arg.(type) {
 		case ExecCmdOption:
 			arg.ApplyExecCmd(c.Cmd)
-		case CmdOption:
-			arg.ApplyCmd(c)
-		default:
 		}
 	}
 
