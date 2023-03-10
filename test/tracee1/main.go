@@ -6,7 +6,7 @@ package main
 import (
 	"log"
 
-	"github.com/stv0g/gont/pkg/trace"
+	"github.com/stv0g/gont/v2/pkg/trace"
 )
 
 func main() {

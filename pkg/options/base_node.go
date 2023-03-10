@@ -4,7 +4,7 @@
 package options
 
 import (
-	g "github.com/stv0g/gont/pkg"
+	g "github.com/stv0g/gont/v2/pkg"
 )
 
 // The name of an existing network namespace which is used instead of creating a new one.

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/pkg"
+	g "github.com/stv0g/gont/v2/pkg"
 )
 
 func TestLink(t *testing.T) {

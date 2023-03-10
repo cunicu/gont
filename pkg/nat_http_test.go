@@ -19,9 +19,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/pkg"
-	o "github.com/stv0g/gont/pkg/options"
-	co "github.com/stv0g/gont/pkg/options/cmd"
+	g "github.com/stv0g/gont/v2/pkg"
+	o "github.com/stv0g/gont/v2/pkg/options"
+	co "github.com/stv0g/gont/v2/pkg/options/cmd"
 )
 
 // TestGetMyIP performs and end-to-end ping test

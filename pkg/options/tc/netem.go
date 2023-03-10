@@ -6,7 +6,7 @@ package tc
 import (
 	"time"
 
-	o "github.com/stv0g/gont/pkg/options"
+	o "github.com/stv0g/gont/v2/pkg/options"
 )
 
 type Latency time.Duration

@@ -67,20 +67,18 @@ func (n *Network) WriteHostsFile(f io.Writer) error {
 		}
 	}
 
-	for _, n := range n.nodes {
-		if n, ok := n.(*Host); ok {
-			for _, i := range n.Interfaces {
-				if i.IsLoopback() {
-					continue
-				}
+	n.ForEachHost(func(n *Host) {
+		for _, i := range n.Interfaces {
+			if i.IsLoopback() {
+				continue
+			}
 
-				for _, a := range i.Addresses {
-					add(n.Name(), a.IP)
-					add(n.Name()+"-"+i.Name, a.IP)
-				}
+			for _, a := range i.Addresses {
+				add(n.Name(), a.IP)
+				add(n.Name()+"-"+i.Name, a.IP)
 			}
 		}
-	}
+	})
 
 	for addr, names := range hosts {
 		if _, err := fmt.Fprintf(f, "%s %s\n", addr, strings.Join(names, " ")); err != nil {

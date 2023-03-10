@@ -13,11 +13,11 @@ import (
 	"github.com/go-delve/delve/service/api"
 	"github.com/go-delve/delve/service/dap/daptest"
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/pkg"
-	o "github.com/stv0g/gont/pkg/options"
-	do "github.com/stv0g/gont/pkg/options/debug"
-	to "github.com/stv0g/gont/pkg/options/trace"
-	"github.com/stv0g/gont/pkg/trace"
+	g "github.com/stv0g/gont/v2/pkg"
+	o "github.com/stv0g/gont/v2/pkg/options"
+	do "github.com/stv0g/gont/v2/pkg/options/debug"
+	to "github.com/stv0g/gont/v2/pkg/options/trace"
+	"github.com/stv0g/gont/v2/pkg/trace"
 )
 
 func TestDebugBreakpointHostnode(t *testing.T) {

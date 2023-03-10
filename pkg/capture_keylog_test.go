@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/pkg"
-	o "github.com/stv0g/gont/pkg/options"
-	co "github.com/stv0g/gont/pkg/options/capture"
+	g "github.com/stv0g/gont/v2/pkg"
+	o "github.com/stv0g/gont/v2/pkg/options"
+	co "github.com/stv0g/gont/v2/pkg/options/capture"
 )
 
 // TestCaptureKeyLog tests the decryption of captured traffic

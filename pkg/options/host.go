@@ -8,8 +8,8 @@ import (
 	"net"
 
 	"github.com/google/nftables/expr"
-	g "github.com/stv0g/gont/pkg"
-	"github.com/stv0g/gont/pkg/options/filters"
+	g "github.com/stv0g/gont/v2/pkg"
+	"github.com/stv0g/gont/v2/pkg/options/filters"
 	nl "github.com/vishvananda/netlink"
 )
 

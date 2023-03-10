@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/pkg"
-	co "github.com/stv0g/gont/pkg/options/cmd"
+	g "github.com/stv0g/gont/v2/pkg"
+	co "github.com/stv0g/gont/v2/pkg/options/cmd"
 	"github.com/vishvananda/netns"
 )
 

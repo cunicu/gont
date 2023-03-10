@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net"
 
-	g "github.com/stv0g/gont/pkg"
+	g "github.com/stv0g/gont/v2/pkg"
 )
 
 // Address assigns an network address (IP layer) to the interface.

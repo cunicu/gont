@@ -12,9 +12,9 @@ import (
 
 	"github.com/go-ping/ping"
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/pkg"
-	o "github.com/stv0g/gont/pkg/options"
-	tco "github.com/stv0g/gont/pkg/options/tc"
+	g "github.com/stv0g/gont/v2/pkg"
+	o "github.com/stv0g/gont/v2/pkg/options"
+	tco "github.com/stv0g/gont/v2/pkg/options/tc"
 )
 
 func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {

@@ -3,7 +3,7 @@
 
 package tc
 
-import o "github.com/stv0g/gont/pkg/options"
+import o "github.com/stv0g/gont/v2/pkg/options"
 
 type Rate uint64
 

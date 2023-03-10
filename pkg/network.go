@@ -17,6 +17,7 @@ import (
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
+	"golang.org/x/exp/maps"
 )
 
 type NetworkOption interface {
@@ -142,15 +143,7 @@ func (n *Network) Nodes() []Node {
 	n.nodesLock.RLock()
 	defer n.nodesLock.RUnlock()
 
-	nodes := []Node{}
-
-	for _, node := range n.nodes {
-		if host, ok := node.(*Host); ok {
-			nodes = append(nodes, host)
-		}
-	}
-
-	return nodes
+	return maps.Values(n.nodes)
 }
 
 func (n *Network) Hosts() []*Host {
@@ -196,6 +189,19 @@ func (n *Network) Routers() []*Router {
 	}
 
 	return routers
+}
+
+// Iterators
+
+func (n *Network) ForEachHost(cb func(h *Host)) {
+	n.nodesLock.RLock()
+	defer n.nodesLock.RUnlock()
+
+	for _, node := range n.nodes {
+		if host, ok := node.(*Host); ok {
+			cb(host)
+		}
+	}
 }
 
 func (n *Network) Teardown() error {

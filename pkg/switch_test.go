@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/pkg"
-	o "github.com/stv0g/gont/pkg/options"
+	g "github.com/stv0g/gont/v2/pkg"
+	o "github.com/stv0g/gont/v2/pkg/options"
 )
 
 // TestPing performs and end-to-end ping test

@@ -8,7 +8,7 @@ import (
 
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
-	"github.com/stv0g/gont/pkg/trace"
+	"github.com/stv0g/gont/v2/pkg/trace"
 )
 
 const (

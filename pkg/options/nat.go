@@ -3,7 +3,7 @@
 
 package options
 
-import g "github.com/stv0g/gont/pkg"
+import g "github.com/stv0g/gont/v2/pkg"
 
 const (
 	SouthBound = Group(g.DeviceGroupSouthBound)

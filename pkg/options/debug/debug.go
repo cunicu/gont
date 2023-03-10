@@ -4,7 +4,7 @@
 package debug
 
 import (
-	g "github.com/stv0g/gont/pkg"
+	g "github.com/stv0g/gont/v2/pkg"
 )
 
 // ListenAddr opens a TCP socket listening for DAP connections.

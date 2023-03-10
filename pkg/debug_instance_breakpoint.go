@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-delve/delve/pkg/proc"
 	"github.com/go-delve/delve/service/api"
-	"github.com/stv0g/gont/pkg/trace"
+	"github.com/stv0g/gont/v2/pkg/trace"
 	"go.uber.org/zap"
 )
 

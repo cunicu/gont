@@ -3,7 +3,7 @@
 
 package options
 
-import g "github.com/stv0g/gont/pkg"
+import g "github.com/stv0g/gont/v2/pkg"
 
 // Redirect output of sub-processes to log
 type RedirectToLog bool

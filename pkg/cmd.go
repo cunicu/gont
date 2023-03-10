@@ -162,15 +162,12 @@ func (c *Cmd) Start() error {
 		}
 	}
 
-	logger := c.logger.With(
-		zap.Int("pid", c.Process.Pid),
-	)
-
+	// Add PID as field to logger after the process has been started
 	if updateLogger != nil {
-		updateLogger(logger)
+		updateLogger(c.logger.With(
+			zap.Int("pid", c.Process.Pid),
+		))
 	}
-
-	logger.Debug("Process started")
 
 	return nil
 }
@@ -180,23 +177,7 @@ func (c *Cmd) Run() error {
 		return err
 	}
 
-	if err := c.Wait(); err != nil {
-		return err
-	}
-
-	logger := c.logger.With(
-		zap.Int("pid", c.Process.Pid),
-		zap.Int("rc", c.ProcessState.ExitCode()),
-		zap.Duration("sys_time", c.ProcessState.SystemTime()),
-	)
-
-	if c.ProcessState.Success() {
-		logger.Debug("Process terminated successfully")
-	} else {
-		logger.Error("Process terminated with error code")
-	}
-
-	return nil
+	return c.Wait()
 }
 
 func (c *Cmd) Wait() error {

@@ -5,7 +5,7 @@ package debug
 
 import (
 	"github.com/go-delve/delve/service/api"
-	g "github.com/stv0g/gont/pkg"
+	g "github.com/stv0g/gont/v2/pkg"
 )
 
 // User defined name of the breakpoint.

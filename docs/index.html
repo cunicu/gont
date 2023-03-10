@@ -381,8 +381,8 @@ SPDX-License-Identifier: Apache-2.0 -->
 					<section>
 						<h3>Two directly connected hosts</h3>
 						<pre><code class="language-go" data-trim>
-							import g "github.com/stv0g/gont/pkg"
-							import o "github.com/stv0g/gont/pkg/options"
+							import g "github.com/stv0g/gont/v2/pkg"
+							import o "github.com/stv0g/gont/v2/pkg/options"
 
 							...
 
@@ -522,7 +522,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 						<h3>Pass options</h3>
 
 						<pre><code class="language-go" data-trim>
-							import co "github.com/stv0g/gont/pkg/options/cmd"
+							import co "github.com/stv0g/gont/v2/pkg/options/cmd"
 
 							outb := &bytes.Buffer{}
 
@@ -767,7 +767,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 					<section>
 						<h3>Trace with trace package</h3>
 						<pre><code class="language-go" data-trim>
-							import "github.com/stv0g/gont/pkg/trace"
+							import "github.com/stv0g/gont/v2/pkg/trace"
 
 							someData := map[string]string{"Hello": "World"}
 							count := 42
@@ -793,7 +793,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 
 						<pre><code class="language-go" data-trim>
 							import "go.uber.org/zap"
-							import "github.com/stv0g/gont/pkg/trace"
+							import "github.com/stv0g/gont/v2/pkg/trace"
 
 							// Add the tracing option which emits a trace event for each log message
 							logger := zap.NewDevelopment(trace.Log())

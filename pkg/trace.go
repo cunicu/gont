@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/stv0g/gont/internal/prque"
-	"github.com/stv0g/gont/pkg/trace"
+	"github.com/stv0g/gont/v2/pkg/trace"
 	"go.uber.org/zap"
 )
 
