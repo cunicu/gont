@@ -98,8 +98,8 @@ SPDX-License-Identifier: Apache-2.0 -->
 					<section>
 						<h3>Why?</h3>
 						<ul>
-							<li>Describe network toplogies quickly in code</li>
-							<li>Automate contruction of complex topolgies</li>
+							<li>Describe network topologies quickly in code</li>
+							<li>Automate construction of complex topologies</li>
 							<li>Unit / CI testing
 							<li>Parallel test execution</li>
 							<li>Example use-cases
@@ -140,7 +140,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 							<li><b>mnt:</b> Mounts</li>
 							<li><b>pid:</b> Process IDs</li>
 							<li><b>net:</b> Networking</li>
-							<li><b>ipc:</b> Interproces Communication</li>
+							<li><b>ipc:</b> Interprocess Communication</li>
 							<li><b>uts:</b> Unix Timesharing (hostname)</li>
 							<li><b>user:</b> User identification & privileges</li>
 							<li><b>cgroup:</b> Process Control Groups</li>
@@ -242,7 +242,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 							err := syscall.Mount("/proc/self/ns/uts",
 							                     "/home/acs/my_uts_namespace", "", syscall.MS_BIND, nil);
 						</code></pre>
-						<h6>In other processs</h6>
+						<h6>In other process</h6>
 						<pre><code data-trim>
 							fd := syscall.Open("/home/acs/my_uts_namespace", syscall.O_RDONLY);
 
@@ -697,7 +697,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 
 						<pre><code class="language-go" data-trim>
 							type Event struct {
-								Timestamp time.Time	// Timestamp when the event occured
+								Timestamp time.Time	// Timestamp when the event occurred
 								Type      string    // Either: 'log', ́'trace', 'break' & ́ watchpoint'
 								Level     uint8     // Log level
 								Message   string    // A human readable description
@@ -786,6 +786,26 @@ SPDX-License-Identifier: Apache-2.0 -->
 							<li>Any process spawned via Gont's<br>
 								<code>Host.{Command,Run,RunGo,Start,StartGo}(...)</code> functions</li>
 						</ul>
+					</section>
+
+					<section>
+						<h3>Trace via slog structured logging package</h3>
+
+						<pre><code class="language-go" data-trim>
+							import "golang.org/x/exp/slog"
+							import "github.com/stv0g/gont/v2/pkg/trace"
+
+							// Create a slog handler which emits trace events
+							handler := trace.NewTraceHandler(slog.HandlerOptions{})
+
+							// Add the tracing option which emits a trace event for each log message
+							logger := slog.New(handler)
+						</code></pre>
+
+						<p class="smaller" style="margin-top: 3em;">
+							Each log message emits a trace event which includes the log message, filename, line number as well function name and more.<br>
+							Any fields passed to to zap structured logger are included in the <code>Data</code> field of the <code>Event</code> structure.
+						</p>
 					</section>
 
 					<section>
