@@ -7,7 +7,7 @@
 [![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
 [![License](https://img.shields.io/github/license/stv0g/gont)](https://github.com/stv0g/gont/blob/master/LICENSE)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
-[![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont)
+[![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont/v2)
 
 Gont is a Go package to support the development networked and distributed applications.
 
@@ -52,7 +52,8 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
     - Automatic decryption of captured trafic using Wireshark/thark by including session secrets in PCAPng file
     - Automatic instrumentation of sub-processes using [`SSLKEYLOGFILE` environment variable](https://everything.curl.dev/usingcurl/tls/sslkeylogfile)
 - Distributed tracing of events
-  - Support for emitting [zap](https://github.com/uber-go/zap) log messages as trace events
+  - A `slog.Handler` to emit [structured log](https://pkg.go.dev/golang.org/x/exp/slog) records as trace events
+  - A `zapcore.Core` to emit [zap](https://github.com/uber-go/zap) log messages as trace events
   - Dedicated [gont/trace](https://pkg.go.dev/github.com/stv0g/gont/v2/pkg/trace) package for emitting trace events
   - Capturing of trace events in PCAPng files
   - WireShark Lua dissector for decoding events
