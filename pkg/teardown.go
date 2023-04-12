@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/stv0g/gont/internal/utils"
+	"github.com/stv0g/gont/v2/internal/utils"
 	"github.com/vishvananda/netns"
 	"golang.org/x/sys/unix"
 )

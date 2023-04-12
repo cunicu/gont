@@ -593,7 +593,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 					<section>
 						<h3>Add some firewall rules for a host</h3>
 						<pre><code class="language-go" data-trim>
-							import fo "github.com/stv0g/gont/options/filter"
+							import fo "github.com/stv0g/gont/v2/options/filter"
 
 							_, src, _ := net.ParseCIDR("10.0.0.1/32")
 
@@ -617,7 +617,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 					<section>
 						<h3>Attach a netem Qdisc to an interface</h3>
 						<pre><code class="language-go" data-trim>
-							import tco "github.com/stv0g/gont/options/tc"
+							import tco "github.com/stv0g/gont/v2/options/tc"
 
 							n.AddLink(
 								g.NewInterface("eth0", h1,
@@ -726,8 +726,8 @@ SPDX-License-Identifier: Apache-2.0 -->
 						<h3>Create a tracer</h3>
 
 						<pre><code class="language-go" data-trim>
-							import "github.com/stv0g/gont/trace"
-							import to "github.com/stv0g/gont/options/trace"
+							import "github.com/stv0g/gont/v2/trace"
+							import to "github.com/stv0g/gont/v2/options/trace"
 
 							c := g.NewCapture(...)
 							f, _ := os.OpenFile(...)
@@ -834,7 +834,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 						<h3>Create a debugger</h3>
 
 						<pre><code class="language-go" data-trim>
-							import do "github.com/stv0g/gont/pkt/options/debug"
+							import do "github.com/stv0g/gont/v2/pkt/options/debug"
 
 							t := g.NewTracer(...)
 
@@ -873,7 +873,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 
 						<pre><code class="language-go" data-trim>
 							import "github.com/go-delve/delve/service/api"
-							import do "github.com/stv0g/gont/pkt/options/debug"
+							import do "github.com/stv0g/gont/v2/pkt/options/debug"
 
 							d := g.NewDebugger(
 								g.NewTracepoint(
@@ -901,7 +901,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 						<h5>Gathering of breakpoint information</h5>
 
 						<pre><code class="language-go" data-trim>
-							import do "github.com/stv0g/gont/pkt/options/debug"
+							import do "github.com/stv0g/gont/v2/pkt/options/debug"
 
 							d := g.NewDebugger(
 								g.NewTracepoint(

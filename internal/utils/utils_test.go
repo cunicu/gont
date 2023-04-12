@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/stv0g/gont/internal/utils"
+	"github.com/stv0g/gont/v2/internal/utils"
 )
 
 func TestRandStringRunes(t *testing.T) {

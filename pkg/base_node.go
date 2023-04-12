@@ -12,7 +12,7 @@ import (
 	"syscall"
 
 	nft "github.com/google/nftables"
-	"github.com/stv0g/gont/internal/utils"
+	"github.com/stv0g/gont/v2/internal/utils"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"

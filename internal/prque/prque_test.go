@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/stv0g/gont/internal/prque"
+	"github.com/stv0g/gont/v2/internal/prque"
 )
 
 type item struct {

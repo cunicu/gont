@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/stv0g/gont/internal/utils"
+	"github.com/stv0g/gont/v2/internal/utils"
 	nl "github.com/vishvananda/netlink"
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"

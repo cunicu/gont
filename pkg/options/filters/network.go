@@ -8,7 +8,7 @@ import (
 	"net"
 
 	"github.com/google/nftables/expr"
-	"github.com/stv0g/gont/internal/utils"
+	"github.com/stv0g/gont/v2/internal/utils"
 )
 
 type direction int
