@@ -50,7 +50,7 @@ jobs:
       run: |
         sudo --preserve-env \
           env "PATH=$PATH" \
-          go test -coverprofile coverage.out -json -v ./pkg ./internal/... 2>&1 \
+          go test -coverpkg ./... -coverprofile coverage.out -json -v ./pkg ./internal/... 2>&1 \
             | tee /tmp/gotest.log \
             | gotestfmt
 
@@ -62,11 +62,6 @@ jobs:
         path: /tmp/gotest.log
         if-no-files-found: error
 
-    - name: Run codacy-coverage-reporter
-      uses: codacy/codacy-coverage-reporter-action@v1
-      env:
-        CODACY_REPORTER_TMP_FOLDER: .codacy
+    - uses: codecov/codecov-action@v3
       with:
-        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        coverage-reports: coverage.out
-        force-coverage-parser: go
+        files: coverage.out
