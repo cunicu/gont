@@ -85,7 +85,6 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 	// in a forked version of ourself by passing all required details
 	// in environment variables.
 	if !c.node.isHostNode {
-		c.Env = os.Environ()
 		if c.node.ExistingDockerContainer == "" {
 			c.Path = "/proc/self/exe"
 			c.Env = append(c.Env,
