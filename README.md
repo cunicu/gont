@@ -2,7 +2,7 @@
 
 [![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/stv0g/gont/build.yaml)](https://github.com/stv0g/gont/actions)
 [![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
-[![Codacy coverage](https://img.shields.io/codacy/coverage/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
+[![Codecov branch](https://img.shields.io/codecov/c/github/stv0g/gont/master?style=flat-square&token=2QHPZ691UD)](https://app.codecov.io/gh/stv0g/go-rosenpass/tree/master)
 [![libraries.io](https://img.shields.io/librariesio/github/stv0g/gont)](https://libraries.io/github/stv0g/gont)
 [![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
 [![License](https://img.shields.io/github/license/stv0g/gont)](https://github.com/stv0g/gont/blob/master/LICENSE)
