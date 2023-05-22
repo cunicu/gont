@@ -5,24 +5,24 @@ go 1.20
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fxamacker/cbor/v2 v2.4.0
-	github.com/go-delve/delve v1.20.1
+	github.com/go-delve/delve v1.20.2
 	github.com/go-ping/ping v1.1.0
 	github.com/google/nftables v0.1.0
-	github.com/gopacket/gopacket v1.0.0
-	github.com/stretchr/testify v1.8.2
+	github.com/gopacket/gopacket v1.1.0
+	github.com/stretchr/testify v1.8.3
 	github.com/vishvananda/netlink v1.2.1-beta.2.0.20221214185949-378a404a26f0
 	github.com/vishvananda/netns v0.0.4
 	go.uber.org/zap v1.24.0
-	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
-	golang.org/x/net v0.7.0
-	golang.org/x/sys v0.5.0
-	kernel.org/pub/linux/libs/security/libcap/cap v1.2.67
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+	golang.org/x/net v0.10.0
+	golang.org/x/sys v0.8.0
+	kernel.org/pub/linux/libs/security/libcap/cap v1.2.69
 )
 
 require (
 	github.com/cilium/ebpf v0.10.0 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/go-dap v0.6.0 // indirect
+	github.com/google/go-dap v0.7.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/josharian/native v1.1.0 // indirect
@@ -38,5 +38,5 @@ require (
 	golang.org/x/sync v0.1.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	kernel.org/pub/linux/libs/security/libcap/psx v1.2.67 // indirect
+	kernel.org/pub/linux/libs/security/libcap/psx v1.2.69 // indirect
 )
