@@ -19,13 +19,13 @@ type pcapgoPacketSource struct {
 	*pcapgo.EthernetHandle
 }
 
-func (c *Capture) createPCAPHandle(name string) (handle, error) {
+func (c *Capture) createPCAPHandle(name string) (packetSource, error) {
 	hdl, err := pcapgo.NewEthernetHandle(name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open PCAP handle: %w", err)
 	}
 
-	if err := hdl.SetCaptureLength(int(c.CaptureLength)); err != nil {
+	if err := hdl.SetCaptureLength(int(c.SnapshotLength)); err != nil {
 		return nil, fmt.Errorf("failed to set capture length: %w", err)
 	}
 
@@ -58,15 +58,15 @@ func (c *Capture) createPCAPHandle(name string) (handle, error) {
 	}, nil
 }
 
-func (h pcapgoPacketSource) Stats() (CaptureStats, error) {
+func (h pcapgoPacketSource) Stats() (captureStats, error) {
 	s, err := h.EthernetHandle.Stats()
 	if err != nil {
-		return CaptureStats{}, err
+		return captureStats{}, err
 	}
 
-	return CaptureStats{
-		PacketsReceived: int(s.Packets),
-		PacketsDropped:  int(s.Drops),
+	return captureStats{
+		PacketsReceived: uint64(s.Packets),
+		PacketsDropped:  uint64(s.Drops),
 	}, nil
 }
 
