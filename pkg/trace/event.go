@@ -127,16 +127,6 @@ func (e *Event) Fprint(w io.Writer) {
 	}
 
 	if bp := e.Breakpoint; bp != nil {
-		if bp.Name != "" {
-			fmt.Fprintf(w, indent+"Breakpoint: %s (%d)\n", bp.Name, bp.ID)
-		} else {
-			fmt.Fprintf(w, indent+"Breakpoint: %d\n", bp.ID)
-		}
-		fmt.Fprintf(w, indent+"Hit count:  %d\n", bp.TotalHitCount)
-
-		fprintVariables(w, indent, "Arguments", bp.Arguments)
-		fprintVariables(w, indent, "Locals", bp.Locals)
-		fprintVariables(w, indent, "Variables", bp.Variables)
-		fprintStacktrace(w, bp.Stacktrace)
+		bp.Fprint(w, indent)
 	}
 }
