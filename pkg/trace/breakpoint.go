@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
 // SPDX-License-Identifier: Apache-2.0
 
+// Limit debugger support to platforms which are supported by Delve
+// See: https://github.com/go-delve/delve/blob/master/pkg/proc/native/support_sentinel_linux.go
+//go:build linux && (amd64 || arm64 || 386)
+
 package trace
 
 import (
@@ -59,6 +63,20 @@ func (b *Breakpoint) Local(name string) string {
 	}
 
 	return ""
+}
+
+func (b *Breakpoint) Fprint(w io.Writer, indent string) {
+	if b.Name != "" {
+		fmt.Fprintf(w, indent+"Breakpoint: %s (%d)\n", b.Name, b.ID)
+	} else {
+		fmt.Fprintf(w, indent+"Breakpoint: %d\n", b.ID)
+	}
+	fmt.Fprintf(w, indent+"Hit count:  %d\n", b.TotalHitCount)
+
+	fprintVariables(w, indent, "Arguments", b.Arguments)
+	fprintVariables(w, indent, "Locals", b.Locals)
+	fprintVariables(w, indent, "Variables", b.Variables)
+	fprintStacktrace(w, b.Stacktrace)
 }
 
 func fprintStacktrace(w io.Writer, st []api.Stackframe) {

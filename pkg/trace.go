@@ -33,10 +33,6 @@ func (t *Tracer) ApplyCmd(c *Cmd) {
 	c.Tracer = t
 }
 
-func (t *Tracer) ApplyDebugger(d *Debugger) {
-	d.Tracers = append(d.Tracers, t)
-}
-
 type Tracer struct {
 	// Output options
 	Files     []*os.File
