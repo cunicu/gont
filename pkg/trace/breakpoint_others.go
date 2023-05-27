@@ -13,4 +13,4 @@ type (
 	Breakpoint struct{}
 )
 
-func (*Breakpoint) Fprint(io.Writer) {}
+func (*Breakpoint) Fprint(io.Writer, string) {}
