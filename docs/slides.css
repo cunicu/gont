@@ -1,0 +1,35 @@
+/*
+SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+SPDX-License-Identifier: Apache-2.0
+*/
+
+em {
+    font-weight: bold;
+}
+
+code {
+    line-height: 1em;
+    font-size: 90%;
+}
+
+li { font-size: 100% }
+li li { font-size: 90% }
+li li li { font-size: 80% }
+li li li li { font-size: 70% }
+li li li li li { font-size: 60% }
+
+.container{
+    display: flex;
+}
+
+.col{
+    flex: 1;
+}
+
+ul.inline-list li {
+    display:inline;
+}
+
+.smaller {
+    font-size: 0.7em;
+}
