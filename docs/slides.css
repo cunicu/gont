@@ -18,7 +18,7 @@ li li li { font-size: 80% }
 li li li li { font-size: 70% }
 li li li li li { font-size: 60% }
 
-.container{
+.container {
     display: flex;
 }
 
@@ -31,5 +31,9 @@ ul.inline-list li {
 }
 
 .smaller {
+    font-size: 0.7em;
+}
+
+.smaller-list ul {
     font-size: 0.7em;
 }

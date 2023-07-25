@@ -3,19 +3,19 @@
 
 package options
 
-import g "github.com/stv0g/gont/v2/pkg"
+import gont "github.com/stv0g/gont/v2/pkg"
 
 // Redirect output of sub-processes to log
 type RedirectToLog bool
 
-func (l RedirectToLog) ApplyNetwork(n *g.Network) {
+func (l RedirectToLog) ApplyNetwork(n *gont.Network) {
 	n.RedirectToLog = bool(l)
 }
 
-func (l RedirectToLog) ApplyBaseNode(n *g.BaseNode) {
+func (l RedirectToLog) ApplyBaseNode(n *gont.BaseNode) {
 	n.RedirectToLog = bool(l)
 }
 
-func (l RedirectToLog) ApplyCmd(c *g.Cmd) {
+func (l RedirectToLog) ApplyCmd(c *gont.Cmd) {
 	c.RedirectToLog = bool(l)
 }

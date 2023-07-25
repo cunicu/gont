@@ -23,8 +23,7 @@ SPDX-License-Identifier: Apache-2.0 -->
 
 ### Mininet
 
-“Mininet creates a realistic virtual network, running real kernel,
-switch and application code, on a single machine (VM, cloud or native)”
+> "Mininet creates a realistic virtual network, running real kernel, switch and application code, on a single machine (VM, cloud or native)"
 
 -- [mininet.org](http://mininet.org/)
 
@@ -111,7 +110,7 @@ only interested in learning about Gont)
 
 ```go
 func main() {
-    err := syscall.Unshare(syscall.CLONE_NEWNS);
+  err := syscall.Unshare(syscall.CLONE_NEWNS);
 }
 ```
 
@@ -121,30 +120,30 @@ func main() {
 
 ```go
 static int child(void *arg) {
-    struct utsname uts;
+  struct utsname uts;
 
-    sethostname(arg, "ernie")
+  sethostname(arg, "ernie")
 
-    uname(&uts)
-    printf("nodename in child:  %s\n", uts.nodename);
+  uname(&uts)
+  printf("nodename in child:  %s\n", uts.nodename);
 
-    return 0;
+  return 0;
 }
 
 int main() {
-    struct utsname uts;
+  struct utsname uts;
 
-    /* Allocate stack for child */
-    char *stack = malloc(STACK_SIZE);
-    if (stack == NULL)
-        return -1;
+  // Allocate stack for child
+  char *stack = malloc(STACK_SIZE);
+  if (stack == NULL)
+    return -1;
 
-    /* Start new kernel task in new UTS namespace */
-    pid_t child_pid = clone(child, stack + STACK_SIZE, CLONE_NEWUTS | SIGCHLD, NULL);
+  // Start new kernel task in new UTS namespace
+  pid_t child_pid = clone(child, stack + STACK_SIZE, CLONE_NEWUTS | SIGCHLD, NULL);
 
-    /* Output hostname */
-    uname(&uts)
-    printf("nodename in parent:  %s\n", uts.nodename);
+  // Output hostname
+  uname(&uts)
+  printf("nodename in parent:  %s\n", uts.nodename);
 }
 ```
 
@@ -287,6 +286,7 @@ Back to Gont...
 
 Have a look at the following code for full fledged test/example code:
 
+<!-- .slide: class="smaller-list" -->
 -   [Ping](https://github.com/stv0g/gont/blob/master/pkg/ping_test.go)
 -   [Run](https://github.com/stv0g/gont/blob/master/pkg/run_test.go)
 -   [NAT](https://github.com/stv0g/gont/blob/master/pkg/nat_test.go)
@@ -311,43 +311,41 @@ Have a look at the following code for full fledged test/example code:
 ### Two directly connected hosts
 
 ```go
-import g "github.com/stv0g/gont/v2/pkg"
-import o "github.com/stv0g/gont/v2/pkg/options"
+import gont "github.com/stv0g/gont/v2/pkg"
+import opt "github.com/stv0g/gont/v2/pkg/options"
 
-...
+ ...
 
-n, _ := g.NewNetwork("mynet")
+network, _ := gont.NewNetwork("mynet")
 
-h1, _ := n.AddHost("h1")
-h2, _ := n.AddHost("h2")
+host1, _ := network.AddHost("host1")
+host2, _ := network.AddHost("host2")
 
-n.AddLink(
-    g.NewInterface("eth0", h1, o.AddressIP("10.0.0.1/24")),
-    g.NewInterface("eth0", h2, o.AddressIP("10.0.0.2/24")),
-    )
+network.AddLink(
+  gont.NewInterface("eth0", host1, opt.AddressIP("10.0.0.1/24")),
+  gont.NewInterface("eth0", host2, opt.AddressIP("10.0.0.2/24")))
 
-h1.Ping(h2)
-                          
+host1.Ping(host2)
 ```
 
-(We use `g` and `o` throughout these examples as import aliases)
+(We `opt` throughout these examples as an import alias)
 
 ...
 
 ### Lets add a L2 switch
 
 ```go
-sw, _ := n.AddSwitch("sw")
+switch1, _ := network.AddSwitch("switch1")
 
-h1, _ := n.AddHost("h1",
-    g.NewInterface("eth0", sw,
-        o.AddressIP("10.0.0.1/24")))
+host1, _ := network.AddHost("host1",
+  gont.NewInterface("eth0", switch1,
+    opt.AddressIP("10.0.0.1/24")))
 
-h2, _ := n.AddHost("h2",
-    g.NewInterface("eth0", sw,
-        o.AddressIP("10.0.0.2/24")))
+host2, _ := network.AddHost("host2",
+  gont.NewInterface("eth0", switch1,
+    opt.AddressIP("10.0.0.2/24")))
 
-h1.Ping(h2)
+host1.Ping(host2)
 ```
 
 ...
@@ -355,20 +353,21 @@ h1.Ping(h2)
 ### How about a L3 router?
 
 ```go
-sw1, _ := n.AddSwitch("sw1")
-sw2, _ := n.AddSwitch("sw2")
+switch1, _ := network.AddSwitch("switch1")
+switch2, _ := network.AddSwitch("switch2")
 
-h1, _ := n.AddHost("h1", g.NewInterface("eth0", sw1,
-                    o.AddressIP("10.0.0.2/24")))
-h2, _ := n.AddHost("h2", g.NewInterface("eth0", sw2,
-                    o.AddressIP("10.0.1.2/24")))
+host1, _ := network.AddHost("host1",
+  gont.NewInterface("eth0", switch1,
+    opt.AddressIP("10.0.0.2/24")))
+host2, _ := network.AddHost("host2",
+  gont.NewInterface("eth0", switch2,
+    opt.AddressIP("10.0.1.2/24")))
 
-n.AddRouter("r1",
-    g.NewInterface("eth0", sw, o.AddressIP("10.0.0.1/24")),
-    g.NewInterface("eth1", sw, o.AddressIP("10.0.1.1/24"))
-)
+network.AddRouter("router1",
+  gont.NewInterface("eth0", sw1, opt.AddressIP("10.0.0.1/24")),
+  gont.NewInterface("eth1", sw2, opt.AddressIP("10.0.1.1/24")))
 
-h1.Ping(h2)
+host1.Ping(host2)
 ```
 
 ...
@@ -376,21 +375,25 @@ h1.Ping(h2)
 ### Lets do some evil NATing 😈
 
 ```go
-sw1, _ := n.AddSwitch("sw1")
-sw2, _ := n.AddSwitch("sw2")
+switch1, _ := network.AddSwitch("switch1")
+switch2, _ := network.AddSwitch("switch2")
 
-h1, _ := n.AddHost("h1", g.NewInterface("eth0", sw1,
-                    o.AddressIP("10.0.0.2/24")))
-h2, _ := n.AddHost("h2", g.NewInterface("eth0", sw2,
-                    o.AddressIP("10.0.1.2/24")))
+host1, _ := network.AddHost("host1",
+  gont.NewInterface("eth0", switch1,
+    opt.AddressIP("10.0.0.2/24")))
+host2, _ := network.AddHost("host2",
+  gont.NewInterface("eth0", switch2,
+    opt.AddressIP("10.0.1.2/24")))
 
-n.AddNAT("n1",
-    g.NewInterface("eth0", sw, o.SouthBound,
-                 o.AddressIP("10.0.0.1/24")),
-    g.NewInterface("eth1", sw, o.NorthBound,
-                 o.AddressIP("10.0.1.1/24")))
+network.AddNAT("n1",
+  gont.NewInterface("eth0", switch1,
+    opt.SouthBound,
+    opt.AddressIP("10.0.0.1/24")),
+  gont.NewInterface("eth1", switch2,
+    opt.NorthBound,
+    opt.AddressIP("10.0.1.1/24")))
 
-h1.Ping(h2)
+host1.Ping(host2)
 ```
 
 ...
@@ -398,31 +401,33 @@ h1.Ping(h2)
 ### How about a whole chain of routers?
 
 ```go
-var firstSwitch *g.Switch = n.AddSwitch("sw0")
-var lastSwitch  *g.Switch = nil
+var firstSwitch *gont.Switch = network.AddSwitch("switch0")
+var lastSwitch  *gont.Switch = nil
 
 for i := 1; i < 100; i++ {
-    swName := fmt.Printf("sw%d", i)
-    rtrName := fmt.Printf("r%d", i)
+  switchName := fmt.Printf("switch%d", i)
+  routerName := fmt.Printf("router%d", i)
 
-    newSwitch, _ := n.AddSwitch(swName)
+  newSwitch, _ := network.AddSwitch(switchName)
 
-    n.AddRouter(rtrName,
-        g.NewInterface("eth0", lastSwitch,
-                     o.AddressIP("10.0.0.1/24")),
-        g.NewInterface("eth1", newSwitch,
-                     o.AddressIP("10.0.1.1/24"))
-    )
+  network.AddRouter(routerName,
+    gont.NewInterface("eth0", lastSwitch,
+      opt.AddressIP("10.0.0.1/24")),
+    gont.NewInterface("eth1", newSwitch,
+      opt.AddressIP("10.0.1.1/24"))
+  )
 
-    lastSwitch = newSwitch
+  lastSwitch = newSwitch
 }
 
-h1, _ := n.AddHost("h1", g.NewInterface("eth0", firstSwitch,
-                    o.AddressIP("10.0.0.2/24")))
-h2, _ := n.AddHost("h2", g.NewInterface("eth0", lastSwitch,
-                    o.AddressIP("10.0.1.2/24")))
+host1, _ := network.AddHost("host1",
+  gont.NewInterface("eth0", firstSwitch,
+    opt.AddressIP("10.0.0.2/24")))
+host2, _ := network.AddHost("host2",
+  gont.NewInterface("eth0", lastSwitch,
+    opt.AddressIP("10.0.1.2/24")))
 
-h1.Ping(h2)
+host1.Ping(host2)
 ```
 
 ---
@@ -437,14 +442,14 @@ Inside the network namespaces / hosts
 
 ```go
 // Get a exec.Cmd-like struct
-cmd := h1.Command("ping", "h2")
+cmd := host1.Command("ping", "host2")
 out, err := cmd.CombinedOutput()
 
 // Directly run a simple process synchronously
-cmd, err := h1.Run("ping", "h2")
+cmd, err := host1.Run("ping", "host2")
 
 // Directly start asynchronously
-cmd, err := h1.Start("ping", "h2")
+cmd, err := host1.Start("ping", "host2")
 
 time.Sleep(5 * time.Second)
 
@@ -452,7 +457,7 @@ err = cmd.Process.Signal(os.Interrupt)
 cmd.Wait()
 ```
 
-The `g.Node` type implements an API similar to the one provided by Go's
+The `gont.Node` type implements an API similar to the one provided by Go's
 `exec` package.
 
 ...
@@ -460,17 +465,17 @@ The `g.Node` type implements an API similar to the one provided by Go's
 ### Pass options
 
 ```go
-import co "github.com/stv0g/gont/v2/pkg/options/cmd"
+import copt "github.com/stv0g/gont/v2/pkg/options/cmd"
 
 outb := &bytes.Buffer{}
 
-cmd := h1.Command("ping", "1.1.1.1",
-    co.DisableASLR(true),
-    co.Dir("/custom/working/dir"),
-    co.EnvVar("DEBUG", "1"),
-    co.Stdin(...), // pass any io.Reader
-    co.Stdout(outb), // pass any io.Writer (can be repeated)
-    co.Stderr(...), // pass any io.Writer (can be repeated)
+cmd := host1.Command("ping", "1.1.1.1",
+  copt.DisableASLR(true),
+  copt.Dir("/custom/working/dir"),
+  copt.EnvVar("DEBUG", "1"),
+  copt.Stdin(...), // pass any io.Reader
+  copt.Stdout(outb), // pass any io.Writer (can be repeated)
+  copt.Stderr(...), // pass any io.Writer (can be repeated)
 )
 
 print(outb.String())
@@ -482,7 +487,7 @@ print(outb.String())
 ```go
 ip := net.ParseIP("1.1.1.1")
 
-cmd := h1.Command("ping", "-c", 10, "-i", 0.1, ip)
+cmd := host1.Command("ping", "-c", 10, "-i", 0.1, ip)
 ```
 
 ...
@@ -490,21 +495,21 @@ cmd := h1.Command("ping", "-c", 10, "-i", 0.1, ip)
 ### Go functions
 
 ```go
-h1.RunFunc(func() {
-    r := http.Get("http://h2:8080")
-    io.Copy(os.Stdout, r.Body)
+host1.RunFunc(func() {
+  r := http.Get("http://host2:8080")
+  io.Copy(os.Stdout, r.Body)
 })
 ```
 
-Call a function inside a network namespace of host `h1` but still
+Call a function inside a network namespace of host `host1` but still
 in the same process so you can use channels and access global variables.
 
 **⚠️ Warning:** Spawning Goroutines from within the callback
 is only indirectly supported:
 
 ```go
-h1.RunFunc(func() {
-    go h1.RunFunc(func() { ... })
+host1.RunFunc(func() {
+  go host1.RunFunc(func() { ... })
 })
 ```
 
@@ -513,7 +518,7 @@ h1.RunFunc(func() {
 ### Go packages
 
 ```go
-cmd, err := h1.RunGo("test/prog.go", "arg1")
+cmd, err := host1.RunGo("test/prog.go", "arg1")
 ```
 
 ---
@@ -527,17 +532,17 @@ by Netfilter's nftables
 ### Add some firewall rules for a host
 
 ```go
-import fo "github.com/stv0g/gont/v2/options/filter"
+import fopt "github.com/stv0g/gont/v2/options/filter"
 
 _, src, _ := net.ParseCIDR("10.0.0.1/32")
 
-h1, _ := n.AddHost("h1",
-                    o.Filter(
-                        g.FilterInput,
-                            fo.Source(src),
-                            fo.Protocol(unix.AF_INET),
-                            fo.TransportProtocol(unix.IPPROTO_TCP),
-                            fo.SourcePortRange(0, 1024)))
+host1, _ := network.AddHost("host1",
+  opt.Filter(
+    gont.FilterInput,
+      fopt.Source(src),
+      fopt.Protocol(unix.AF_INET),
+      fopt.TransportProtocol(unix.IPPROTO_TCP),
+      fopt.SourcePortRange(0, 1024)))
 ```
 
 ---
@@ -551,21 +556,21 @@ by Linux's Traffic Control: Netem Qdisc
 ### Attach a netem Qdisc to an interface
 
 ```go
-import tco "github.com/stv0g/gont/v2/options/tc"
+import tcopt "github.com/stv0g/gont/v2/options/tc"
 
-n.AddLink(
-    g.NewInterface("eth0", h1,
-        o.WithNetem(
-            tco.Latency(50 * time.Millisecond),
-            tco.Jitter(5 * time.Millisecond),
-            tco.Loss(0.1),
-        ),
-        o.AddressIP("10.0.0.1/24")),
-    g.NewInterface("eth0", h2,
-        o.AddressIP("10.0.0.2/24")),
+network.AddLink(
+  gont.NewInterface("eth0", host1,
+    opt.WithNetem(
+      tcopt.Latency(50 * time.Millisecond),
+      tcopt.Jitter(5 * time.Millisecond),
+      tcopt.Loss(0.1),
+    ),
+    opt.AddressIP("10.0.0.1/24")),
+  gont.NewInterface("eth0", host2,
+    opt.AddressIP("10.0.0.2/24")),
 )
 
-h1.Ping(h2)
+host1.Ping(host2)
 ```
 
 ---
@@ -636,23 +641,23 @@ analysis.
 
 ```go
 type Event struct {
-    Timestamp time.Time // Timestamp when the event occurred
-    Type      string    // Either: 'log', ́'trace', 'break' & ́ watchpoint'
-    Level     uint8     // Log level
-    Message   string    // A human readable description
-    Source    string    // Logger name
-    PID       int 
-    Function  string
-    File      string
-    Line      int
-    Args      []any
-    Data      any       // User defined data
+  Timestamp time.Time // Timestamp when the event occurred
+  Type      string    // Either: 'log', ́'trace', 'break' & ́ watchpoint'
+  Level     uint8     // Log level
+  Message   string    // A human readable description
+  Source    string    // Logger name
+  PID       int 
+  Function  string
+  File      string
+  Line      int
+  Args      []any
+  Data      any       // User defined data
 }
 ```
 
 ...
 
-### Write to trace events to
+### Sink trace events into
 
 -   JSON files
 -   Go channels
@@ -665,18 +670,18 @@ type Event struct {
 
 ```go
 import "github.com/stv0g/gont/v2/trace"
-import to "github.com/stv0g/gont/v2/options/trace"
+import topt "github.com/stv0g/gont/v2/options/trace"
 
-c := g.NewCapture(...)
+c := gont.NewCapture(...)
 f, _ := os.OpenFile(...)
 ch := make(chan trace.Event)
 
-t := g.NewTracer(
-    to.ToFile(f)
-    to.ToFilename("trace.log"),
-    to.ToChannel(ch),
-    to.ToCapture(c),
-    to.Callback(func(e trace.Event) { ... }))
+t := gont.NewTracer(
+  topt.ToFile(f)
+  topt.ToFilename("trace.log"),
+  topt.ToChannel(ch),
+  topt.ToCapture(c),
+  topt.Callback(func(e trace.Event) { ... }))
 
 t.Start()
 ```
@@ -688,24 +693,24 @@ t.Start()
 Trace all processes started by nodes of this network
 
 ```go
-n, _ := g.NewNetwork("", t)
+network, _ := gont.NewNetwork("", t)
 ```
 
 Trace all processes started by a node
 
 ```go
-h1 := n.NewHost("h1", t)
+host1 := network.NewHost("host1", t)
 ```
 
 Trace a single process
 
 ```go
-h1.RunGo("test/main.go", t)
+host1.RunGo("test/main.go", t)
 ```
 
 ...
 
-### Trace with trace package
+### Trace with the `trace` package
 
 ```go
 import "github.com/stv0g/gont/v2/pkg/trace"
@@ -729,7 +734,7 @@ Works from:
 
 ...
 
-### Trace via slog structured logging package
+### Trace via `slog` structured logging package
 
 ```go
 import "golang.org/x/exp/slog"
@@ -749,7 +754,7 @@ field of the `Event` structure.
 
 ...
 
-### Trace via zap logging package
+### Trace via `go.uber.org/zap` logging package
 
 ```go
 import "go.uber.org/zap"
@@ -796,15 +801,17 @@ packet and other tracing data in real-time to Wireshark.
 ### Create a debugger
 
 ```go
-import do "github.com/stv0g/gont/v2/pkt/options/debug"
+import dopt "github.com/stv0g/gont/v2/pkt/options/debug"
 
-t := g.NewTracer(...)
+t := gont.NewTracer(...)
 
-d := g.NewDebugger(
-// ... Tracepoints are defined her
-do.BreakOnEntry(true),
-do.ListenAddr("tcp:[::]:1234"), // DAP listening socket
-do.ToTracer(t))
+d := gont.NewDebugger(
+  // ... Tracepoints are defined her
+  dopt.BreakOnEntry(true),
+  dopt.ToTracer(t),
+
+  // Listening socket for connection of external DAP client
+  dopt.ListenAddr("tcp:[::]:1234"))
 ```
 
 ...
@@ -814,19 +821,19 @@ do.ToTracer(t))
 Debug all processes started by nodes of this network:
 
 ```go
-n, _ := g.NewNetwork("", d)
+network, _ := gont.NewNetwork("", d)
 ```
 
 Debug all processes started by a node:
 
 ```go
-h1 := n.NewHost("h1", d)
+host1 := network.NewHost("host1", d)
 ```
 
 Debug a single process:
 
 ```go
-h1.RunGo("test/main.go", d)
+host1.RunGo("test/main.go", d)
 ```
 
 (Like for the event tracing)
@@ -841,25 +848,24 @@ h1.RunGo("test/main.go", d)
 
 ```go
 import "github.com/go-delve/delve/service/api"
-import do "github.com/stv0g/gont/v2/pkt/options/debug"
+import dopt "github.com/stv0g/gont/v2/pkg/options/debug"
 
-d := g.NewDebugger(
-    g.NewTracepoint(
-        do.Disabled(false),
-        do.Name("tp1"),
-        do.Message("A trace message with evaluated {placeholders}"),
-        do.Location(...), // A Delve locspec
-        do.Address(0x12312321),
-        do.File("main.go"),
-        do.Line(12),
-        do.FunctionName("main.main"),
-        do.FunctionNameRegex("main\.(main|setupLogger)"),
-        do.Condition("i % 100 == 0"),
-        do.HitCondition("> 100"),
-        do.HitConditionPerGoroutine(true),
-        do.Watch("p", api.WatchRead|api.WatchWrite),
-    ),
-...
+d := gont.NewDebugger(
+  gont.NewTracepoint(
+    dopt.Disabled(false),
+    dopt.Name("tp1"),
+    dopt.Message("A trace message with evaluated {placeholders}"),
+    dopt.Location(...), // A Delve locspec
+    dopt.Address(0x12312321),
+    dopt.File("main.go"),
+    dopt.Line(12),
+    dopt.FunctionName("main.main"),
+    dopt.FunctionNameRegex("main\.(main|setupLogger)"),
+    dopt.Condition("i % 100 == 0"),
+    dopt.HitCondition("> 100"),
+    dopt.HitConditionPerGoroutine(true),
+    dopt.Watch("p", api.WatchRead|api.WatchWrite)),
+  ...
 )
 ```
 
@@ -872,24 +878,21 @@ d := g.NewDebugger(
 #### Gathering of breakpoint information
 
 ```go
-import do "github.com/stv0g/gont/v2/pkt/options/debug"
+import dopt "github.com/stv0g/gont/v2/pkt/options/debug"
 
-d := g.NewDebugger(
-  g.NewTracepoint(
-      ...
-      do.Variable("j"),
-      do.Goroutine(true),
-      do.Stacktrace(10),
-      do.LoadLocals(...),
-      do.LoadArguments(
-          do.FollowPointers(true),
-          do.MaxVariableRecurse(3),
-          do.MaxStringLen(128),
-          do.MaxArrayValues(128),
-          do.MaxStructFields(32),
-      )
-  )
-)
+d := gont.NewDebugger(
+  gont.NewTracepoint(
+    ...
+    dopt.Variable("j"),
+    dopt.Goroutine(true),
+    dopt.Stacktrace(10),
+    dopt.LoadLocals(...),
+    dopt.LoadArguments(
+      dopt.FollowPointers(true),
+      dopt.MaxVariableRecurse(3),
+      dopt.MaxStringLen(128),
+      dopt.MaxArrayValues(128),
+      dopt.MaxStructFields(32))))
 ```
 
 ...
@@ -908,21 +911,21 @@ d.WriteVSCodeConfigs("", false)
 ### Topology factories (WIP)
 
 ```go
-createHost := func(pos int) (*g.Host. error) {
-    return n.AddHost(fmt.Sprintf("h%d", pos))
+createHost := func(pos int) (*gont.Host. error) {
+  return network.AddHost(fmt.Sprintf("h%d", pos))
 }
 
-linkHosts := func(a, b *g.Node) error {
-    _, err := n.AddRouter(fmt.Sprintf("r%d", pos),
-        g.NewInterface("eth0", a, o.AddressIPv4(10, 0, 0, a.Position, 24),
-        g.NewInterface("eth1", b, o.AddressIPv4(10, 0, 0, b.Position, 24)
-    )
-    return err
+linkHosts := func(a, b *gont.Node) error {
+  _, err := network.AddRouter(fmt.Sprintf("r%d", pos),
+    gont.NewInterface("eth0", a, opt.AddressIPv4(10, 0, 0, a.Position, 24),
+    gont.NewInterface("eth1", b, opt.AddressIPv4(10, 0, 0, b.Position, 24)
+  )
+  return err
 }
 
 topo.Linear(n, 100, createHost, linkHosts)
 
-n.Nodes["h0"].Traceroute(n.Nodes["h99"])
+network.Nodes["h0"].Traceroute(network.Nodes["h99"])
 ```
 
 ---
@@ -936,7 +939,8 @@ n.Nodes["h0"].Traceroute(n.Nodes["h99"])
 Make network persistent
 
 ```go
-n, _ := g.NewNetwork("mynet", o.Persistent(true))
+network, _ := gont.NewNetwork("mynet",
+  opt.Persistent(true))
 ```
 
 Introspect network after creation with `gontc`
@@ -946,21 +950,21 @@ $ gontc list
 mynet
 
 $ gontc list mynet
-mynet/h1
-mynet/h2
+mynet/host1
+mynet/host2
 
-$ gontc exec mynet/h1 hostname
-h1.mynet.gont
+$ gontc exec mynet/host1 hostname
+host1.mynet.gont
 
-$ gontc shell mynet/h1
-$ mynet/h1: ip address show
+$ gontc shell mynet/host1
+$ mynet/host1: ip address show
 ```
 
 ...
 
 ### CLI Usage
 
-```
+```text
 Usage: gontc [flags] <command>
 
     Supported <commands> are:
@@ -975,7 +979,7 @@ Usage: gontc [flags] <command>
 
    Example:
 
-      gontc exec zorn/h1 ping h2
+      gontc exec zorn/host1 ping host2
 
    Gont - The Go network tester
       Author Steffen Vogel <post@steffenvogel>
@@ -1033,14 +1037,14 @@ digraph D {
     persistent = true
 
     /* nodes */
-    h1 [type=host, exec="ping h2"]
-    h2 [type=host]
-    r1 [type=router]
+    host1 [type=host, exec="ping host2"]
+    host2 [type=host]
+    router1 [type=router]
 
     /* links */
-    h1 -> r1 [address="10.0.0.1/24",
+    host1 -> router1 [address="10.0.0.1/24",
               mtu=9000]
-    h2 -> r1 [address="10.0.0.2/24",
+    host2 -> router1 [address="10.0.0.2/24",
               mtu=9000]
 }
 ```
@@ -1063,5 +1067,5 @@ src="https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg"
 style="float: left; margin: 0" alt="European Flag" />
 
 The development of Gont has been supported by the [ERIGrid
-2.0](https://erigrid2.eu) project of the H2020 Programme under [Grant
+2.0](https://erigrid2.eu) project of the host2020 Programme under [Grant
 Agreement No. 870620](https://cordis.europa.eu/project/id/870620).
