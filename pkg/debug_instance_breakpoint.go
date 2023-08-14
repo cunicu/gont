@@ -13,9 +13,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"cunicu.li/gont/v2/pkg/trace"
 	"github.com/go-delve/delve/pkg/proc"
 	"github.com/go-delve/delve/service/api"
-	"github.com/stv0g/gont/v2/pkg/trace"
 	"go.uber.org/zap"
 )
 

@@ -1,13 +1,13 @@
 # Gont - A testing framework for distributed Go applications
 
-[![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/stv0g/gont/build.yaml)](https://github.com/stv0g/gont/actions)
-[![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/stv0g/gont/)
-[![Codecov branch](https://img.shields.io/codecov/c/github/stv0g/gont/master?style=flat-square&token=2QHPZ691UD)](https://app.codecov.io/gh/stv0g/gont/tree/master)
-[![libraries.io](https://img.shields.io/librariesio/github/stv0g/gont)](https://libraries.io/github/stv0g/gont)
+[![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/cunicu/gont/build.yaml)](https://github.com/cunicu/gont/actions)
+[![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/cunicu/gont/)
+[![Codecov branch](https://img.shields.io/codecov/c/github/cunicu/gont/master?style=flat-square&token=2QHPZ691UD)](https://app.codecov.io/gh/cunicu/gont/tree/master)
+[![libraries.io](https://img.shields.io/librariesio/github/cunicu/gont)](https://libraries.io/github/cunicu/gont)
 [![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
-[![License](https://img.shields.io/github/license/stv0g/gont)](https://github.com/stv0g/gont/blob/master/LICENSE)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/stv0g/gont)
-[![Go Reference](https://pkg.go.dev/badge/github.com/stv0g/gont.svg)](https://pkg.go.dev/github.com/stv0g/gont/v2)
+[![License](https://img.shields.io/github/license/cunicu/gont)](https://github.com/cunicu/gont/blob/master/LICENSE)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cunicu/gont)
+[![Go Reference](https://pkg.go.dev/badge/github.com/cunicu/gont.svg)](https://pkg.go.dev/github.com/cunicu/gont/v2)
 
 Gont is a Go package to support the development networked and distributed applications.
 
@@ -25,7 +25,7 @@ Integration tests can be automated and executed in CI environments like GitHub a
 
 ## Getting started
 
-Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you started.
+Have a look at our **[slide set](https://cunicu.github.io/gont/)** to get you started.
 
 ## Features
 
@@ -54,7 +54,7 @@ Have a look at our **[slide set](https://stv0g.github.io/gont/)** to get you sta
 - Distributed tracing of events
   - A `slog.Handler` to emit [structured log](https://pkg.go.dev/golang.org/x/exp/slog) records as trace events
   - A `zapcore.Core` to emit [zap](https://github.com/uber-go/zap) log messages as trace events
-  - Dedicated [gont/trace](https://pkg.go.dev/github.com/stv0g/gont/v2/pkg/trace) package for emitting trace events
+  - Dedicated [gont/trace](https://pkg.go.dev/github.com/cunicu/gont/v2/pkg/trace) package for emitting trace events
   - Capturing of trace events in PCAPng files
   - WireShark Lua dissector for decoding events
 - Built-in [Delve](https://github.com/go-delve/delve) debugger
@@ -171,4 +171,4 @@ Gont is [REUSE compliant](https://reuse.software/) and mainly licensed under the
 - SPDX-License-Identifier: Apache-2.0
 
 [erigrid]: https://erigrid2.eu
-[gont]: https://github.com/stv0g/gont
+[gont]: https://github.com/cunicu/gont

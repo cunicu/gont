@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/stv0g/gont/v2/internal"
-	"github.com/stv0g/gont/v2/internal/utils"
-	g "github.com/stv0g/gont/v2/pkg"
+	"cunicu.li/gont/v2/internal"
+	"cunicu.li/gont/v2/internal/utils"
+	g "cunicu.li/gont/v2/pkg"
 	"golang.org/x/exp/slices"
 )
 

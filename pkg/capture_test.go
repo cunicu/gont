@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
+	g "cunicu.li/gont/v2/pkg"
+	o "cunicu.li/gont/v2/pkg/options"
+	co "cunicu.li/gont/v2/pkg/options/capture"
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/v2/pkg"
-	o "github.com/stv0g/gont/v2/pkg/options"
-	co "github.com/stv0g/gont/v2/pkg/options/capture"
 	"go.uber.org/zap"
 )
 

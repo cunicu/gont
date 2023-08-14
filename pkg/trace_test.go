@@ -15,12 +15,12 @@ import (
 	"testing"
 	"time"
 
+	g "cunicu.li/gont/v2/pkg"
+	o "cunicu.li/gont/v2/pkg/options"
+	co "cunicu.li/gont/v2/pkg/options/capture"
+	to "cunicu.li/gont/v2/pkg/options/trace"
+	"cunicu.li/gont/v2/pkg/trace"
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/v2/pkg"
-	o "github.com/stv0g/gont/v2/pkg/options"
-	co "github.com/stv0g/gont/v2/pkg/options/capture"
-	to "github.com/stv0g/gont/v2/pkg/options/trace"
-	"github.com/stv0g/gont/v2/pkg/trace"
 	"go.uber.org/zap"
 )
 
@@ -98,7 +98,7 @@ func TestTraceInSameProcess(t *testing.T) {
 	require.True(t, strings.HasSuffix(event.File, filename), "Mismatching filename")
 	require.NotZero(t, event.Line, "Empty line number")
 	require.Equal(t, event.PID, os.Getpid(), "Wrong PID")
-	require.Equal(t, event.Function, "github.com/stv0g/gont/v2/pkg_test.TestTraceInSameProcess", "Wrong function name")
+	require.Equal(t, event.Function, "cunicu.li/gont/v2/pkg_test.TestTraceInSameProcess", "Wrong function name")
 }
 
 func TestTraceLog(t *testing.T) {
@@ -138,7 +138,7 @@ func TestTraceLog(t *testing.T) {
 
 	_, filename, _, _ := runtime.Caller(0)
 
-	function := "github.com/stv0g/gont/v2/pkg_test.TestTraceLog"
+	function := "cunicu.li/gont/v2/pkg_test.TestTraceLog"
 
 	require.NotNil(t, event, "No trace event received")
 	require.Equal(t, event.Type, "log", "Unexpected event type")
@@ -230,7 +230,7 @@ func TestTraceDissector(t *testing.T) {
 	trace := tsharkOutput[0].Source.Layers.Trace
 	require.Equal(t, trace.Message, "This is my first trace message: Hurra")
 	require.Equal(t, trace.Type, "tracepoint")
-	require.Equal(t, trace.Function, "github.com/stv0g/gont/v2/pkg_test.TestTraceDissector")
+	require.Equal(t, trace.Function, "cunicu.li/gont/v2/pkg_test.TestTraceDissector")
 	require.Equal(t, trace.Data, fmt.Sprint(1237))
 	require.Equal(t, trace.Pid, fmt.Sprint(os.Getpid()))
 	require.True(t, strings.HasSuffix(trace.File, "gont/pkg/trace_test.go"))

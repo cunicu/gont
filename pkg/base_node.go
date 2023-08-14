@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"cunicu.li/gont/v2/internal/utils"
 	nft "github.com/google/nftables"
-	"github.com/stv0g/gont/v2/internal/utils"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"

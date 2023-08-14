@@ -13,10 +13,10 @@ import (
 	"text/template"
 	"time"
 
+	"cunicu.li/gont/v2/internal/prque"
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
-	"github.com/stv0g/gont/v2/internal/prque"
 	"go.uber.org/zap"
 	"golang.org/x/net/bpf"
 )
@@ -300,9 +300,9 @@ func (c *Capture) createWriter(i *captureInterface) (*pcapgo.NgWriter, error) {
 	comment := c.Comment
 	if comment == "" {
 		if i.Interface == nil {
-			comment = "Captured with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)"
+			comment = "Captured with Gont, the Go network testing toolkit (https://github.com/cunicu/gont)"
 		} else {
-			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/stv0g/gont)", i.Node.Network().Name)
+			comment = fmt.Sprintf("Captured network '%s' with Gont, the Go network testing toolkit (https://github.com/cunicu/gont)", i.Node.Network().Name)
 		}
 	}
 

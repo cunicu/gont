@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"net"
 
+	g "cunicu.li/gont/v2/pkg"
+	"cunicu.li/gont/v2/pkg/options/filters"
 	"github.com/google/nftables/expr"
-	g "github.com/stv0g/gont/v2/pkg"
-	"github.com/stv0g/gont/v2/pkg/options/filters"
 	nl "github.com/vishvananda/netlink"
 )
 

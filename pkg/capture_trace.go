@@ -6,9 +6,9 @@ package gont
 import (
 	"io"
 
+	"cunicu.li/gont/v2/pkg/trace"
 	"github.com/gopacket/gopacket"
 	"github.com/gopacket/gopacket/layers"
-	"github.com/stv0g/gont/v2/pkg/trace"
 )
 
 const (

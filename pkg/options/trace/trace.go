@@ -6,8 +6,8 @@ package trace
 import (
 	"os"
 
-	g "github.com/stv0g/gont/v2/pkg"
-	"github.com/stv0g/gont/v2/pkg/trace"
+	g "cunicu.li/gont/v2/pkg"
+	"cunicu.li/gont/v2/pkg/trace"
 )
 
 // File writes tracing events in JSON format to the provided file handle.

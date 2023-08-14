@@ -3,7 +3,7 @@
 
 package options
 
-import gont "github.com/stv0g/gont/v2/pkg"
+import gont "cunicu.li/gont/v2/pkg"
 
 // Redirect output of sub-processes to log
 type RedirectToLog bool

@@ -6,7 +6,7 @@ package cmd
 import (
 	"context"
 
-	g "github.com/stv0g/gont/v2/pkg"
+	g "cunicu.li/gont/v2/pkg"
 )
 
 // DisableASLR will start the sub-process with

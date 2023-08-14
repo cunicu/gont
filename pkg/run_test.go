@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"testing"
 
+	g "cunicu.li/gont/v2/pkg"
+	co "cunicu.li/gont/v2/pkg/options/cmd"
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/v2/pkg"
-	co "github.com/stv0g/gont/v2/pkg/options/cmd"
 	"github.com/vishvananda/netns"
 )
 

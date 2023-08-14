@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
-	g "github.com/stv0g/gont/v2/pkg"
-	o "github.com/stv0g/gont/v2/pkg/options"
-	co "github.com/stv0g/gont/v2/pkg/options/capture"
+	g "cunicu.li/gont/v2/pkg"
+	o "cunicu.li/gont/v2/pkg/options"
+	co "cunicu.li/gont/v2/pkg/options/capture"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

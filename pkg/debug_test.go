@@ -14,14 +14,14 @@ import (
 	"strings"
 	"testing"
 
+	g "cunicu.li/gont/v2/pkg"
+	o "cunicu.li/gont/v2/pkg/options"
+	do "cunicu.li/gont/v2/pkg/options/debug"
+	to "cunicu.li/gont/v2/pkg/options/trace"
+	"cunicu.li/gont/v2/pkg/trace"
 	"github.com/go-delve/delve/service/api"
 	"github.com/go-delve/delve/service/dap/daptest"
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/v2/pkg"
-	o "github.com/stv0g/gont/v2/pkg/options"
-	do "github.com/stv0g/gont/v2/pkg/options/debug"
-	to "github.com/stv0g/gont/v2/pkg/options/trace"
-	"github.com/stv0g/gont/v2/pkg/trace"
 )
 
 func TestDebugBreakpointHostnode(t *testing.T) {
