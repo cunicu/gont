@@ -1,6 +1,6 @@
 module cunicu.li/gont/v2
 
-go 1.20
+go 1.21
 
 require (
 	github.com/davecgh/go-spew v1.1.1
@@ -9,10 +9,11 @@ require (
 	github.com/go-ping/ping v1.1.0
 	github.com/google/nftables v0.1.0
 	github.com/gopacket/gopacket v1.1.2-0.20230727130822-916e2ade1109
+	github.com/stv0g/gont/v2 v2.3.6
 	github.com/vishvananda/netlink v1.2.1-beta.2.0.20221214185949-378a404a26f0
 	github.com/vishvananda/netns v0.0.4
 	go.uber.org/zap v1.25.0
-	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/net v0.14.0
 	golang.org/x/sys v0.11.0
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.69
@@ -33,7 +34,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect

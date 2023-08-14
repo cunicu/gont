@@ -737,7 +737,7 @@ Works from:
 ### Trace via `slog` structured logging package
 
 ```go
-import "golang.org/x/exp/slog"
+import "log/slog"
 import "cunicu.li/gont/v2/pkg/trace"
 
 // Create a slog handler which emits trace events
