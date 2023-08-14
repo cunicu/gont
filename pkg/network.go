@@ -13,11 +13,11 @@ import (
 	"sync"
 	"syscall"
 
+	"cunicu.li/gont/v2/internal/utils"
 	nft "github.com/google/nftables"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
-	"golang.org/x/exp/maps"
 )
 
 type NetworkOption interface {
@@ -143,7 +143,7 @@ func (n *Network) Nodes() []Node {
 	n.nodesLock.RLock()
 	defer n.nodesLock.RUnlock()
 
-	return maps.Values(n.nodes)
+	return utils.MapValues(n.nodes)
 }
 
 func (n *Network) Hosts() []*Host {

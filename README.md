@@ -52,7 +52,7 @@ Have a look at our **[slide set](https://cunicu.github.io/gont/)** to get you st
     - Automatic decryption of captured trafic using Wireshark/thark by including session secrets in PCAPng file
     - Automatic instrumentation of sub-processes using [`SSLKEYLOGFILE` environment variable](https://everything.curl.dev/usingcurl/tls/sslkeylogfile)
 - Distributed tracing of events
-  - A `slog.Handler` to emit [structured log](https://pkg.go.dev/golang.org/x/exp/slog) records as trace events
+  - A `slog.Handler` to emit [structured log](https://pkg.go.dev/log/slog) records as trace events
   - A `zapcore.Core` to emit [zap](https://github.com/uber-go/zap) log messages as trace events
   - Dedicated [gont/trace](https://pkg.go.dev/github.com/cunicu/gont/v2/pkg/trace) package for emitting trace events
   - Capturing of trace events in PCAPng files
