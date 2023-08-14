@@ -6,9 +6,9 @@ package gont_test
 import (
 	"testing"
 
+	g "cunicu.li/gont/v2/pkg"
+	o "cunicu.li/gont/v2/pkg/options"
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/v2/pkg"
-	o "github.com/stv0g/gont/v2/pkg/options"
 )
 
 // TestPing performs and end-to-end ping test

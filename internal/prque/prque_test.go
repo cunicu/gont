@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"cunicu.li/gont/v2/internal/prque"
 	"github.com/stretchr/testify/require"
-	"github.com/stv0g/gont/v2/internal/prque"
 )
 
 type item struct {

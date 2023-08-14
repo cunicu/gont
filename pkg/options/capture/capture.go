@@ -7,7 +7,7 @@ package capture
 import (
 	"os"
 
-	g "github.com/stv0g/gont/v2/pkg"
+	g "cunicu.li/gont/v2/pkg"
 	"golang.org/x/net/bpf"
 )
 

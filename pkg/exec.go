@@ -10,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/stv0g/gont/v2/internal/execvpe"
+	"cunicu.li/gont/v2/internal/execvpe"
 	"golang.org/x/sys/unix"
 )
 

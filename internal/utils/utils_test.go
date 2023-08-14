@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"cunicu.li/gont/v2/internal/utils"
 	"github.com/stretchr/testify/require"
-	"github.com/stv0g/gont/v2/internal/utils"
 )
 
 func TestRandStringRunes(t *testing.T) {

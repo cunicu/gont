@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/stv0g/gont/v2/internal/prque"
-	"github.com/stv0g/gont/v2/pkg/trace"
+	"cunicu.li/gont/v2/internal/prque"
+	"cunicu.li/gont/v2/pkg/trace"
 	"go.uber.org/zap"
 )
 

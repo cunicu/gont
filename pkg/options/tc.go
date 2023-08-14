@@ -4,7 +4,7 @@
 package options
 
 import (
-	g "github.com/stv0g/gont/v2/pkg"
+	g "cunicu.li/gont/v2/pkg"
 	nl "github.com/vishvananda/netlink"
 )
 

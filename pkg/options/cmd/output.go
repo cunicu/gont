@@ -6,7 +6,7 @@ package cmd
 import (
 	"io"
 
-	g "github.com/stv0g/gont/v2/pkg"
+	g "cunicu.li/gont/v2/pkg"
 )
 
 // StdoutWriter allows passing an io.Writer to which

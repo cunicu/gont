@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net"
 
+	"cunicu.li/gont/v2/internal/utils"
 	"github.com/google/nftables/expr"
-	"github.com/stv0g/gont/v2/internal/utils"
 )
 
 type direction int

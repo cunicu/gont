@@ -8,8 +8,8 @@
 package debug
 
 import (
+	g "cunicu.li/gont/v2/pkg"
 	"github.com/go-delve/delve/service/api"
-	g "github.com/stv0g/gont/v2/pkg"
 )
 
 // User defined name of the breakpoint.

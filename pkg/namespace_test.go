@@ -6,8 +6,8 @@ package gont_test
 import (
 	"testing"
 
+	g "cunicu.li/gont/v2/pkg"
 	"github.com/stretchr/testify/require"
-	g "github.com/stv0g/gont/v2/pkg"
 	"github.com/vishvananda/netns"
 )
 

@@ -1,4 +1,4 @@
-module github.com/stv0g/gont/v2
+module cunicu.li/gont/v2
 
 go 1.20
 
