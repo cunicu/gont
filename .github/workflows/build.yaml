@@ -65,3 +65,5 @@ jobs:
     - uses: codecov/codecov-action@v3
       with:
         files: coverage.out
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
