@@ -287,20 +287,20 @@ Back to Gont...
 Have a look at the following code for full fledged test/example code:
 
 <!-- .slide: class="smaller-list" -->
--   [Ping](https://github.com/cunicu/gont/blob/master/pkg/ping_test.go)
--   [Run](https://github.com/cunicu/gont/blob/master/pkg/run_test.go)
--   [NAT](https://github.com/cunicu/gont/blob/master/pkg/nat_test.go)
--   [Switch](https://github.com/cunicu/gont/blob/master/pkg/switch_test.go)
--   [Links](https://github.com/cunicu/gont/blob/master/pkg/link_test.go)
+-   [Ping](https://github.com/cunicu/gont/blob/main/pkg/ping_test.go)
+-   [Run](https://github.com/cunicu/gont/blob/main/pkg/run_test.go)
+-   [NAT](https://github.com/cunicu/gont/blob/main/pkg/nat_test.go)
+-   [Switch](https://github.com/cunicu/gont/blob/main/pkg/switch_test.go)
+-   [Links](https://github.com/cunicu/gont/blob/main/pkg/link_test.go)
 -   [Firewall
-    Rules](https://github.com/cunicu/gont/blob/master/pkg/filter_test.go)
+    Rules](https://github.com/cunicu/gont/blob/main/pkg/filter_test.go)
 -   [Packet
-    Tracing](https://github.com/cunicu/gont/blob/master/pkg/capture_test.go)
+    Tracing](https://github.com/cunicu/gont/blob/main/pkg/capture_test.go)
 -   [Event
-    Tracing](https://github.com/cunicu/gont/blob/master/pkg/trace_test.go)
+    Tracing](https://github.com/cunicu/gont/blob/main/pkg/trace_test.go)
 -   [Tracing with TLS
-    decryption](https://github.com/cunicu/gont/blob/master/pkg/capture_keylog_test.go)
--   [Debugger](https://github.com/cunicu/gont/blob/master/pkg/debug_test.go)
+    decryption](https://github.com/cunicu/gont/blob/main/pkg/capture_keylog_test.go)
+-   [Debugger](https://github.com/cunicu/gont/blob/main/pkg/debug_test.go)
 
 ---
 

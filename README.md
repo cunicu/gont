@@ -1,11 +1,11 @@
 # Gont - A testing framework for distributed Go applications
 
-[![GitHub Workflow Status (master)](https://img.shields.io/github/actions/workflow/status/cunicu/gont/build.yaml)](https://github.com/cunicu/gont/actions)
+[![GitHub Workflow Status (main)](https://img.shields.io/github/actions/workflow/status/cunicu/gont/build.yaml)](https://github.com/cunicu/gont/actions)
 [![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/cunicu/gont/)
-[![Codecov branch](https://img.shields.io/codecov/c/github/cunicu/gont/master?style=flat-square&token=2QHPZ691UD)](https://app.codecov.io/gh/cunicu/gont/tree/master)
+[![Codecov branch](https://img.shields.io/codecov/c/github/cunicu/gont/main?style=flat-square&token=2QHPZ691UD)](https://app.codecov.io/gh/cunicu/gont/tree/main)
 [![libraries.io](https://img.shields.io/librariesio/github/cunicu/gont)](https://libraries.io/github/cunicu/gont)
 [![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
-[![License](https://img.shields.io/github/license/cunicu/gont)](https://github.com/cunicu/gont/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/cunicu/gont)](https://github.com/cunicu/gont/blob/main/LICENSE)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cunicu/gont)
 [![Go Reference](https://pkg.go.dev/badge/github.com/cunicu/gont.svg)](https://pkg.go.dev/github.com/cunicu/gont/v2)
 
