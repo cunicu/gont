@@ -165,7 +165,7 @@ of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.
 
 ## License
 
-Gont is [REUSE compliant](https://reuse.software/) and mainly licensed under the [Apache 2.0 license](LICENSES/Apache-2.0.txt)
+Gont is licensed under the [Apache 2.0](./LICENSE) license.
 
 - SPDX-FileCopyrightText: 2023 Steffen Vogel \<post@steffenvogel.de\>
 - SPDX-License-Identifier: Apache-2.0
