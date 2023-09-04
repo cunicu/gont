@@ -14,7 +14,7 @@ require (
 	go.uber.org/zap v1.25.0
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 	golang.org/x/net v0.14.0
-	golang.org/x/sys v0.11.0
+	golang.org/x/sys v0.12.0
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.69
 )
 
