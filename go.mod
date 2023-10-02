@@ -8,7 +8,7 @@ require (
 	github.com/go-delve/delve v1.21.0
 	github.com/go-ping/ping v1.1.0
 	github.com/google/nftables v0.1.0
-	github.com/gopacket/gopacket v1.1.2-0.20230912204112-80f5a16b5596
+	github.com/gopacket/gopacket v1.1.2-0.20230926021218-ce66cf7026f1
 	github.com/vishvananda/netlink v1.2.1-beta.2.0.20221214185949-378a404a26f0
 	github.com/vishvananda/netns v0.0.4
 	go.uber.org/zap v1.26.0
