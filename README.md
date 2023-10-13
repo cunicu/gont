@@ -1,4 +1,4 @@
-# Gont - A testing framework for distributed Go applications
+# Gont: A Go testing framework for distributed applications
 
 [![GitHub Workflow Status (main)](https://img.shields.io/github/actions/workflow/status/cunicu/gont/build.yaml)](https://github.com/cunicu/gont/actions)
 [![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/cunicu/gont/)
