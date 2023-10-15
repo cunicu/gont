@@ -1,13 +1,12 @@
 # Gont: A Go testing framework for distributed applications
 
-[![GitHub Workflow Status (main)](https://img.shields.io/github/actions/workflow/status/cunicu/gont/build.yaml)](https://github.com/cunicu/gont/actions)
-[![Codacy grade](https://img.shields.io/codacy/grade/d6da26516eae43b7b9ef23c5f24c35a6)](https://app.codacy.com/gh/cunicu/gont/)
+[![GitHub build](https://img.shields.io/github/actions/workflow/status/cunicu/gont/build.yaml?style=flat-square)](https://github.com/cunicu/gont/actions)
+[![goreportcard](https://goreportcard.com/badge/github.com/cunicu/gont?style=flat-square)](https://goreportcard.com/report/github.com/cunicu/gont)
 [![Codecov branch](https://img.shields.io/codecov/c/github/cunicu/gont/main?style=flat-square&token=2QHPZ691UD)](https://app.codecov.io/gh/cunicu/gont/tree/main)
-[![libraries.io](https://img.shields.io/librariesio/github/cunicu/gont)](https://libraries.io/github/cunicu/gont)
-[![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
-[![License](https://img.shields.io/github/license/cunicu/gont)](https://github.com/cunicu/gont/blob/main/LICENSE)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cunicu/gont)
+[![License](https://img.shields.io/github/license/cunicu/gont?style=flat-square)](https://github.com/cunicu/gont/blob/main/LICENSE)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/cunicu/gont?style=flat-square)
 [![Go Reference](https://pkg.go.dev/badge/github.com/cunicu/gont.svg)](https://pkg.go.dev/github.com/cunicu/gont/v2)
+[![DOI](https://zenodo.org/badge/413409974.svg)](https://zenodo.org/badge/latestdoi/413409974)
 
 Gont is a Go package to support the development networked and distributed applications.
 
@@ -154,9 +153,9 @@ classDiagram
     Network "1" o-- "*" Node
 ``` -->
 
-## Credits
+## Authors
 
--   [Steffen Vogel](https://github.com/stv0g) [📧](mailto:post@steffenvogel.de)
+-   Steffen Vogel ([@stv0g](https://github.com/stv0g))
 
 ### Funding acknowledment
 
