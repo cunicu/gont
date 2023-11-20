@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fxamacker/cbor/v2 v2.5.0
-	github.com/go-delve/delve v1.21.0
+	github.com/go-delve/delve v1.21.2
 	github.com/go-ping/ping v1.1.0
 	github.com/google/nftables v0.1.0
 	github.com/gopacket/gopacket v1.1.2-0.20231013201358-4769cf270e9e
