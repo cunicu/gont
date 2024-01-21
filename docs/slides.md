@@ -999,7 +999,7 @@ Usage: gontc [flags] <command>
 -   is available at
     [github.com/cunicu/gont](https://github.com/cunicu/gont)
 -   is documented at
-    [pkg.go.dev/cunicu.li/gont](https://pkg.go.dev/cunicu/gont)
+    [pkg.go.dev/cunicu.li/gont/v2](https://pkg.go.dev/cunicu.li/gont/v2)
 -   has slides at [cunicu.github.io/gont](https://cunicu.github.io/gont)
 
 ...
