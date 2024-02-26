@@ -14,7 +14,7 @@ require (
 	github.com/gopacket/gopacket v1.2.0
 	github.com/vishvananda/netlink v1.2.1-beta.2.0.20221214185949-378a404a26f0
 	github.com/vishvananda/netns v0.0.4
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 	golang.org/x/net v0.21.0
 	golang.org/x/sys v0.17.0
