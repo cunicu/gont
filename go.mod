@@ -21,7 +21,7 @@ require (
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.69
 )
 
-require github.com/stretchr/testify v1.8.4 // test-only
+require github.com/stretchr/testify v1.9.0 // test-only
 
 require (
 	github.com/cilium/ebpf v0.12.3 // indirect
