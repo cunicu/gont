@@ -3,10 +3,6 @@ Upstream-Name: Gont
 Upstream-Contact: Steffen Vogel <post@steffenvogel.de>
 Source: https://github.com/cunicu/gont
 
-Files: docs/images/* docs/CNAME README.md 
-Copyright: 2023 Steffen Vogel <post@steffenvogel.de>
-License: Apache-2.0
-
-Files: go.sum .renovaterc.json
+Files: flake.lock docs/images/* docs/CNAME README.md go.sum .renovaterc.json
 Copyright: 2023 Steffen Vogel <post@steffenvogel.de>
 License: Apache-2.0
