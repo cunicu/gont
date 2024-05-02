@@ -21,7 +21,7 @@
         packages.gont = pkgs.buildGoModule {
           name = "gont";
           src = ./.;
-          vendorHash = "sha256-5nrMKzn/rFRp01OeRDS5y9Hn921S6ke0n8esRoYFXyU=";
+          vendorHash = "sha256-QOh1jBR7FL/fKFmJv7wGxuCghRLR3DV/0TzXd+bUFP0=";
           buildInputs = with pkgs; [
             libpcap
           ];
