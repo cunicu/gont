@@ -75,9 +75,15 @@ func (e Env) ApplyExecCmd(c *exec.Cmd) {
 	c.Env = append(c.Env, string(e))
 }
 
-// EnvVar appends a key-value paired environment variable
+// EnvVar appends a key-value paired environment variable.
 func EnvVar(k, v string) Env {
 	return Env(fmt.Sprintf("%s=%s", k, v))
+}
+
+// PassEnv forward environment variables from the main
+// Gont process to the invoked sub-processes.
+func PassEnv(k string) Env {
+	return EnvVar(k, os.Getenv(k))
 }
 
 // Envs appends additional environment variables.
