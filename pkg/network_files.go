@@ -4,12 +4,16 @@
 package gont
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+
+	"cunicu.li/gont/v2/internal/utils"
 )
 
 // IPv4loopback is the IPv4 loopback address (127.0.0.1)
@@ -90,10 +94,105 @@ func (n *Network) WriteHostsFile(f io.Writer) error {
 }
 
 func (n *Network) GenerateConfigFiles() error {
-	return n.GenerateIProute2Files()
+	if err := n.generateIProute2Files(); err != nil {
+		return err
+	}
+
+	// We need to patch /etc/nsswitch.conf here
+	// to avoid using systemd-resolved here as its
+	// broken from within network namesapces
+	if err := n.patchNSSConfFile(); err != nil {
+		return err
+	}
+
+	// We also need to hide the NSCD socket as glibc
+	// will otherwise use NSCD and hence again the resolve
+	// NSS module provided by systemd-resolved.
+	if err := n.hideNSCDSocket(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (n *Network) GenerateIProute2Files() error {
+func (n *Network) hideNSCDSocket() error {
+	fn := filepath.Join(n.VarPath, "files/var/run/nscd/socket")
+
+	// We hide the NSCD socket here by bind mounting
+	// an empty file over its location.
+	return utils.Touch(fn)
+}
+
+func readNSSwitchConfig(fn string) (map[string][]string, error) {
+	f, err := os.Open(fn)
+	if err != nil {
+		return nil, err
+	}
+
+	m := map[string][]string{}
+	s := bufio.NewScanner(f)
+
+	for s.Scan() {
+		line := s.Text()
+
+		if strings.HasPrefix(line, "#") {
+			continue // Skip comments
+		}
+
+		cols := strings.Split(line, ":")
+
+		db := cols[0]
+		srcs := cols[1:]
+
+		m[db] = srcs
+	}
+
+	if err := s.Err(); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func writeNSSwitchConfig(fn string, config map[string][]string) error {
+	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err = fmt.Fprintln(f, "# Gont's patched nsswitch.conf"); err != nil {
+		return err
+	}
+
+	for db, srcs := range config {
+		if _, err := fmt.Fprintf(f, "%s: %s\n", db, strings.Join(srcs, " ")); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (n *Network) patchNSSConfFile() error {
+	cfg, err := readNSSwitchConfig("/etc/nsswitch.conf")
+	if err != nil {
+		return fmt.Errorf("failed to read nsswitch.conf: %w", err)
+	}
+
+	for db := range cfg {
+		if db == "hosts" {
+			cfg[db] = slices.DeleteFunc(cfg[db], func(src string) bool {
+				return !strings.HasPrefix(src, "resolve") && !strings.HasPrefix(src, "mymachines") && !strings.HasPrefix(src, "myhostname")
+			})
+		}
+	}
+
+	fn := filepath.Join(n.VarPath, "files/etc/nsswitch.conf")
+	return writeNSSwitchConfig(fn, cfg)
+}
+
+func (n *Network) generateIProute2Files() error {
 	fn := filepath.Join(n.VarPath, "files/etc/iproute2/group")
 	if err := os.MkdirAll(filepath.Dir(fn), 0o755); err != nil {
 		return err
