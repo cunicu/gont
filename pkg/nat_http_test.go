@@ -62,7 +62,7 @@ func TestGetMyIP(t *testing.T) {
 	require.NoError(t, err, "Failed to setup default route")
 
 	outp := &bytes.Buffer{}
-	_, err = client.Run("curl", "-sk", "--connect-timeout", 1000, "https://server",
+	_, err = client.Run("curl", "--silent", "--insecure", "--connect-timeout", 1000, "https://server",
 		co.Stdout(outp))
 	require.NoError(t, err, "Request failed")
 

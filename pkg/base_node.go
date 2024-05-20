@@ -73,7 +73,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
-	// Create mount point dirs
+	// Create mount point directories
 	for _, ed := range node.EmptyDirs {
 		path := filepath.Join(basePath, "files", ed)
 
