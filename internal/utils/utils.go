@@ -6,9 +6,14 @@ package utils
 import (
 	"math/rand"
 	"os"
+	"path/filepath"
 )
 
 func Touch(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL, 0o444)
 	if err != nil {
 		return err
