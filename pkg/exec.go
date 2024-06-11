@@ -12,7 +12,6 @@ import (
 	"syscall"
 
 	"cunicu.li/gont/v2/internal/execvpe"
-	"cunicu.li/gont/v2/internal/utils"
 	"golang.org/x/sys/unix"
 )
 
@@ -122,30 +121,14 @@ func setupBindMounts(basePath string) error {
 		src := filepath.Join(filesRootPath, path)
 		tgt := filepath.Join("/", path)
 
-		srcInfo, err := os.Stat(src)
+		_, err := os.Stat(src)
 		if err != nil {
 			return fmt.Errorf("failed to stat source: %s: %w", src, err)
 		}
 
-		// Create non-existing targets
+		// If target doesn't exist, there's nothing to mount
 		if _, err := os.Stat(tgt); errors.Is(err, os.ErrNotExist) { //nolint:nestif
-			var tgtDir string
-			if srcInfo.IsDir() {
-				tgtDir = tgt
-			} else {
-				tgtDir = filepath.Dir(tgt)
-			}
-
-			// Create target if it does not exist yet
-			if srcInfo.IsDir() {
-				if err := os.MkdirAll(tgtDir, 0o755); err != nil {
-					return fmt.Errorf("failed to create directory: %s: %w", path, err)
-				}
-			} else {
-				if err := utils.Touch(tgt); err != nil {
-					return fmt.Errorf("failed to create empty file: %s: %w", tgt, err)
-				}
-			}
+			continue
 		}
 
 		if err := syscall.Mount(src, tgt, "", syscall.MS_BIND, ""); err != nil {
