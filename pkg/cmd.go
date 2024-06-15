@@ -19,6 +19,10 @@ import (
 	"go.uber.org/zap/zapio"
 )
 
+var DefaultPreserveEnvVars = []string{
+	"PATH",
+}
+
 type ExecCmdOption interface {
 	ApplyExecCmd(*exec.Cmd)
 }
@@ -31,11 +35,12 @@ type Cmd struct {
 	*exec.Cmd
 
 	// Options
-	Tracer        *Tracer
-	Debugger      *Debugger
-	RedirectToLog bool
-	DisableASLR   bool
-	Context       context.Context
+	Tracer          *Tracer
+	Debugger        *Debugger
+	RedirectToLog   bool
+	DisableASLR     bool
+	Context         context.Context
+	PreserveEnvVars []string
 
 	StdoutWriters []io.Writer
 	StderrWriters []io.Writer
@@ -80,6 +85,17 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 		zap.String("path", name),
 		zap.Strings("args", strArgs),
 	)
+
+	// Preserve some environment variables from the parent process
+	if c.PreserveEnvVars == nil {
+		c.PreserveEnvVars = DefaultPreserveEnvVars
+	}
+
+	for _, key := range c.PreserveEnvVars {
+		if value := os.Getenv(key); value != "" {
+			c.Env = append(c.Env, fmt.Sprintf("%s=%s", key, value))
+		}
+	}
 
 	// Actual namespace switching is done similar to Docker's reexec
 	// in a forked version of ourself by passing all required details

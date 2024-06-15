@@ -28,3 +28,12 @@ type Context struct {
 func (c Context) ApplyCmd(d *g.Cmd) {
 	d.Context = c
 }
+
+// A name of an environment variable which should be preserved from the parent
+// process. If not provided PATH will be preserved by default.
+// See gont.DefaultPreserveEnvVars
+type PreserveEnv string
+
+func (e PreserveEnv) ApplyCmd(c *g.Cmd) {
+	c.PreserveEnvVars = append(c.PreserveEnvVars, string(e))
+}
