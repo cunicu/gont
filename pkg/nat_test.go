@@ -176,7 +176,7 @@ func TestPingHostNAT(t *testing.T) {
 	_, err = h1.Run("ping", "-c", 1, "1.1.1.1")
 	require.NoError(t, err, "Failed to ping")
 
-	_, err = h1.Run("ping", "-c", 1, "www.rwth-aachen.de")
+	_, err = h1.Run("ping", "-c", 1, "cunicu.li")
 	require.NoError(t, err)
 
 	_, err = h1.Ping(n.HostNode)
