@@ -116,13 +116,13 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 	if !i.EnableDAD {
 		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
 		if err := h.WriteProcFS(fn, "0"); err != nil {
-			return fmt.Errorf("failed to enabled IPv6 forwarding: %s", err)
+			return fmt.Errorf("failed to disable IPv6 DAD: %w", err)
 		}
 	}
 
 	for _, addr := range i.Addresses {
 		if err := i.AddAddress(&addr); err != nil {
-			return fmt.Errorf("failed to add link address: %s", err)
+			return fmt.Errorf("failed to add link address: %w", err)
 		}
 	}
 
@@ -131,7 +131,7 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 
 func (h *Host) Traceroute(o *Host, opts ...any) error {
 	if h.network != o.network {
-		return fmt.Errorf("hosts must be on same network")
+		return ErrDifferentNetworks
 	}
 
 	opts = append(opts, o)

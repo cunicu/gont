@@ -47,9 +47,8 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 	}
 
 	// Apply NAT options
-	for _, o := range opts {
-		switch opt := o.(type) {
-		case NATOption:
+	for _, opt := range opts {
+		if opt, ok := opt.(NATOption); ok {
 			opt.ApplyNAT(nat)
 		}
 	}
@@ -63,7 +62,7 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 	return nat, nil
 }
 
-func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
+func (n *Network) AddHostNAT(_ string, opts ...Option) (*NAT, error) {
 	host := n.HostNode
 
 	if err := host.EnableForwarding(); err != nil {

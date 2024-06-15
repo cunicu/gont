@@ -13,7 +13,6 @@ func main() {
 	if err := trace.Start(0); err != nil {
 		log.Fatalf("Failed to start tracer: %s", err)
 	}
-	defer trace.Stop() //nolint:errcheck
 
 	myData := map[string]any{
 		"Hello": "World",
@@ -21,5 +20,9 @@ func main() {
 
 	if err := trace.PrintfWithData(myData, "This is my first trace message: %s", "Hurra"); err != nil {
 		log.Fatalf("Failed to write trace: %s", err)
+	}
+
+	if err := trace.Stop(); err != nil {
+		log.Fatalf("Failed to stop trace: %s", err)
 	}
 }

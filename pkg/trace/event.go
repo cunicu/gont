@@ -22,6 +22,7 @@ var (
 	em cbor.EncMode
 )
 
+//nolint:gochecknoinits
 func init() {
 	dm, _ = cbor.DecOptions{
 		DefaultMapType: reflect.TypeOf(map[string]any{}),
@@ -53,6 +54,7 @@ const (
 
 type EventCallback func(e Event)
 
+//nolint:tagliatelle
 type Event struct {
 	Timestamp  time.Time   `cbor:"time" json:"time"`
 	Type       string      `cbor:"type" json:"type"`

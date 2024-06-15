@@ -20,6 +20,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var ErrCreateNode = errors.New("failed to create node")
+
 type NetworkOption interface {
 	ApplyNetwork(n *Network)
 }
@@ -119,7 +121,7 @@ func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
 
 	n.HostNode = HostNode(n)
 	if n.HostNode == nil {
-		return nil, errors.New("failed to create host node")
+		return nil, ErrCreateNode
 	}
 
 	if err := n.generateHostsFile(); err != nil {
@@ -286,7 +288,7 @@ func (n *Network) KeyLogPipe(secretsType uint32) (*os.File, error) {
 	}
 
 	if len(capturesWithKeys) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	rd, wr, err := os.Pipe()

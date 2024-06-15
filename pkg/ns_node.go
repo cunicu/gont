@@ -117,7 +117,7 @@ func (n *Network) AddNamespaceNode(name string, opts ...Option) (*NamespaceNode,
 		return nil, err
 	}
 	if err := unix.Mount(src, dst, "", syscall.MS_BIND, ""); err != nil {
-		return nil, fmt.Errorf("failed to bind mount netns fd: %s", err)
+		return nil, fmt.Errorf("failed to bind mount netns fd: %w", err)
 	}
 
 	n.Register(node)
@@ -247,7 +247,7 @@ func (n *NamespaceNode) ConfigureInterface(i *Interface) error {
 	n.Interfaces = append(n.Interfaces, i)
 
 	if err := n.network.generateHostsFile(); err != nil {
-		return fmt.Errorf("failed to update hosts file")
+		return fmt.Errorf("failed to update hosts file: %w", err)
 	}
 
 	return nil

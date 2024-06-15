@@ -31,7 +31,7 @@ func (q heapl) Swap(i, j int) {
 }
 
 func (q *heapl) Push(x any) {
-	*q = append(*q, x.(Item))
+	*q = append(*q, x.(Item)) //nolint:forcetypeassert
 }
 
 func (q *heapl) Pop() any {
@@ -64,9 +64,7 @@ func (q *PriorityQueue) Pop() Item {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	item := heap.Pop(&q.heap).(Item)
-
-	return item
+	return heap.Pop(&q.heap).(Item) //nolint:forcetypeassert
 }
 
 func (q *PriorityQueue) Oldest() time.Time {

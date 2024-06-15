@@ -128,12 +128,15 @@ func NewCapture(opts ...CaptureOption) *Capture {
 
 // Count returns the total number of captured packets
 func (c *Capture) Count() uint64 {
-	return uint64(c.count.Load())
+	return c.count.Load()
 }
 
 func (c *Capture) Flush() error {
 	for c.queue.Len() > 0 {
-		p := c.queue.Pop().(CapturePacket)
+		p, ok := c.queue.Pop().(CapturePacket)
+		if !ok {
+			continue
+		}
 
 		if err := c.writePacket(p); err != nil {
 			return err
@@ -254,7 +257,10 @@ out:
 					break
 				}
 
-				p := c.queue.Pop().(CapturePacket)
+				p, ok := c.queue.Pop().(CapturePacket)
+				if !ok {
+					continue
+				}
 
 				if err := c.writePacket(p); err != nil {
 					c.logger.Error("Failed to handle packet. Stop capturing...", zap.Error(err))
