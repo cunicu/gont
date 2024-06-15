@@ -17,31 +17,62 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = import nixpkgs {
+          inherit system;
+          inherit overlays;
+        };
+
+        overlay = final: prev: { gont = final.callPackage ./default.nix { }; };
+        overlays = [ overlay ];
+
+        luaPkgs = {
+          lua-struct = pkgs.lua.pkgs.buildLuarocksPackage {
+            pname = "lua-struct";
+            version = "0.9.2-1";
+
+            src = pkgs.fetchFromGitHub {
+              owner = "iryont";
+              repo = "lua-struct";
+              rev = "0.9.2-1";
+              hash = "sha256-tyZU+Cm/f3urG3A5nBFC2NZ9nwtWh1yD4Oj0MHRtDlI=";
+            };
+          };
+        };
       in
-      rec {
-        packages.gont = pkgs.buildGo123Module {
-          name = "gont";
-          src = ./.;
-          vendorHash = "sha256-IXTpMzTrWRH10vB6hRsMf7ilT5tUG/EPJbYLO+8d9Ik=";
-          buildInputs = with pkgs; [ libpcap ];
-          doCheck = false;
-        };
+      {
+        inherit overlays;
 
-        devShell = pkgs.mkShell {
-          packages = with pkgs; [
-            golangci-lint
-            reuse
-            traceroute
-            gnumake
-            tshark
-            packages.gont
-          ];
+        packages.default = pkgs.gont;
 
-          inputsFrom = [ packages.gont ];
-        };
+        devShell =
+          let
+            tshark = pkgs.tshark.overrideAttrs (
+              final: prev: {
+                # Make sure we can load our own Lua dissector plugin
+                # by Wiresharks Lua interpreter when tests are executed by root
+                postFixup = ''
+                  echo "run_user_scripts_when_superuser = true" >> $out/lib/wireshark/plugins/init.lua
+                '';
+              }
+            );
+          in
+          pkgs.mkShell {
+            packages = with pkgs // luaPkgs; [
+              golangci-lint
+              reuse
+              traceroute
+              gnumake
+              tshark
+              gont
+              lua-struct
+            ];
 
-        formatter = nixpkgs.nixfmt-rfc-style;
+            inputsFrom = with pkgs; [ gont ];
+
+            hardeningDisable = [ "fortify" ];
+          };
+
+        formatter = pkgs.nixfmt-rfc-style;
       }
     );
 }
