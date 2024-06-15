@@ -152,7 +152,7 @@ func TestTraceLog(t *testing.T) {
 }
 
 func TestTraceWithCapture(t *testing.T) {
-	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
+	if _, ok := os.LookupEnv("WITH_WIRESHARK"); !ok {
 		t.Skip("Requires WireShark")
 	}
 
