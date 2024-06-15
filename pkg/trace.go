@@ -25,7 +25,7 @@ func (t *Tracer) ApplyNetwork(n *Network) {
 	n.Tracer = t
 }
 
-func (t *Tracer) ApplyBaseNode(n *BaseNode) {
+func (t *Tracer) ApplyNamespaceNode(n *NamespaceNode) {
 	n.Tracer = t
 }
 

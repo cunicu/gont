@@ -47,11 +47,11 @@ type Cmd struct {
 	StderrWriters []io.Writer
 
 	debuggerInstance *debuggerInstance
-	node             *BaseNode
+	node             *NamespaceNode
 	logger           *zap.Logger
 }
 
-func (n *BaseNode) Command(name string, args ...any) *Cmd {
+func (n *NamespaceNode) Command(name string, args ...any) *Cmd {
 	c := &Cmd{
 		node: n,
 	}

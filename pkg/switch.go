@@ -20,7 +20,7 @@ type BridgeOption interface {
 
 // Switch is an abstraction for a Linux virtual bridge
 type Switch struct {
-	*BaseNode
+	*NamespaceNode
 }
 
 // Options
@@ -31,13 +31,13 @@ func (sw *Switch) ApplyInterface(i *Interface) {
 
 // AddSwitch adds a new Linux virtual bridge in a dedicated namespace
 func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
-	node, err := n.AddNode(name, opts...)
+	node, err := n.AddNamespaceNode(name, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create node: %w", err)
 	}
 
 	sw := &Switch{
-		BaseNode: node,
+		NamespaceNode: node,
 	}
 
 	n.Register(sw)
@@ -74,10 +74,19 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 		return nil, fmt.Errorf("failed to bring bridge up: %w", err)
 	}
 
-	// Connect host to switch interfaces
-	for _, intf := range sw.Interfaces {
-		peerDev := fmt.Sprintf("veth-%s", name)
+	// Configure links
+	if err := sw.configureLinks(); err != nil {
+		return nil, err
+	}
 
+	return sw, nil
+}
+
+// configureLinks adds links to other nodes which
+// have been configured by functional options
+func (sw *Switch) configureLinks() error {
+	for _, intf := range sw.ConfiguredInterfaces {
+		peerDev := fmt.Sprintf("veth-%s", sw.Name())
 		left := intf
 		left.Node = sw
 
@@ -86,12 +95,12 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 			Node: intf.Node,
 		}
 
-		if err := n.AddLink(left, right); err != nil {
-			return nil, fmt.Errorf("failed to add link: %w", err)
+		if err := sw.network.AddLink(left, right); err != nil {
+			return err
 		}
 	}
 
-	return sw, nil
+	return nil
 }
 
 // ConfigureInterface attaches an existing interface to a bridge interface
@@ -112,5 +121,5 @@ func (sw *Switch) ConfigureInterface(i *Interface) error {
 		return err
 	}
 
-	return sw.BaseNode.ConfigureInterface(i)
+	return sw.NamespaceNode.ConfigureInterface(i)
 }

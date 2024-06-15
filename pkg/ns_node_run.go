@@ -15,17 +15,17 @@ type GoBuildFlagsOption interface {
 	ApplyGoBuildFlags(*GoBuildFlags)
 }
 
-func (n *BaseNode) Run(cmd string, args ...any) (*Cmd, error) {
+func (n *NamespaceNode) Run(cmd string, args ...any) (*Cmd, error) {
 	c := n.Command(cmd, args...)
 	return c, c.Run()
 }
 
-func (n *BaseNode) Start(cmd string, args ...any) (*Cmd, error) {
+func (n *NamespaceNode) Start(cmd string, args ...any) (*Cmd, error) {
 	c := n.Command(cmd, args...)
 	return c, c.Start()
 }
 
-func (n *BaseNode) StartGo(fileOrPkg string, args ...any) (*Cmd, error) {
+func (n *NamespaceNode) StartGo(fileOrPkg string, args ...any) (*Cmd, error) {
 	bin, err := n.BuildGo(fileOrPkg, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build: %w", err)
@@ -34,7 +34,7 @@ func (n *BaseNode) StartGo(fileOrPkg string, args ...any) (*Cmd, error) {
 	return n.Start(bin.Name(), args...)
 }
 
-func (n *BaseNode) RunGo(fileOrPkg string, args ...any) (*Cmd, error) {
+func (n *NamespaceNode) RunGo(fileOrPkg string, args ...any) (*Cmd, error) {
 	bin, err := n.BuildGo(fileOrPkg, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build: %w", err)
@@ -43,7 +43,7 @@ func (n *BaseNode) RunGo(fileOrPkg string, args ...any) (*Cmd, error) {
 	return n.Run(bin.Name(), args...)
 }
 
-func (n *BaseNode) BuildGo(fileOrPkg string, args ...any) (*os.File, error) {
+func (n *NamespaceNode) BuildGo(fileOrPkg string, args ...any) (*os.File, error) {
 	if err := os.MkdirAll(n.network.TmpPath, 0o644); err != nil {
 		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
 	}

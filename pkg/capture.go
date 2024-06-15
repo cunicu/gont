@@ -97,7 +97,7 @@ func (c *Capture) ApplyInterface(i *Interface) {
 	i.Captures = append(i.Captures, c)
 }
 
-func (c *Capture) ApplyBaseNode(n *BaseNode) {
+func (c *Capture) ApplyNamespaceNode(n *NamespaceNode) {
 	n.Captures = append(n.Captures, c)
 }
 

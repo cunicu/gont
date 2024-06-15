@@ -88,7 +88,7 @@ func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
 		}
 	}
 
-	if err := host.ConfigureLinks(); err != nil {
+	if err := host.configureLinks(); err != nil {
 		return nil, err
 	}
 
