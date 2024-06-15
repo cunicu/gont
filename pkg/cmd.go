@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap/zapio"
 )
 
+//nolint:gochecknoglobals
 var DefaultPreserveEnvVars = []string{
 	"PATH",
 }
