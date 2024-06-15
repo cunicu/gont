@@ -45,6 +45,8 @@ func TestMain(m *testing.M) {
 	logger := setupLogging()
 	defer logger.Sync() //nolint:errcheck
 
+	flag.Parse()
+
 	// Handle global flags
 	if *persist {
 		globalNetworkOptions = append(globalNetworkOptions,
