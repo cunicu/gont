@@ -13,6 +13,7 @@ import (
 
 	g "cunicu.li/gont/v2/pkg"
 	co "cunicu.li/gont/v2/pkg/options/cmd"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -151,4 +152,19 @@ func TestCmdContext(t *testing.T) {
 	require.True(t, ok)
 	require.True(t, ws.Signaled())
 	require.Equal(t, syscall.SIGKILL, ws.Signal())
+}
+
+func TestIProute2Files(t *testing.T) {
+	n, err := g.NewNetwork("")
+	require.NoError(t, err, "Failed to create network")
+	defer n.Close()
+
+	beep, err := n.AddHost("beep")
+	require.Nil(t, err)
+
+	cmd := beep.Command("ip", "addr")
+	out, err := cmd.CombinedOutput()
+	assert.Nil(t, err)
+
+	t.Logf("Output: %s", out)
 }
