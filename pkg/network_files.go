@@ -151,7 +151,7 @@ func readNSSwitchConfig(fn string) (map[string][]string, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	return m, nil
 }
 
 func writeNSSwitchConfig(fn string, config map[string][]string) error {
