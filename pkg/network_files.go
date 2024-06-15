@@ -10,7 +10,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"cunicu.li/gont/v2/internal/utils"
@@ -141,8 +140,12 @@ func readNSSwitchConfig(fn string) (map[string][]string, error) {
 
 		cols := strings.Split(line, ":")
 
+		if len(cols) < 2 {
+			continue // Skip empty lines
+		}
+
 		db := cols[0]
-		srcs := cols[1:]
+		srcs := strings.Fields(cols[1])
 
 		m[db] = srcs
 	}
@@ -180,12 +183,32 @@ func (n *Network) patchNSSConfFile() error {
 		return fmt.Errorf("failed to read nsswitch.conf: %w", err)
 	}
 
-	for db := range cfg {
-		if db == "hosts" {
-			cfg[db] = slices.DeleteFunc(cfg[db], func(src string) bool {
-				return !strings.HasPrefix(src, "resolve") && !strings.HasPrefix(src, "mymachines") && !strings.HasPrefix(src, "myhostname")
-			})
+	keepService := func(svc string) bool {
+		return svc != "resolve" && svc != "mymachines" && svc != "myhostname"
+	}
+
+	isAction := func(s string) bool {
+		return len(s) >= 1 && s[0] == '['
+	}
+
+	if fields, ok := cfg["hosts"]; ok {
+		var newFields []string
+
+		for i := 0; i < len(fields); i++ {
+			keep := keepService(fields[i])
+			if keep {
+				newFields = append(newFields, fields[i])
+			}
+
+			if i+1 < len(fields) && isAction(fields[i+1]) {
+				i++
+				if keep {
+					newFields = append(newFields, fields[i+1])
+				}
+			}
 		}
+
+		cfg["hosts"] = newFields
 	}
 
 	fn := filepath.Join(n.VarPath, "files/etc/nsswitch.conf")
