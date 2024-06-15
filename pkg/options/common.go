@@ -12,7 +12,7 @@ func (l RedirectToLog) ApplyNetwork(n *gont.Network) {
 	n.RedirectToLog = bool(l)
 }
 
-func (l RedirectToLog) ApplyBaseNode(n *gont.BaseNode) {
+func (l RedirectToLog) ApplyNamespaceNode(n *gont.NamespaceNode) {
 	n.RedirectToLog = bool(l)
 }
 

@@ -60,18 +60,20 @@ func HostNode(n *Network) *Host {
 	}
 
 	return &Host{
-		BaseNode: &BaseNode{
-			name:       "host",
+		NamespaceNode: &NamespaceNode{
 			isHostNode: true,
+			BaseNode: &BaseNode{
+				name:    "host",
+				network: n,
+				logger:  zap.L().Named("host"),
+			},
 			Namespace: &Namespace{
 				Name:     "base",
 				NsHandle: baseNs,
 				nlHandle: baseHandle,
 				nftConn:  &nft.Conn{},
-				logger:   zap.L().Named("namespace"),
+				loggerNs: zap.L().Named("namespace"),
 			},
-			network: n,
-			logger:  zap.L().Named("host"),
 		},
 	}
 }
