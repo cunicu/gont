@@ -38,4 +38,4 @@ jobs:
         cache: true
 
     - name: Run linter
-      uses: golangci/golangci-lint-action@v5
+      uses: golangci/golangci-lint-action@v6
