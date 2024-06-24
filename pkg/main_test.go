@@ -42,8 +42,9 @@ func setupLogging() *zap.Logger {
 }
 
 func TestMain(m *testing.M) {
-	logger := setupLogging()
-	defer logger.Sync() //nolint:errcheck
+	setupLogging()
+
+	flag.Parse()
 
 	// Handle global flags
 	if *persist {

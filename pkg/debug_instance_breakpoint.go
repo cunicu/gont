@@ -105,7 +105,7 @@ func (bpi *breakpointInstance) createWatchpoint(d *debuggerInstance, thr *api.Th
 	return nil
 }
 
-func (bpi *breakpointInstance) traceEvent(t *api.Thread, d *debuggerInstance) trace.Event {
+func (bpi *breakpointInstance) traceEvent(t *api.Thread, _ *debuggerInstance) trace.Event {
 	var msg string
 	if bpi.message == nil {
 		msg = fmt.Sprintf("Hit breakpoint %d: %s", bpi.ID, bpi.Name)
