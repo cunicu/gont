@@ -7,6 +7,9 @@ GOFLAGS = -ldflags "-X main.tag=$(GIT_TAG)"
 
 all: gontc
 
+tests:
+	sudo -E go test ./pkg ./internal -v $(TEST_OPTS)
+
 gontc:
 	go build $(GOFLAGS) -o $@ ./cmd/gontc
 

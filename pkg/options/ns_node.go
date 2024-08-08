@@ -10,21 +10,21 @@ import (
 // The name of an existing network namespace which is used instead of creating a new one.
 type ExistingNamespace string
 
-func (e ExistingNamespace) ApplyBaseNode(n *g.BaseNode) {
+func (e ExistingNamespace) ApplyNamespaceNode(n *g.NamespaceNode) {
 	n.ExistingNamespace = string(e)
 }
 
 // Name of an existing Docker container which is used for this node
 type ExistingDockerContainer string
 
-func (d ExistingDockerContainer) ApplyBaseNode(n *g.BaseNode) {
+func (d ExistingDockerContainer) ApplyNamespaceNode(n *g.NamespaceNode) {
 	n.ExistingDockerContainer = string(d)
 }
 
 // Mount an empty dir to shadow parts of the root filesystem
 type EmptyDir string
 
-func (ed EmptyDir) ApplyBaseNode(n *g.BaseNode) {
+func (ed EmptyDir) ApplyNamespaceNode(n *g.NamespaceNode) {
 	n.EmptyDirs = append(n.EmptyDirs, string(ed))
 }
 

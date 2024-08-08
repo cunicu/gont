@@ -153,9 +153,9 @@ classDiagram
     Network "1" o-- "*" Node
 ``` -->
 
-## Authors
+## Contact
 
--   Steffen Vogel ([@stv0g](https://github.com/stv0g))
+Please have a look at the contact page: [cunicu.li/docs/contact](https://cunicu.li/docs/contact).
 
 ### Funding acknowledment
 

@@ -14,6 +14,13 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+var (
+	ErrDifferentNetworks    = errors.New("nodes are belonging to different networks")
+	ErrMissingNode          = errors.New("cant establish link between interfaces without node")
+	ErrInterfaceNameTooLong = errors.New("interface names are too long")
+	ErrAddLinkToSelf        = errors.New("failed to link the node with itself")
+)
+
 type VethOption interface {
 	ApplyVeth(ve *nl.Veth)
 }
@@ -26,19 +33,19 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 	var err error
 
 	if len(l.Name) > syscall.IFNAMSIZ-1 || len(r.Name) > syscall.IFNAMSIZ-1 {
-		return fmt.Errorf("interface names are too long. max_len=%d", syscall.IFNAMSIZ-1)
+		return fmt.Errorf("%w. max_len=%d", ErrInterfaceNameTooLong, syscall.IFNAMSIZ-1)
 	}
 
 	if l.Node == nil || r.Node == nil {
-		return errors.New("cant establish link between interfaces without node")
+		return ErrMissingNode
 	}
 
 	if l.Node == r.Node {
-		return errors.New("failed to link the node with itself")
+		return ErrAddLinkToSelf
 	}
 
 	if l.Node.Network() != r.Node.Network() {
-		return errors.New("nodes are belonging to different networks")
+		return ErrDifferentNetworks
 	}
 
 	// Create Veth pair
@@ -63,8 +70,7 @@ func (n *Network) AddLink(l, r *Interface, opts ...Option) error {
 
 	// Apply options
 	for _, opt := range opts {
-		switch opt := opt.(type) {
-		case VethOption:
+		if opt, ok := opt.(VethOption); ok {
 			opt.ApplyVeth(veth)
 		}
 	}

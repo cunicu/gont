@@ -17,9 +17,14 @@ type Node interface {
 	String() string
 	Network() *Network
 	Interface(name string) *Interface
-	NetNSHandle() netns.NsHandle
-	NetlinkHandle() *nl.Handle
+
+	ConfigureInterface(i *Interface) error
+}
+
+type NamespacedNode interface {
+	Node
 
 	RunFunc(cb Callback) error
-	ConfigureInterface(i *Interface) error
+	NetNSHandle() netns.NsHandle
+	NetlinkHandle() *nl.Handle
 }

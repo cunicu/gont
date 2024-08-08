@@ -12,12 +12,14 @@ import (
 func ipToInt(ip net.IP) (*big.Int, int) {
 	val := &big.Int{}
 	val.SetBytes([]byte(ip))
-	if len(ip) == net.IPv4len {
+
+	switch {
+	case len(ip) == net.IPv4len:
 		return val, 32
-	} else if len(ip) == net.IPv6len {
+	case len(ip) == net.IPv6len:
 		return val, 128
-	} else {
-		panic(fmt.Errorf("Unsupported address length %d", len(ip)))
+	default:
+		panic(fmt.Sprintf("unsupported address length %d", len(ip)))
 	}
 }
 

@@ -25,18 +25,18 @@ type Namespace struct {
 
 	Name string
 
-	logger *zap.Logger
+	loggerNs *zap.Logger
 }
 
 func NewNamespace(name string) (*Namespace, error) {
 	var err error
 
 	ns := &Namespace{
-		Name:   name,
-		logger: zap.L().Named("namespace").With(zap.String("ns", name)),
+		Name:     name,
+		loggerNs: zap.L().Named("namespace").With(zap.String("ns", name)),
 	}
 
-	ns.logger.Info("Creating new namespace")
+	ns.loggerNs.Info("Creating new namespace")
 
 	// We lock the goroutine to an OS thread for the duration while we open the netlink sockets
 	runtime.LockOSThread()
@@ -73,7 +73,7 @@ func (ns *Namespace) Close() error {
 			return err
 		}
 
-		ns.logger.Info("Deleted namespace")
+		ns.loggerNs.Info("Deleted namespace")
 	}
 
 	return nil
