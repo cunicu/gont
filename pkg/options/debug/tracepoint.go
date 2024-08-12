@@ -163,7 +163,7 @@ type UserData struct {
 }
 
 func (u UserData) ApplyTracepoint(b *g.Tracepoint) {
-	b.UserData = any(u.Data)
+	b.UserData = u.Data
 }
 
 func Data(d any) UserData {

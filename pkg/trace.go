@@ -25,7 +25,7 @@ func (t *Tracer) ApplyNetwork(n *Network) {
 	n.Tracer = t
 }
 
-func (t *Tracer) ApplyBaseNode(n *BaseNode) {
+func (t *Tracer) ApplyNamespaceNode(n *NamespaceNode) {
 	n.Tracer = t
 }
 
@@ -113,7 +113,10 @@ func (t *Tracer) Start() error {
 
 func (t *Tracer) Flush() error {
 	for t.queue.Len() > 0 {
-		p := t.queue.Pop().(trace.Event)
+		p, ok := t.queue.Pop().(trace.Event)
+		if !ok {
+			continue
+		}
 
 		if err := t.writeEvent(p); err != nil {
 			return err
@@ -161,10 +164,10 @@ func (t *Tracer) Pipe() (*os.File, error) {
 			if _, err := e.ReadFrom(rd); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
-				} else {
-					t.logger.Warn("Failed to read tracepoint from log", zap.Error(err))
-					continue
 				}
+
+				t.logger.Warn("Failed to read tracepoint from log", zap.Error(err))
+				continue
 			}
 
 			t.newEvent(e)
@@ -222,7 +225,10 @@ out:
 					break
 				}
 
-				e := t.queue.Pop().(trace.Event)
+				e, ok := t.queue.Pop().(trace.Event)
+				if !ok {
+					continue
+				}
 
 				if err := t.writeEvent(e); err != nil {
 					t.logger.Error("Failed to handle event. Stop tracing...", zap.Error(err))

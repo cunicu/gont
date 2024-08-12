@@ -7,6 +7,6 @@ type DeviceGroup uint32
 
 const (
 	DeviceGroupDefault    DeviceGroup = 0
-	DeviceGroupSouthBound DeviceGroup = 1000 + iota
-	DeviceGroupNorthBound
+	DeviceGroupSouthBound DeviceGroup = 1000
+	DeviceGroupNorthBound DeviceGroup = 1001
 )

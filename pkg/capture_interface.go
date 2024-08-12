@@ -37,10 +37,10 @@ func (ci *captureInterface) readPackets(c *Capture) {
 		if err := ci.readPacket(c); err != nil {
 			if errors.Is(err, io.EOF) {
 				break
-			} else {
-				c.logger.Error("Failed to read packet data", zap.Error(err))
-				continue
 			}
+
+			c.logger.Error("Failed to read packet data", zap.Error(err))
+			continue
 		}
 	}
 }

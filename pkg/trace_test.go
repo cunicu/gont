@@ -136,7 +136,7 @@ func TestTraceLog(t *testing.T) {
 		"number": int64(1234), // zap is adding zap.Int() as an int64 internally
 	}
 
-	_, filename, _, _ := runtime.Caller(0)
+	_, filename, _, _ := runtime.Caller(0) //nolint:dogsled
 
 	function := "cunicu.li/gont/v2/pkg_test.TestTraceLog"
 
@@ -152,7 +152,7 @@ func TestTraceLog(t *testing.T) {
 }
 
 func TestTraceWithCapture(t *testing.T) {
-	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
+	if _, ok := os.LookupEnv("WITH_WIRESHARK"); !ok {
 		t.Skip("Requires WireShark")
 	}
 

@@ -36,7 +36,7 @@ func ipOffsetLen(ip net.IP, dir direction) (uint32, uint32) {
 }
 
 func network(dir direction, netw *net.IPNet) Statement {
-	offset, len := ipOffsetLen(netw.IP, dir)
+	offset, length := ipOffsetLen(netw.IP, dir)
 	fromAddr, toAddr := utils.AddressRange(netw)
 
 	return Statement{
@@ -45,7 +45,7 @@ func network(dir direction, netw *net.IPNet) Statement {
 			DestRegister: 1,
 			Base:         expr.PayloadBaseNetworkHeader,
 			Offset:       offset,
-			Len:          len,
+			Len:          length,
 		},
 		&expr.Range{
 			Op:       expr.CmpOpEq,
