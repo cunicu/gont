@@ -75,7 +75,7 @@ func Protocol(proto int) Statement {
 		&expr.Cmp{
 			Op:       expr.CmpOpEq,
 			Register: 1,
-			Data:     binaryutil.NativeEndian.PutUint32(uint32(proto)),
+			Data:     binaryutil.NativeEndian.PutUint32(uint32(proto)), //nolint:gosec
 		},
 	}
 }

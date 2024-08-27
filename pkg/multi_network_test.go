@@ -16,7 +16,7 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 	pfx := fmt.Sprintf("net%d-", i)
 
 	address := func(j int) o.Address {
-		return o.AddressIP(fmt.Sprintf("fc::%d:%d/112", i, j))
+		return o.AddressIP(fmt.Sprintf("fc::%d:%d/112", i, j)) //nolint:govet
 	}
 
 	n, err := g.NewNetwork("", globalNetworkOptions...)

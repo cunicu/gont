@@ -82,7 +82,6 @@ func (d *Debugger) start(c *exec.Cmd) (*debuggerInstance, error) {
 	}
 
 	for _, tp := range d.Tracepoints {
-		tp := tp
 		if err := di.createBreakpoints(&tp); err != nil {
 			return nil, fmt.Errorf("failed to create breakpoints: %w", err)
 		}
