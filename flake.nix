@@ -5,7 +5,7 @@
 
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
   outputs =
@@ -23,7 +23,7 @@
         packages.gont = pkgs.buildGoModule {
           name = "gont";
           src = ./.;
-          vendorHash = "sha256-QOh1jBR7FL/fKFmJv7wGxuCghRLR3DV/0TzXd+bUFP0=";
+          vendorHash = "sha256-+6NZh6mBf1M7TU9WivWLesmd4CkUEkhXKEioMuHfo9Y=";
           buildInputs = with pkgs; [ libpcap ];
           doCheck = false;
         };
