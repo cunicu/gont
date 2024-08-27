@@ -343,7 +343,7 @@ func (c *Capture) startInterface(i *Interface) (*captureInterface, error) {
 			Name:        fmt.Sprintf("%s/%s", i.Node.Name(), i.Name),
 			Filter:      c.FilterExpression,
 			LinkType:    hdl.LinkType(),
-			SnapLength:  uint32(c.SnapshotLength),
+			SnapLength:  uint32(c.SnapshotLength), //nolint:gosec
 			OS:          "Linux",
 			Description: "Linux veth pair",
 			Comment:     fmt.Sprintf("Gont Network: '%s'", i.Node.Network().Name),
@@ -381,7 +381,7 @@ func (c *Capture) startTrace() (*captureInterface, *traceEventPacketSource, erro
 		pcapInterface: pcapgo.NgInterface{
 			Name:        "tracer",
 			LinkType:    LinkTypeTrace,
-			SnapLength:  uint32(c.SnapshotLength),
+			SnapLength:  uint32(c.SnapshotLength), //nolint:gosec
 			OS:          "Debug",
 			Description: "Trace output",
 		},

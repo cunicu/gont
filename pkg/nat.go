@@ -278,13 +278,13 @@ func (n *NAT) setupTable(c *nft.Conn) error {
 			&expr.Immediate{
 				Register: 1,
 				Data: binaryutil.BigEndian.PutUint16(
-					uint16(n.SourcePortMin),
+					uint16(n.SourcePortMin), //nolint:gosec
 				),
 			},
 			&expr.Immediate{
 				Register: 2,
 				Data: binaryutil.BigEndian.PutUint16(
-					uint16(n.SourcePortMax),
+					uint16(n.SourcePortMax), //nolint:gosec
 				),
 			},
 			&expr.Masq{

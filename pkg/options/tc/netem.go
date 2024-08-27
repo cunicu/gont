@@ -13,14 +13,14 @@ type Latency time.Duration
 
 func (m Latency) ApplyNetem(n *o.Netem) {
 	d := time.Duration(m)
-	n.Latency = uint32(d / time.Microsecond)
+	n.Latency = uint32(d / time.Microsecond) //nolint:gosec
 }
 
 type Jitter time.Duration
 
 func (j Jitter) ApplyNetem(n *o.Netem) {
 	d := time.Duration(j)
-	n.Jitter = uint32(d / time.Microsecond)
+	n.Jitter = uint32(d / time.Microsecond) //nolint:gosec
 }
 
 type Gap uint32

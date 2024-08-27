@@ -4,7 +4,7 @@
 linters:
   enable:
   - errname
-  - exportloopref
+  - copyloopvar
   - gci
   - gochecknoglobals
   - gocognit

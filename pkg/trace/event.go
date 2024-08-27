@@ -101,7 +101,7 @@ func (e *Event) Fprint(w io.Writer) {
 	fmt.Fprintf(w, indent+"Type:       %s\n", e.Type)
 
 	if e.Level > 0 {
-		lvl := zapcore.Level(e.Level - 2)
+		lvl := zapcore.Level(e.Level - 2) //nolint:gosec
 		fmt.Fprintf(w, indent+"Level:      %s\n", lvl.String())
 	}
 
