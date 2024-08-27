@@ -1,0 +1,4 @@
+ssh_authorized_keys:
+    - ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBERI62l9pAbMxi6QYd3xnEMJhOY9NxcUOvgzNrJsDqSSRs5UgRjHCTDbw+7+yqr+ibcwDAcQgnzJEdRqsdhdTdc=
+ssh_import_id:
+    - gh:stv0g
