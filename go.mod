@@ -3,7 +3,7 @@
 
 module cunicu.li/gont/v2
 
-go 1.22.5
+go 1.23.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1
@@ -11,7 +11,7 @@ require (
 	github.com/go-delve/delve v1.21.0
 	github.com/go-ping/ping v1.1.0
 	github.com/google/nftables v0.2.0
-	github.com/gopacket/gopacket v1.2.0
+	github.com/gopacket/gopacket v1.3.0
 	github.com/vishvananda/netlink v1.3.0
 	github.com/vishvananda/netns v0.0.4
 	go.uber.org/zap v1.27.0
