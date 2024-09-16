@@ -20,10 +20,10 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       rec {
-        packages.gont = pkgs.buildGoModule {
+        packages.gont = pkgs.buildGo123Module {
           name = "gont";
           src = ./.;
-          vendorHash = "sha256-+6NZh6mBf1M7TU9WivWLesmd4CkUEkhXKEioMuHfo9Y=";
+          vendorHash = "sha256-yKrxAJabyE3puZEBBzZvcuefrlr8HaBNf9V7emf2JFU=";
           buildInputs = with pkgs; [ libpcap ];
           doCheck = false;
         };
