@@ -83,7 +83,7 @@ func (h pcapPacketSource) Stats() (captureStats, error) {
 	}
 
 	return captureStats{
-		PacketsReceived: uint64(s.PacketsReceived),
-		PacketsDropped:  uint64(s.PacketsDropped),
+		PacketsReceived: uint64(s.PacketsReceived), //nolint:gosec
+		PacketsDropped:  uint64(s.PacketsDropped),  //nolint:gosec
 	}, nil
 }

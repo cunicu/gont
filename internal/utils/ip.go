@@ -49,7 +49,7 @@ func AddressRange(network *net.IPNet) (net.IP, net.IP) {
 	}
 
 	firstIPInt, bits := ipToInt(firstIP)
-	hostLen := uint(bits) - uint(prefixLen)
+	hostLen := uint(bits) - uint(prefixLen) //nolint:gosec
 	lastIPInt := big.NewInt(1)
 	lastIPInt.Lsh(lastIPInt, hostLen)
 	lastIPInt.Add(lastIPInt, firstIPInt)
