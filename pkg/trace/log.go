@@ -56,7 +56,7 @@ func (c *traceCore) Write(e zapcore.Entry, fields []zapcore.Field) error {
 		Timestamp: time.Now(),
 		Message:   strings.TrimSpace(e.Message),
 		Source:    e.LoggerName,
-		Level:     uint8(e.Level) + 2, // 0 -> omitempty
+		Level:     uint8(e.Level) + 2, //nolint:gosec // 0 -> omitempty
 		Function:  e.Caller.Function,
 		Line:      e.Caller.Line,
 		File:      e.Caller.File,
