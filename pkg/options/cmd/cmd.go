@@ -5,9 +5,21 @@ package cmd
 
 import (
 	"context"
+	"os/exec"
 
 	g "cunicu.li/gont/v2/pkg"
 )
+
+// Use the existing exec.Cmd
+type Cmd exec.Cmd
+
+func (c *Cmd) ApplyCmd(d *g.Cmd) {
+	d.Cmd = (*exec.Cmd)(c)
+}
+
+func Command(c *exec.Cmd) *Cmd {
+	return (*Cmd)(c)
+}
 
 // DisableASLR will start the sub-process with
 // Address Space Layout Randomization disabled
