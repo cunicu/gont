@@ -120,11 +120,11 @@ func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
 		return nil, errors.New("failed to create host node")
 	}
 
-	if err := n.GenerateHostsFile(); err != nil {
+	if err := n.generateHostsFile(); err != nil {
 		return nil, fmt.Errorf("failed to update hosts file: %w", err)
 	}
 
-	if err := n.GenerateConfigFiles(); err != nil {
+	if err := n.generateConfigFiles(); err != nil {
 		return nil, fmt.Errorf("failed to generate configuration files: %w", err)
 	}
 

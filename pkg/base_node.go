@@ -282,7 +282,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 
 	n.Interfaces = append(n.Interfaces, i)
 
-	if err := n.network.GenerateHostsFile(); err != nil {
+	if err := n.network.generateHostsFile(); err != nil {
 		return fmt.Errorf("failed to update hosts file")
 	}
 
