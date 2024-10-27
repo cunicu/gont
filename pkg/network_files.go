@@ -5,6 +5,7 @@ package gont
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -18,14 +19,23 @@ import (
 // IPv4loopback is the IPv4 loopback address (127.0.0.1)
 var IPv4loopback = net.IPv4(127, 0, 0, 1) //nolint:gochecknoglobals
 
-// GenerateHostsFile writes the addresses and host names of all nodes
+// generateHostsFile writes the addresses and host names of all nodes
 // into a file located at /run/gont/<network>/files/etc/hosts
 //
 // Processes started via BaseNode.Run or BaseNode.Start, will see
 // this file bind mounted at /etc/hosts
-func (n *Network) GenerateHostsFile() error {
+func (n *Network) generateHostsFile() error {
 	n.hostsFileLock.Lock()
 	defer n.hostsFileLock.Unlock()
+
+	contentsOrig, err := os.ReadFile("/etc/hosts")
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil // We do not throw an error as there is no file to patch
+		}
+
+		return fmt.Errorf("failed to read /etc/hosts file: %w", err)
+	}
 
 	fn := filepath.Join(n.VarPath, "files", "etc", "hosts")
 	if err := os.MkdirAll(filepath.Dir(fn), 0o755); err != nil {
@@ -37,6 +47,16 @@ func (n *Network) GenerateHostsFile() error {
 		return err
 	}
 	defer f.Close()
+
+	// Write original lines
+	if _, err := f.Write(contentsOrig); err != nil {
+		return err
+	}
+
+	// Add empty line as separator
+	if _, err := f.WriteString("\n"); err != nil {
+		return err
+	}
 
 	return n.WriteHostsFile(f)
 }
@@ -92,7 +112,7 @@ func (n *Network) WriteHostsFile(f io.Writer) error {
 	return nil
 }
 
-func (n *Network) GenerateConfigFiles() error {
+func (n *Network) generateConfigFiles() error {
 	if err := n.generateIProute2Files(); err != nil {
 		return err
 	}
@@ -115,6 +135,12 @@ func (n *Network) GenerateConfigFiles() error {
 }
 
 func (n *Network) hideNSCDSocket() error {
+	if _, err := os.Stat("/var/run/nscd/socket"); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil // We do not throw an error as there is no socket to hide
+		}
+	}
+
 	fn := filepath.Join(n.VarPath, "files/var/run/nscd/socket")
 
 	// We hide the NSCD socket here by bind mounting
@@ -180,6 +206,10 @@ func writeNSSwitchConfig(fn string, config map[string][]string) error {
 func (n *Network) patchNSSConfFile() error {
 	cfg, err := readNSSwitchConfig("/etc/nsswitch.conf")
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil // We do not throw an error as there is no file to patch
+		}
+
 		return fmt.Errorf("failed to read nsswitch.conf: %w", err)
 	}
 
@@ -216,26 +246,37 @@ func (n *Network) patchNSSConfFile() error {
 }
 
 func (n *Network) generateIProute2Files() error {
+	contentsOrig, err := os.ReadFile("/etc/iproute2/group")
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil // We do not throw an error as there is no file to patch
+		}
+
+		return fmt.Errorf("failed to read /etc/iproute2/group file: %w", err)
+	}
+
 	fn := filepath.Join(n.VarPath, "files/etc/iproute2/group")
 	if err := os.MkdirAll(filepath.Dir(fn), 0o755); err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
+	f, err := os.OpenFile(fn, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o644)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	if contentsOrig, err := os.ReadFile("/etc/iproute2/group"); err == nil {
-		if _, err := f.Write(contentsOrig); err != nil {
-			return err
-		}
-		if _, err := f.WriteString("\n"); err != nil {
-			return err
-		}
+	// Write original lines
+	if _, err := f.Write(contentsOrig); err != nil {
+		return err
 	}
 
+	// Add empty line as separator
+	if _, err := f.WriteString("\n"); err != nil {
+		return err
+	}
+
+	// Add Gont specific groups
 	groups := map[DeviceGroup]string{
 		DeviceGroupNorthBound: "north-bound",
 		DeviceGroupSouthBound: "south-bound",
