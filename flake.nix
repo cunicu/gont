@@ -23,7 +23,7 @@
         packages.gont = pkgs.buildGo123Module {
           name = "gont";
           src = ./.;
-          vendorHash = "sha256-yKrxAJabyE3puZEBBzZvcuefrlr8HaBNf9V7emf2JFU=";
+          vendorHash = "sha256-IXTpMzTrWRH10vB6hRsMf7ilT5tUG/EPJbYLO+8d9Ik=";
           buildInputs = with pkgs; [ libpcap ];
           doCheck = false;
         };
