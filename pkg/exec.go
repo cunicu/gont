@@ -123,7 +123,13 @@ func setupBindMounts(basePath string) error {
 
 		// Create non-existing targets
 		if _, err := os.Stat(tgt); errors.Is(err, os.ErrNotExist) { //nolint:nestif
-			return fmt.Errorf("bind mount target does not exist : %s", tgt)
+			if os.Getenv("GONT_SKIP_MISSING_MOUNTPOINT") != "" {
+				continue
+			}
+
+			return fmt.Errorf("bind mount target does not exist: %s.\n"+
+				"Please consider creating an empty file or directory in its location "+
+				"or set the GONT_SKIP_MISSING_MOUNTPOINT environment variable.", tgt)
 		}
 
 		if err := syscall.Mount(src, tgt, "", syscall.MS_BIND, ""); err != nil {
