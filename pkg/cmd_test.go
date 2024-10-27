@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"os/exec"
 	"syscall"
 	"testing"
 	"time"
@@ -167,4 +168,21 @@ func TestIProute2Files(t *testing.T) {
 	assert.Nil(t, err)
 
 	t.Logf("Output: %s", out)
+}
+
+func TestExecCmd(t *testing.T) {
+	n, err := g.NewNetwork("")
+	require.NoError(t, err, "Failed to create network")
+	defer n.Close()
+
+	stdin := bytes.NewBuffer([]byte("Hello World"))
+	stdout := bytes.NewBuffer(nil)
+
+	cmd := exec.Command("cat")
+	cmd.Stdin = stdin
+	cmd.Stdout = stdout
+
+	_, err = n.HostNode.Run("is-ignored", co.Command(cmd))
+	require.NoError(t, err, "Failed to run")
+	require.Equal(t, "Hello World", stdout.String())
 }

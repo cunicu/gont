@@ -69,10 +69,14 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 		}
 	}
 
-	if c.Context != nil {
-		c.Cmd = exec.CommandContext(c.Context, name, strArgs...)
+	if c.Cmd == nil {
+		if c.Context != nil {
+			c.Cmd = exec.CommandContext(c.Context, name, strArgs...)
+		} else {
+			c.Cmd = exec.Command(name, strArgs...)
+		}
 	} else {
-		c.Cmd = exec.Command(name, strArgs...)
+		c.Cmd.Args = append(c.Cmd.Args, strArgs...)
 	}
 
 	for _, arg := range args {
