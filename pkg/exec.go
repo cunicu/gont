@@ -122,7 +122,7 @@ func setupBindMounts(basePath string) error {
 		tgt := filepath.Join("/", path)
 
 		// Create non-existing targets
-		if _, err := os.Stat(tgt); errors.Is(err, os.ErrNotExist) { //nolint:nestif
+		if _, err := os.Stat(tgt); errors.Is(err, os.ErrNotExist) {
 			if os.Getenv("GONT_SKIP_MISSING_MOUNTPOINT") != "" {
 				continue
 			}
