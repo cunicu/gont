@@ -96,10 +96,14 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 		c.PreserveEnvVars = DefaultPreserveEnvVars
 	}
 
-	for _, key := range c.PreserveEnvVars {
-		if value := os.Getenv(key); value != "" {
-			c.Env = append(c.Env, fmt.Sprintf("%s=%s", key, value))
+	passEnv := func(name string) {
+		if value := os.Getenv(name); value != "" {
+			c.Env = append(c.Env, fmt.Sprintf("%s=%s", name, value))
 		}
+	}
+
+	for _, name := range c.PreserveEnvVars {
+		passEnv(name)
 	}
 
 	// Actual namespace switching is done similar to Docker's reexec
@@ -112,6 +116,8 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 				"GONT_UNSHARE=true",
 				"GONT_NODE="+c.node.name,
 				"GONT_NETWORK="+c.node.network.Name)
+
+			passEnv("GONT_SKIP_MISSING_MOUNTPOINT")
 		} else {
 			c.Path = "/usr/bin/docker"
 			c.Args = append([]string{"docker", "exec", c.node.ExistingDockerContainer, name}, strArgs...)
