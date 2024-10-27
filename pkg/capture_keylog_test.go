@@ -51,7 +51,7 @@ func TestCaptureKeyLog(t *testing.T) {
 	require.NoError(t, err, "Failed to add link")
 
 	_, err = client.Run("curl", "--http2", "--silent", "--insecure", "--connect-timeout", 5, "https://server")
-	require.NoError(t, err, "cURL Request failed: %s")
+	require.NoError(t, err, "cURL Request failed: %s", err)
 
 	// Wait until all traffic propagates through PCAP
 	time.Sleep(time.Second)
