@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"text/template"
@@ -89,6 +90,7 @@ type Capture struct {
 	interfaces []*captureInterface
 	closables  []io.Closer
 	logger     *zap.Logger
+	mu         sync.Mutex
 }
 
 func (c *Capture) ApplyInterface(i *Interface) {
@@ -170,6 +172,9 @@ func (c *Capture) newPacket(cp CapturePacket) {
 }
 
 func (c *Capture) writeDecryptionSecret(typ uint32, payload []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	return c.writer.WriteDecryptionSecretsBlock(typ, payload)
 }
 
@@ -177,17 +182,24 @@ func (c *Capture) writePacket(p CapturePacket) error {
 	ci := p.CaptureInfo
 	ci.InterfaceIndex = p.Interface.pcapInterfaceIndex
 
+	c.mu.Lock()
+
 	if err := c.writer.WritePacket(ci, p.Data); err != nil {
+		c.mu.Unlock()
 		return fmt.Errorf("failed to write packet: %w", err)
 	}
 
 	count := c.count.Add(1)
 	if c.FlushEach > 0 && count%c.FlushEach == 0 {
 		if err := c.writer.Flush(); err != nil {
+			c.mu.Unlock()
 			return fmt.Errorf("failed to flush: %w", err)
 		}
 	}
 
+	c.mu.Unlock() // We unlock before writing to channels and invoking callbacks
+
+	// Notify other consumer about new packet
 	for _, ch := range c.Channels {
 		ch <- p
 	}
@@ -200,6 +212,9 @@ func (c *Capture) writePacket(p CapturePacket) error {
 }
 
 func (c *Capture) writeStats(ci *captureInterface) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	counters, err := ci.source.Stats()
 	if err != nil {
 		ci.logger.Error("Failed to get interface statistics", zap.Error(err))
