@@ -65,6 +65,7 @@
               tshark
               gont
               lua-struct
+              yarn-berry
             ];
 
             inputsFrom = with pkgs; [ gont ];

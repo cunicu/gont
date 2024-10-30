@@ -13,13 +13,9 @@ Have a look at the following code for full fledged test/example code:
 -   [NAT](https://github.com/cunicu/gont/blob/main/pkg/nat_test.go) (`nat_test.go`)
 -   [Switch](https://github.com/cunicu/gont/blob/main/pkg/switch_test.go) (`switch_test.go`)
 -   [Links](https://github.com/cunicu/gont/blob/main/pkg/link_test.go) (`link_test.go`)
--   [Firewall
-    Rules](https://github.com/cunicu/gont/blob/main/pkg/filter_test.go) (`filter_test.go`)
--   [Packet
-    Tracing](https://github.com/cunicu/gont/blob/main/pkg/capture_test.go) (`capture_test.go`)
--   [Event
-    Tracing](https://github.com/cunicu/gont/blob/main/pkg/trace_test.go) (`trace_test.go`)
--   [Tracing with TLS
-    decryption](https://github.com/cunicu/gont/blob/main/pkg/capture_keylog_test.go) (`capture_keylog_test.go`)
+-   [Firewall Rules](https://github.com/cunicu/gont/blob/main/pkg/filter_test.go) (`filter_test.go`)
+-   [Packet Tracing](https://github.com/cunicu/gont/blob/main/pkg/capture_test.go) (`capture_test.go`)
+-   [Event Tracing](https://github.com/cunicu/gont/blob/main/pkg/trace_test.go) (`trace_test.go`)
+-   [Tracing with TLS decryption](https://github.com/cunicu/gont/blob/main/pkg/capture_keylog_test.go) (`capture_keylog_test.go`)
 -   [Debugger](https://github.com/cunicu/gont/blob/main/pkg/debug_test.go) (`debug_test.go`)
 

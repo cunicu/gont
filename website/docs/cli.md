@@ -1,6 +1,7 @@
 ---
 # SPDX-FileCopyrightText: 2024 Steffen Vogel <post@steffenvogel.de>
 # SPDX-License-Identifier: Apache-2.0
+sidebar_position: 80
 ---
 
 # CLI utility
