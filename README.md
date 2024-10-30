@@ -68,7 +68,7 @@ Have a look at our **[slide set](https://cunicu.github.io/gont/)** to get you st
 
 ## Examples
 
-Please refer to [our documentation](./docs/website/docs/examples/index.md)
+Please refer to [our documentation](https://gont.cunicu.li/examples/)
 
 ## Contact
 

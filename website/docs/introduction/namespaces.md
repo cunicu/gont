@@ -5,18 +5,12 @@
 
 # Namespaces
 
-(Feel free to [skip this section](#first-some-definitions) if you are
-only interested in learning about Gont)
+What are Linux namespaces? They..
 
-## What are Linux namespaces?
-
-## They..
-
--   partition kernel resources
-    from **a process-perspective.**
--   power most of Linux containerization tools.
--   appear in many Linux subsystems.
--   are used by many sandboxing solutions in browsers.
+-   Partition kernel resources from **a process-perspective.**
+-   Power most of Linux containerization tools.
+-   Appear in many Linux subsystems.
+-   Are used by many sandboxing solutions in browsers.
 
 
 ## Available Linux namespaces
