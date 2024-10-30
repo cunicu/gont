@@ -22,4 +22,3 @@ host1, _ := network.AddHost("host1",
       fopt.TransportProtocol(unix.IPPROTO_TCP),
       fopt.SourcePortRange(0, 1024)))
 ```
-

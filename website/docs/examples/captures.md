@@ -22,7 +22,6 @@ from multiple interfaces and records them to one of the following sinks:
 -  Go channels
 -  Go callback functions.
 
-
 ## Filtering
 
 Captured network traffic can be filtered by

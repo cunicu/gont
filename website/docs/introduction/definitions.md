@@ -14,7 +14,6 @@
 - **router**: A *host* with IP forwarding enabled
 - **nat**: A special type of *router* which implements network address translation between a set of south- and north-bound *interfaces*
 
-
 ## Relationships
 
 ```mermaid
@@ -83,11 +82,11 @@ classDiagram
 
 ## Gont and Namespaces
 
--   for each *node*:
-    -   a separate network namespace
-    -   a separate uts namespace
-        -   for a unique hostname within each *node*
--   for each *network*:
-    -   a separate mount namespace
-        -   for a unique `/etc/hosts` files between *networks*
+-   For each *node*:
+    -   A separate network namespace
+    -   A separate UTS namespace
+        -   For a unique hostname within each *node*
+-   For each *network*:
+    -   A separate mount namespace
+        -   For a unique `/etc/hosts` files between *networks*
 

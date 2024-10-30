@@ -31,7 +31,6 @@ $ gontc shell mynet/host1
 $ mynet/host1: ip address show
 ```
 
-
 ## Usage
 
 ```text

@@ -87,7 +87,6 @@ int main() {
 -   By passing file descriptor and
     [setns(2)](https://man7.org/linux/man-pages/man2/setns.2.html)
 
-
 ## Joining namespace of another process: `/proc`
 
 You can join the namespace of another process by using [/proc/\{pid\}/ns/\*](https://man7.org/linux/man-pages/man5/proc.5.html)
@@ -98,7 +97,6 @@ err := unix.Setns(fd, syscall.CLONE_NEWUTS);
 ```
 
 **Note:** Can only set a single namespace per `netns(2)` invocation.
-
 
 ## Joining namespace of another process: `pidfd_open`
 
@@ -112,7 +110,6 @@ setns(fd, CLONE_NEWUTS | CLONE_NEWNET);
  ```
 
 **Note:** Can only set a multiple namespaces per `netns(2)` invocation.
-
 
 ## Persisting namespaces
 

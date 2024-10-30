@@ -12,7 +12,7 @@ sidebar_position: 1
 import gont "github.com/cunicu/gont/v2/pkg"
 import opt "github.com/cunicu/gont/v2/pkg/options"
 
- ...
+...
 
 network, _ := gont.NewNetwork("mynet")
 
@@ -27,7 +27,6 @@ host1.Ping(host2)
 ```
 
 (We `opt` throughout these examples as an import alias)
-
 
 ## Lets add a L2 switch
 
@@ -44,7 +43,6 @@ host2, _ := network.AddHost("host2",
 
 host1.Ping(host2)
 ```
-
 
 ## How about a L3 router?
 
@@ -65,7 +63,6 @@ network.AddRouter("router1",
 
 host1.Ping(host2)
 ```
-
 
 ## Lets do some evil NATing 😈
 
@@ -90,7 +87,6 @@ network.AddNAT("n1",
 
 host1.Ping(host2)
 ```
-
 
 ## How about a whole chain of routers?
 
@@ -123,4 +119,3 @@ host2, _ := network.AddHost("host2",
 
 host1.Ping(host2)
 ```
-

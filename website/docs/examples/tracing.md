@@ -31,14 +31,12 @@ type Event struct {
 }
 ```
 
-
 ### Sink trace events into
 
 -   JSON files
 -   Go channels
 -   Go callbacks
 -   Packet captures
-
 
 ## Create a tracer
 
@@ -60,7 +58,6 @@ t := gont.NewTracer(
 t.Start()
 ```
 
-
 ## Attach the tracer
 
 Trace all processes started by nodes of this network
@@ -80,7 +77,6 @@ Trace a single process
 ```go
 host1.RunGo("test/main.go", t)
 ```
-
 
 ## Trace with the `trace` package
 
@@ -118,11 +114,8 @@ handler := trace.NewTraceHandler(slog.HandlerOptions{})
 logger := slog.New(handler)
 ```
 
-Each log message emits a trace event which includes the log message,
-filename, line number as well function name and more.
-Any fields passed to to zap structured logger are included in the `Data`
-field of the `Event` structure.
-
+Each log message emits a trace event which includes the log message, filename, line number as well function name and more.
+Any fields passed to to zap structured logger are included in the `Data` field of the `Event` structure.
 
 ## Trace via `go.uber.org/zap` logging package
 
@@ -140,8 +133,5 @@ logger = logger.WithOptions(zap.AddCaller())
 logger = logger.Named("my-test-logger")
 ```
 
-Each log message emits a trace event which includes the log message,
-filename, line number as well function name and more.
-Any fields passed to to zap structured logger are included in the `Data`
-field of the `Event` structure.
-
+Each log message emits a trace event which includes the log message, filename, line number as well function name and more.
+Any fields passed to to zap structured logger are included in the `Data` field of the `Event` structure.

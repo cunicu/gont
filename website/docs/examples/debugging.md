@@ -34,8 +34,7 @@ d := gont.NewDebugger(
   dopt.BreakOnEntry(true),
   dopt.ToTracer(t),
 
-  // Listening socket for connection of external DAP client
-  dopt.ListenAddr("tcp:[::]:1234"))
+  dopt.ListenAddr("tcp:[::]:1234")) // Listening socket for connection of external DAP client
 ```
 
 

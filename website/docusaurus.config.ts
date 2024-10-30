@@ -45,19 +45,7 @@ const config: Config = {
           routeBasePath: '/', // Serve the docs at the site's root
           sidebarPath: './sidebars.ts',
           editUrl:
-            'https://github.com/cunicu/gont/tree/main/docs/website',
-        },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          editUrl:
-            'https://github.com/cunicu/gont/tree/main/docs/website/',
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
+            'https://github.com/cunicu/gont/edit/main/website',
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -83,7 +71,7 @@ const config: Config = {
           position: 'left',
           label: 'Documentation',
         },
-        { to: '/blog', label: 'Blog', position: 'left' },
+        { href: 'https://cunicu.li/blog/', label: 'Blog', position: 'left' },
         { href: 'pathname:///slides/', label: 'Slides', position: 'left' },
         {
           href: 'https://github.com/cunicu/gont',
@@ -122,7 +110,7 @@ const config: Config = {
           items: [
             {
               label: 'Blog',
-              to: '/blog',
+              href: 'https://cunicu.li/blog',
             },
             {
               label: 'GitHub',
