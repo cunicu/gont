@@ -523,9 +523,84 @@ cmd, err := host1.RunGo("test/prog.go", "arg1")
 
 ---
 
+## CGroups
+
+powered by
+
+### systemd System and Service manager
+
+...
+
+### Hierarchy
+
+_Networks_, _nodes_ and _commands_ \
+are forming a Unified Cgroup Hierarchy (v2):
+
+```shell
+$ systemd-cgls
+...
+├─gont.slice
+│ └─gont-barlow.slice
+│   └─gont-barlow-h1.slice
+│     └─gont-run-2797869.scope
+│       └─2797869 sleep 3600
+```
+
+...
+
+### Freeze, Thaw, Kill
+
+All processes of a Cgroup can be controlled together:
+
+```go
+cmd.Freeze()   // Suspends all processes, included forked sub-processes
+
+cmd.Thaw()     // Resumes all processes
+
+cmd.Teardown() // Sends a SIGKILL to all processes
+```
+
+This also works on the _host_ and _network_ levels.
+
+...
+
+### Clean shutdown
+
+By default, `Close()` will invoke `Teardown()`.
+
+Hence, guaranteeing that no lingering processes will stick around.
+
+...
+
+### Resource Control
+
+We can control resource quota's in each level of the hierarchy using systemd resource control properties:
+
+```go
+import sdopt "github.com/cunicu/gont/v2/options/systemd"
+
+network, _ := gont.NewNetwork("mynet",
+  sdopt.AllowedCPUs(0b1100))
+
+host1, _ := network.AddHost("host1",
+  sdopt.TasksMax(10))
+
+cmd := host1.Command("long-running-command",
+  sdopt.RuntimeMax(10 * time.Second))
+
+cmd := host1.Command("memory-hungry-command",
+  sdopt.MemoryMax(1 << 20))
+```
+
+See: [systemd.resource-control](https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html)
+
+---
+
 ## Firewall
 
-by Netfilter's nftables
+powered by
+
+### Netfilter's nftables
 
 ...
 
@@ -549,7 +624,9 @@ host1, _ := network.AddHost("host1",
 
 ## Network Emulation
 
-by Linux's Traffic Control: Netem Qdisc
+powered by
+
+### Linux's Traffic Control / Netem Qdisc
 
 ...
 
@@ -577,7 +654,9 @@ host1.Ping(host2)
 
 ## Packet captures
 
-PCAP, WireShark, tshark
+powered by 
+
+### PCAP, WireShark, tshark
 
 ...
 
@@ -779,7 +858,9 @@ field of the `Event` structure.
 
 ## Distributed Debugging
 
-powered by Delve
+powered by
+
+### Delve
 
 ...
 
@@ -945,7 +1026,7 @@ network, _ := gont.NewNetwork("mynet",
 
 Introspect network after creation with `gontc`
 
-```sh
+```shell
 $ gontc list
 mynet
 
@@ -1006,13 +1087,13 @@ Usage: gontc [flags] <command>
 
 ### Requirements
 
--   Go 1.19
+-   >= Go 1.19
 -   A moderate recent Linux kernel (&gt;= 4.9)
     -   `mnt` and `net` namespace support
 -   root access / `NET_ADMIN` caps
 -   traceroute userspace tool
 -   libpcap for packet captures
-
+-   systemd service manager
 ...
 
 ### Roadmap

@@ -1,4 +1,6 @@
-# Gont: A Go testing framework for distributed applications
+![](website/static/img/gont_logo.png)
+
+## A Go testing framework for distributed applications
 
 [![GitHub build](https://img.shields.io/github/actions/workflow/status/cunicu/gont/build.yaml?style=flat-square)](https://github.com/cunicu/gont/actions)
 [![goreportcard](https://goreportcard.com/badge/github.com/cunicu/gont?style=flat-square)](https://goreportcard.com/report/github.com/cunicu/gont)
@@ -66,92 +68,7 @@ Have a look at our **[slide set](https://cunicu.github.io/gont/)** to get you st
 
 ## Examples
 
-Have a look at the unit tests for usage examples:
-
--   [Ping](pkg/ping_test.go)
--   [Run](pkg/run_test.go)
--   [NAT](pkg/nat_test.go)
--   [Switch](pkg/switch_test.go)
--   [Links](pkg/link_test.go)
--   [Firewall Rules](pkg/filter_test.go)
--   [Packet tracing](pkg/capture_test.go)
-    - [With TLS decryption](pkg/capture_keylog_test.go)
--   [Event tracing](pkg/trace_test.go)
--   [Debugging](pkg/debug_test.go)
-
-## Prerequisites
-
--   Go version 1.19 or later
--   `traceroute` (for testing)
--   `libpcap` (for compiling BPF filter expressions of packet tracing feature)
-
-## Architecture
-
-[![](https://mermaid.ink/img/eyJjb2RlIjoiY2xhc3NEaWFncmFtXG4gICAgZGlyZWN0aW9uIEJUXG5cbiAgICBjbGFzcyBOZXR3b3JrIHtcbiAgICAgICAgTm9kZXMgW11Ob2RlXG4gICAgICAgIExpbmtzIFtdTGlua1xuICAgIH1cblxuICAgIGNsYXNzIExpbmsge1xuICAgICAgICBMZWZ0IEVuZHBvaW50XG4gICAgICAgIFJpZ2h0IEVuZHBvaW50XG4gICAgfVxuXG4gICAgY2xhc3MgSW50ZXJmYWNlIHtcbiAgICAgICAgTmFtZSBzdHJpbmdcbiAgICAgICAgTm9kZSBOb2RlXG5cbiAgICAgICAgQWRkcmVzc2VzIFtdbmV0LklQTmV0XG4gICAgfVxuXG4gICAgY2xhc3MgTmFtZXNwYWNlIHtcbiAgICAgICAgTnNGZCBpbnRcbiAgICAgICAgUnVuKClcbiAgICB9XG5cbiAgICBjbGFzcyBOb2RlIHtcbiAgICAgICAgTmFtZSBzdHJpbmdcbiAgICB9XG5cbiAgICBjbGFzcyBIb3N0IHtcbiAgICAgICAgSW50ZXJmYWNlcyBbXUludGVyZmFjZVxuICAgICAgICBBZGRJbnRlcmZhY2UoKVxuICAgIH1cblxuICAgIGNsYXNzIFN3aXRjaCB7XG4gICAgICAgIFBvcnRzIFtdUG9ydFxuICAgICAgICBBZGRQb3J0KClcbiAgICB9XG5cbiAgICBjbGFzcyBSb3V0ZXIge1xuICAgICAgICBBZGRSb3V0ZSgpXG4gICAgfVxuXG4gICAgY2xhc3MgTkFUIHtcblxuICAgIH1cbiAgICAgICAgICAgIFxuICAgIE5vZGUgKi0tIE5hbWVzcGFjZVxuICAgIEhvc3QgKi0tIE5vZGVcbiAgICBSb3V0ZXIgKi0tIEhvc3RcbiAgICBOQVQgKi0tIFJvdXRlclxuICAgIFN3aXRjaCAqLS0gTm9kZVxuXG4gICAgSW50ZXJmYWNlIFwiMVwiIG8tLSBcIjFcIiBOb2RlXG5cblxuICAgIExpbmsgXCIxXCIgby0tIFwiMlwiIEludGVyZmFjZVxuXG4gICAgTmV0d29yayBcIjFcIiBvLS0gXCIqXCIgTGlua1xuICAgIE5ldHdvcmsgXCIxXCIgby0tIFwiKlwiIE5vZGUiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGVmYXVsdCJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlLCJhdXRvU3luYyI6dHJ1ZSwidXBkYXRlRGlhZ3JhbSI6ZmFsc2V9)](https://mermaid.live/edit/#eyJjb2RlIjoiY2xhc3NEaWFncmFtXG4gICAgZGlyZWN0aW9uIEJUXG5cbiAgICBjbGFzcyBOZXR3b3JrIHtcbiAgICAgICAgTm9kZXMgW11Ob2RlXG4gICAgICAgIExpbmtzIFtdTGlua1xuICAgIH1cblxuICAgIGNsYXNzIExpbmsge1xuICAgICAgICBMZWZ0IEVuZHBvaW50XG4gICAgICAgIFJpZ2h0IEVuZHBvaW50XG4gICAgfVxuXG4gICAgY2xhc3MgSW50ZXJmYWNlIHtcbiAgICAgICAgTmFtZSBzdHJpbmdcbiAgICAgICAgTm9kZSBOb2RlXG5cbiAgICAgICAgQWRkcmVzc2VzIFtdbmV0LklQTmV0XG4gICAgfVxuXG4gICAgY2xhc3MgTmFtZXNwYWNlIHtcbiAgICAgICAgTnNGZCBpbnRcbiAgICAgICAgUnVuKClcbiAgICB9XG5cbiAgICBjbGFzcyBOb2RlIHtcbiAgICAgICAgTmFtZSBzdHJpbmdcbiAgICB9XG5cbiAgICBjbGFzcyBIb3N0IHtcbiAgICAgICAgSW50ZXJmYWNlcyBbXUludGVyZmFjZVxuICAgICAgICBBZGRJbnRlcmZhY2UoKVxuICAgIH1cblxuICAgIGNsYXNzIFN3aXRjaCB7XG4gICAgICAgIFBvcnRzIFtdUG9ydFxuICAgICAgICBBZGRQb3J0KClcbiAgICB9XG5cbiAgICBjbGFzcyBSb3V0ZXIge1xuICAgICAgICBBZGRSb3V0ZSgpXG4gICAgfVxuXG4gICAgY2xhc3MgTkFUIHtcblxuICAgIH1cbiAgICAgICAgICAgIFxuICAgIE5vZGUgKi0tIE5hbWVzcGFjZVxuICAgIEhvc3QgKi0tIE5vZGVcbiAgICBSb3V0ZXIgKi0tIEhvc3RcbiAgICBOQVQgKi0tIFJvdXRlclxuICAgIFN3aXRjaCAqLS0gTm9kZVxuXG4gICAgSW50ZXJmYWNlIFwiMVwiIG8tLSBcIjFcIiBOb2RlXG5cblxuICAgIExpbmsgXCIxXCIgby0tIFwiMlwiIEludGVyZmFjZVxuXG4gICAgTmV0d29yayBcIjFcIiBvLS0gXCIqXCIgTGlua1xuICAgIE5ldHdvcmsgXCIxXCIgby0tIFwiKlwiIE5vZGUiLCJtZXJtYWlkIjoie1xuICBcInRoZW1lXCI6IFwiZGVmYXVsdFwiXG59IiwidXBkYXRlRWRpdG9yIjpmYWxzZSwiYXV0b1N5bmMiOnRydWUsInVwZGF0ZURpYWdyYW0iOmZhbHNlfQ)
-
-<!-- 
-```mermaid
-classDiagram
-    direction BT
-
-    class Network {
-        Nodes []Node
-        Links []Link
-    }
-
-    class Link {
-        Left Endpoint
-        Right Endpoint
-    }
-
-    class Interface {
-        Name string
-        Node Node
-
-        Addresses []net.IPNet
-    }
-
-    class Namespace {
-        NsFd int
-        Run()
-    }
-
-    class Node {
-        Name string
-    }
-
-    class Host {
-        Interfaces []Interface
-        AddInterface()
-    }
-
-    class Switch {
-        Ports []Port
-        AddPort()
-    }
-
-    class Router {
-        AddRoute()
-    }
-
-    class NAT {
-
-    }
-            
-    Node *-- Namespace
-    Host *-- Node
-    Router *-- Host
-    NAT *-- Router
-    Switch *-- Node
-
-    Interface "1" o-- "1" Node
-
-
-    Link "1" o-- "2" Interface
-
-    Network "1" o-- "*" Link
-    Network "1" o-- "*" Node
-``` -->
+Please refer to [our documentation](./docs/website/docs/examples/index.md)
 
 ## Contact
 
@@ -159,7 +76,7 @@ Please have a look at the contact page: [cunicu.li/docs/contact](https://cunicu.
 
 ### Funding acknowledment
 
-<img alt="European Flag" src="https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg" align="left" style="margin-right: 10px"/> The development of [Gont][gont] has been supported by the [ERIGrid 2.0][erigrid] project \
+<img alt="European Flag" src="https://erigrid2.eu/wp-content/uploads/2020/03/europa_flag_low.jpg" align="left" /> The development of [Gont][gont] has been supported by the [ERIGrid 2.0][erigrid] project \
 of the H2020 Programme under [Grant Agreement No. 870620](https://cordis.europa.eu/project/id/870620)
 
 ## License
