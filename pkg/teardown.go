@@ -4,6 +4,7 @@
 package gont
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -13,6 +14,7 @@ import (
 	"sort"
 
 	"cunicu.li/gont/v2/internal/utils"
+	"github.com/coreos/go-systemd/v22/dbus"
 	"github.com/vishvananda/netns"
 	"golang.org/x/sys/unix"
 )
@@ -76,9 +78,9 @@ func GenerateNetworkName() string {
 	return fmt.Sprintf("%s%d", random, rand.Intn(128)+1) //nolint:gosec
 }
 
-func TeardownAllNetworks() error {
+func TeardownAllNetworks(ctx context.Context, c *dbus.Conn) error {
 	for _, name := range NetworkNames() {
-		if err := TeardownNetwork(name); err != nil {
+		if err := TeardownNetwork(ctx, c, name); err != nil {
 			return fmt.Errorf("failed to teardown network '%s': %w", name, err)
 		}
 	}
@@ -86,7 +88,7 @@ func TeardownAllNetworks() error {
 	return nil
 }
 
-func TeardownNetwork(network string) error {
+func TeardownNetwork(ctx context.Context, c *dbus.Conn, network string) error {
 	networkVarPath := filepath.Join(baseVarDir, network)
 	networkTmpPath := filepath.Join(baseTmpDir, network)
 	nodesVarPath := filepath.Join(networkVarPath, "nodes")
@@ -102,7 +104,7 @@ func TeardownNetwork(network string) error {
 		}
 
 		node := fi.Name()
-		if err := TeardownNode(network, node); err != nil {
+		if err := TeardownNode(ctx, c, network, node); err != nil {
 			return fmt.Errorf("failed to teardown node '%s': %w", node, err)
 		}
 	}
@@ -115,10 +117,15 @@ func TeardownNetwork(network string) error {
 		return fmt.Errorf("failed to delete network dir: %w", err)
 	}
 
+	sliceName := fmt.Sprintf("gont-%s.slice", network)
+	if _, err := c.StopUnitContext(ctx, sliceName, "fail", nil); err != nil {
+		return fmt.Errorf("failed to stop CGroup slice: %w", err)
+	}
+
 	return nil
 }
 
-func TeardownNode(network, node string) error {
+func TeardownNode(ctx context.Context, c *dbus.Conn, network, node string) error {
 	nodePath := filepath.Join(baseVarDir, network, "nodes", node)
 	nsMount := filepath.Join(nodePath, "ns", "net")
 
@@ -138,6 +145,11 @@ func TeardownNode(network, node string) error {
 
 	if err := os.RemoveAll(nodePath); err != nil {
 		return fmt.Errorf("failed to delete node dir: %w", err)
+	}
+
+	sliceName := fmt.Sprintf("gont-%s-%s.slice", network, node)
+	if _, err := c.StopUnitContext(ctx, sliceName, "fail", nil); err != nil {
+		return fmt.Errorf("failed to stop CGroup slice: %w", err)
 	}
 
 	return nil

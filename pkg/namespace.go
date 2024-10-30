@@ -64,7 +64,11 @@ func NewNamespace(name string) (*Namespace, error) {
 	}
 
 	// Restore original netns namespace
-	return ns, unix.Setns(curNetNs, syscall.CLONE_NEWNET)
+	if err = unix.Setns(curNetNs, syscall.CLONE_NEWNET); err != nil {
+		return nil, err
+	}
+
+	return ns, nil
 }
 
 func (ns *Namespace) Close() error {
