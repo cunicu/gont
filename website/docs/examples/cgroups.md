@@ -15,11 +15,11 @@ _Networks_, _nodes_ and _commands_ are forming a Unified Cgroup Hierarchy (v2):
 ```shell
 $ systemd-cgls
 ...
-├─gont.slice
-│ └─gont-barlow.slice
-│   └─gont-barlow-h1.slice
-│     └─gont-run-2797869.scope
-│       └─2797869 sleep 3600
+└─gont.slice
+  └─gont-barlow.slice
+    └─gont-barlow-h1.slice
+      └─gont-run-2797869.scope
+        └─2797869 some-process
 ```
 
 We rely on systemd's service manager to manage the hierarchy. 
@@ -30,9 +30,7 @@ All processes of a Cgroup can be controlled together:
 
 ```go
 cmd.Freeze()   // Suspends all processes, included forked sub-processes
-
 cmd.Thaw()     // Resumes all processes
-
 cmd.Teardown() // Sends a SIGKILL to all processes
 ```
 

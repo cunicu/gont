@@ -8,7 +8,6 @@ sidebar_position: 10
 
 Powered by Linux's Traffic Control: [Netem Qdisc](https://man7.org/linux/man-pages/man8/tc-netem.8.html).
 
-
 ## Attach a netem Qdisc to an interface
 
 ```go
@@ -28,4 +27,3 @@ network.AddLink(
 
 host1.Ping(host2)
 ```
-

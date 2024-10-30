@@ -18,4 +18,3 @@ Have a look at the following code for full fledged test/example code:
 -   [Event Tracing](https://github.com/cunicu/gont/blob/main/pkg/trace_test.go) (`trace_test.go`)
 -   [Tracing with TLS decryption](https://github.com/cunicu/gont/blob/main/pkg/capture_keylog_test.go) (`capture_keylog_test.go`)
 -   [Debugger](https://github.com/cunicu/gont/blob/main/pkg/debug_test.go) (`debug_test.go`)
-

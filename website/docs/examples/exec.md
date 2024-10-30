@@ -59,7 +59,6 @@ ip := net.ParseIP("1.1.1.1")
 cmd := host1.Command("ping", "-c", 10, "-i", 0.1, ip)
 ```
 
-
 ### Go functions
 
 ```go
@@ -75,7 +74,6 @@ in the same process so you can use channels and access global variables.
 :::warning
 Spawning Goroutines from within the callback is only indirectly supported:
 
-
 ```go
 host1.RunFunc(func() {
   go host1.RunFunc(func() { ... })
@@ -83,10 +81,8 @@ host1.RunFunc(func() {
 ```
 :::
 
-
 ### Go packages
 
 ```go
 cmd, err := host1.RunGo("test/prog.go", "arg1")
 ```
-

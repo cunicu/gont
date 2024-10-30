@@ -24,4 +24,3 @@ topo.Linear(n, 100, createHost, linkHosts)
 
 network.Nodes["h0"].Traceroute(network.Nodes["h99"])
 ```
-
