@@ -17,7 +17,7 @@ import (
 
 //nolint:gochecknoglobals
 var (
-	globalNetworkOptions = []g.NetworkOption{}
+	globalNetworkOptions = []g.Option{}
 	nname                = flag.String("name", "", "Network name")
 	persist              = flag.Bool("persist", false, "Do not teardown networks after test")
 	capture              = flag.String("capture", "", "Capture network traffic to PCAPng file")

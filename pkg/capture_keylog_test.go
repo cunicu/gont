@@ -31,7 +31,7 @@ func TestCaptureKeyLog(t *testing.T) {
 	)
 
 	n, err := g.NewNetwork(*nname,
-		o.Customize[g.NetworkOption](globalNetworkOptions, c1, // Also multiple capturers are supported
+		g.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
 			g.NewCapture(
 				co.ToFilename("all.pcapng")), // We can create a file
 		)...)
