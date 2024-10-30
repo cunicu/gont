@@ -24,6 +24,7 @@ type BaseNodeOption interface {
 
 type BaseNode struct {
 	*Namespace
+	*CGroup
 
 	isHostNode bool
 	network    *Network
@@ -46,9 +47,7 @@ type BaseNode struct {
 	logger *zap.Logger
 }
 
-func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
-	var err error
-
+func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err error) {
 	basePath := filepath.Join(n.VarPath, "nodes", name)
 	for _, path := range []string{"ns", "files"} {
 		path = filepath.Join(basePath, path)
@@ -57,11 +56,20 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
-	node := &BaseNode{
+	node = &BaseNode{
 		name:     name,
 		network:  n,
 		BasePath: basePath,
 		logger:   zap.L().Named("node").With(zap.String("node", name)),
+	}
+
+	cgroupName := fmt.Sprintf("gont-%s-%s", n.Name, name)
+	if node.CGroup, err = NewCGroup(n.sdConn, "slice", cgroupName, opts...); err != nil {
+		return nil, fmt.Errorf("failed to create CGroup slice: %w", err)
+	}
+
+	if err := node.CGroup.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start CGroup slice: %w", err)
 	}
 
 	node.logger.Info("Adding new node")
@@ -121,6 +129,7 @@ func (n *Network) AddNode(name string, opts ...Option) (*BaseNode, error) {
 		}
 	}
 
+	// Create Netlink connection handle if it does not exist yet
 	if node.nlHandle == nil {
 		node.nlHandle, err = nl.NewHandleAt(node.NsHandle)
 		if err != nil {
@@ -309,7 +318,15 @@ func (n *BaseNode) Teardown() error {
 		return err
 	}
 
-	return os.RemoveAll(n.BasePath)
+	if err := os.RemoveAll(n.BasePath); err != nil {
+		return err
+	}
+
+	if err := n.CGroup.Stop(); err != nil {
+		return fmt.Errorf("failed to stop Cgroup slice: %w", err)
+	}
+
+	return nil
 }
 
 // WriteProcFS write a value to a path within the ProcFS by entering the namespace of this node.

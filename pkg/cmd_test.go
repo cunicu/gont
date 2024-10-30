@@ -161,11 +161,11 @@ func TestIProute2Files(t *testing.T) {
 	defer n.Close()
 
 	beep, err := n.AddHost("beep")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	cmd := beep.Command("ip", "addr")
 	out, err := cmd.CombinedOutput()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	t.Logf("Output: %s", out)
 }

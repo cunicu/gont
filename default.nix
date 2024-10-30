@@ -4,7 +4,7 @@
 buildGoModule {
   name = "gont";
   src = ./.;
-  vendorHash = "sha256-IXTpMzTrWRH10vB6hRsMf7ilT5tUG/EPJbYLO+8d9Ik=";
+  vendorHash = "sha256-EAwP8nNyS6lnLi/OBxxdZzePIiy30l6uFr1Z8SPAllA=";
   buildInputs = [ libpcap ];
   doCheck = false;
 }
