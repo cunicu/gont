@@ -76,7 +76,7 @@ func HostNode(n *Network) *Host {
 	}
 }
 
-func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
+func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 	if err := CheckCaps(); err != nil {
 		return nil, err
 	}
@@ -101,7 +101,10 @@ func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
 
 	// Apply network specific options
 	for _, opt := range opts {
-		opt.ApplyNetwork(n)
+		switch opt := opt.(type) {
+		case NetworkOption:
+			opt.ApplyNetwork(n)
+		}
 	}
 
 	if stat, err := os.Stat(varPath); err == nil && stat.IsDir() {
