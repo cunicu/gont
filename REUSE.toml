@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2024 Steffen Vogel <post@steffenvogel.de>
+# SPDX-License-Identifier: Apache-2.0
+
+version = 1
+SPDX-PackageName = "Gont"
+SPDX-PackageSupplier = "Steffen Vogel <post@steffenvogel.de>"
+SPDX-PackageDownloadLocation = "https://github.com/cunicu/gont"
+
+[[annotations]]
+path = ["flake.lock", "slides/images/**", "README.md", "go.sum", ".renovaterc.json", "website/package.json", "website/yarn.lock", "website/static/img/**", "website/static/CNAME", ]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2023-2024 Steffen Vogel <post@steffenvogel.de>"
+SPDX-License-Identifier = "Apache-2.0"
