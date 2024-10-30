@@ -5,16 +5,19 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"cunicu.li/gont/v2/internal"
 	"cunicu.li/gont/v2/internal/utils"
 	g "cunicu.li/gont/v2/pkg"
+	"github.com/coreos/go-systemd/v22/dbus"
 	"golang.org/x/exp/slices"
 )
 
@@ -174,13 +177,21 @@ func list(args []string) {
 }
 
 func clean(args []string) error {
+	ctx := context.Background()
+	ctx, _ = context.WithTimeout(ctx, 10*time.Second)
+
+	c, err := dbus.NewWithContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to connect to D-Bus: %w", err)
+	}
+
 	if len(args) > 1 {
 		network := args[1]
-		if err := g.TeardownNetwork(network); err != nil {
+		if err := g.TeardownNetwork(ctx, c, network); err != nil {
 			return fmt.Errorf("failed to teardown network '%s': %w", network, err)
 		}
 	} else {
-		return g.TeardownAllNetworks()
+		return g.TeardownAllNetworks(ctx, c)
 	}
 
 	return nil
@@ -200,6 +211,16 @@ func exec(network, node string, args []string) error {
 	}
 	if err := os.Setenv("GONT_NODE", node); err != nil {
 		return err
+	}
+
+	cgroupName := fmt.Sprintf("gont-run-%d", os.Getpid())
+	cgroup, err := g.NewCGroup(nil, "scope", cgroupName)
+	if err != nil {
+		return fmt.Errorf("failed to create CGroup scope: %w", err)
+	}
+
+	if err := cgroup.Start(); err != nil {
+		return fmt.Errorf("failed to start CGroup scope: %w", err)
 	}
 
 	return g.Exec(network, node, args)

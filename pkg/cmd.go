@@ -8,12 +8,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"syscall"
 
+	sdbus "github.com/coreos/go-systemd/v22/dbus"
+	"github.com/godbus/dbus/v5"
 	"github.com/gopacket/gopacket/pcapgo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapio"
@@ -33,6 +34,7 @@ type CmdOption interface {
 }
 
 type Cmd struct {
+	*CGroup
 	*exec.Cmd
 
 	// Options
@@ -56,12 +58,16 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 		node: n,
 	}
 
+	c.CGroup, _ = NewCGroup(c.node.sdConn, "scope", "")
+
 	strArgs := []string{}
 	for _, arg := range args {
 		switch arg := arg.(type) {
 		case ExecCmdOption:
 		case CmdOption:
 			arg.ApplyCmd(c)
+		case CGroupOption:
+			arg.ApplyCGroup(c.CGroup)
 		default:
 			if strArg, ok := stringifyArg(arg); ok {
 				strArgs = append(strArgs, strArg)
@@ -133,7 +139,7 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 	return c
 }
 
-func (c *Cmd) Start() error {
+func (c *Cmd) Start() (err error) {
 	// Add some IPC pipes to capture decryption secrets
 	for envName, secretsType := range map[string]uint32{
 		"SSLKEYLOGFILE": pcapgo.DSB_SECRETS_TYPE_TLS,
@@ -169,21 +175,17 @@ func (c *Cmd) Start() error {
 		c.Stderr = io.MultiWriter(c.StderrWriters...)
 	}
 
-	if d := c.debugger(); d != nil {
-		// We need to start the process in a stopped state
-		// so we can attach the delve debugger before execution
-		// commences in order to allow for breakpoints early
-		// in the execution.
-		if err := c.stoppedStart(); err != nil {
-			return err
-		}
+	// We need to start the process in a stopped state for two reasons
+	// 1. Attaching the Delve debugger before execution
+	//    commences in order to allow for breakpoints early
+	//    in the execution.
+	// 2. Attaching the process into the new Systemd Scope Unit
+	if err := c.stoppedStart(); err != nil {
+		return err
+	}
 
-		var err error
+	if d := c.debugger(); d != nil {
 		if c.debuggerInstance, err = d.start(c.Cmd); err != nil {
-			return err
-		}
-	} else {
-		if err := c.Cmd.Start(); err != nil {
 			return err
 		}
 	}
@@ -193,6 +195,25 @@ func (c *Cmd) Start() error {
 		updateLogger(c.logger.With(
 			zap.Int("pid", c.Process.Pid),
 		))
+	}
+
+	// Start CGroup scope and attach process to it
+	c.CGroup.Name = fmt.Sprintf("gont-run-%d", c.Process.Pid)
+	c.CGroup.Properties = append(c.CGroup.Properties,
+		sdbus.Property{
+			Name:  "Slice",
+			Value: dbus.MakeVariant(c.node.Unit()),
+		},
+		sdbus.PropPids(uint32(c.Process.Pid)), //nolint:gosec
+	)
+
+	if err := c.CGroup.Start(); err != nil {
+		return fmt.Errorf("failed to start CGroup scope: %w", err)
+	}
+
+	// Signal child that that it is ready to proceed
+	if err := c.Process.Signal(syscall.SIGCONT); err != nil {
+		return fmt.Errorf("failed to send continuation signal to child: %w", err)
 	}
 
 	return nil
@@ -338,7 +359,7 @@ func (c *Cmd) stoppedStart() error {
 
 	pgid, err := syscall.Getpgid(c.Process.Pid)
 	if err != nil {
-		log.Panic(err)
+		return fmt.Errorf("failed to get pgid: %w", err)
 	}
 
 	for {
@@ -348,10 +369,10 @@ func (c *Cmd) stoppedStart() error {
 			return err
 		}
 
-		c.logger.Debug("Stopped",
-			zap.String("signal", ws.Signal().String()),
-			zap.String("stop_signal", ws.StopSignal().String()),
-			zap.Int("trap_cause", ws.TrapCause()))
+		// c.logger.Debug("Stopped",
+		// 	zap.String("signal", ws.Signal().String()),
+		// 	zap.String("stop_signal", ws.StopSignal().String()),
+		// 	zap.Int("trap_cause", ws.TrapCause()))
 
 		if ws.Exited() {
 			return fmt.Errorf("process exited prematurely")

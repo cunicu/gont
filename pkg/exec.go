@@ -45,13 +45,7 @@ func init() {
 			panic(err)
 		}
 
-		// Enter new namespaces
-		if err := Unshare(network, node); err != nil {
-			panic(err)
-		}
-
-		// Run program
-		if err := execvpe.Execvpe(os.Args[0], os.Args, os.Environ()); err != nil {
+		if err := Exec(network, node, os.Args); err != nil {
 			panic(err)
 		}
 

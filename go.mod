@@ -6,9 +6,11 @@ module cunicu.li/gont/v2
 go 1.23.0
 
 require (
+	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/go-delve/delve v1.21.0
+	github.com/godbus/dbus/v5 v5.1.0
 	github.com/google/nftables v0.2.0
 	github.com/gopacket/gopacket v1.3.1
 	github.com/prometheus-community/pro-bing v0.5.0
