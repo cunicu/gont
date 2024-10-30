@@ -16,7 +16,6 @@ import (
 	"time"
 
 	g "cunicu.li/gont/v2/pkg"
-	o "cunicu.li/gont/v2/pkg/options"
 	co "cunicu.li/gont/v2/pkg/options/capture"
 	to "cunicu.li/gont/v2/pkg/options/trace"
 	"cunicu.li/gont/v2/pkg/trace"
@@ -37,7 +36,7 @@ func TestTraceSubProcess(t *testing.T) {
 	)
 
 	n, err := g.NewNetwork(*nname,
-		o.Customize[g.NetworkOption](globalNetworkOptions, t1)...)
+		g.Customize(globalNetworkOptions, t1)...)
 	require.NoError(t, err, "Failed to create network")
 
 	err = t1.Start()
@@ -169,7 +168,7 @@ func TestTraceWithCapture(t *testing.T) {
 	require.NoError(t, err, "Failed to start")
 
 	n, err := g.NewNetwork(*nname,
-		o.Customize[g.NetworkOption](globalNetworkOptions, t1, c1)...)
+		g.Customize(globalNetworkOptions, t1, c1)...)
 	require.NoError(t, err, "Failed to create network")
 
 	h1, err := n.AddHost("h1")

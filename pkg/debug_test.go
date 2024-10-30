@@ -38,7 +38,7 @@ func TestDebugBreakpointHostnode(t *testing.T) {
 			do.Line(21),
 			do.Variable("s")))
 
-	n, err := g.NewNetwork("", d)
+	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
@@ -74,7 +74,7 @@ func TestDebugBreakpoint(t *testing.T) {
 				do.MaxStructFields(100),
 				do.FollowPointers(true))))
 
-	n, err := g.NewNetwork("", d)
+	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
@@ -123,7 +123,7 @@ func TestDebugBreakpointLocation(t *testing.T) {
 				do.MaxStructFields(100),
 				do.FollowPointers(true))))
 
-	n, err := g.NewNetwork("", d)
+	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
@@ -177,7 +177,7 @@ func TestDebugWatchpoint(t *testing.T) {
 			do.Watch("i", api.WatchWrite),
 			do.Variable("t")))
 
-	n, err := g.NewNetwork("", d)
+	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
@@ -227,7 +227,7 @@ func TestDebugListener(t *testing.T) {
 			do.Line(21),
 			do.Variable("s")))
 
-	n, err := g.NewNetwork("", d)
+	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
 
