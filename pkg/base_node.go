@@ -137,7 +137,7 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 
 	default:
 		// Create a new network namespace
-		nsName := fmt.Sprintf("%s%s-%s", n.NSPrefix, n.Name, name)
+		nsName := fmt.Sprintf("gont-%s-%s", n.Name, name)
 		if node.Namespace, err = NewNamespace(nsName); err != nil {
 			return nil, err
 		}
