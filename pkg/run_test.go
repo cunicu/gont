@@ -58,7 +58,7 @@ func TestRunGo(t *testing.T) {
 	defer n.Close()
 
 	outp := &bytes.Buffer{}
-	cmd, err := n1.RunGo("../cmd/gontc/gontc.go", "identify",
+	cmd, err := n1.RunGo("../cmd/gontc", "identify",
 		co.Stdout(outp))
 	require.NoError(t, err, "Failed to run Go script")
 
