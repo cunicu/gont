@@ -5,19 +5,15 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"cunicu.li/gont/v2/internal"
-	"cunicu.li/gont/v2/internal/utils"
 	g "cunicu.li/gont/v2/pkg"
-	"github.com/coreos/go-systemd/v22/dbus"
 	"golang.org/x/exp/slices"
 )
 
@@ -143,99 +139,4 @@ func networkNode(args []string) (string, string, error) {
 	}
 
 	return network, node, nil
-}
-
-func version() {
-	version := "unknown"
-	if tag != "" {
-		version = tag
-	}
-
-	if ok, rev, dirty, btime := utils.ReadVCSInfos(); ok {
-		dirtyFlag := ""
-		if dirty {
-			dirtyFlag = "-dirty"
-		}
-
-		fmt.Printf("%s (%s%s, build on %s)\n", version, rev[:8], dirtyFlag, btime.String())
-	} else {
-		fmt.Println(version)
-	}
-}
-
-func list(args []string) {
-	if len(args) > 1 {
-		network := args[1]
-		for _, name := range g.NodeNames(network) {
-			fmt.Printf("%s/%s\n", network, name)
-		}
-	} else {
-		for _, name := range g.NetworkNames() {
-			fmt.Println(name)
-		}
-	}
-}
-
-func clean(args []string) error {
-	ctx := context.Background()
-	ctx, _ = context.WithTimeout(ctx, 10*time.Second)
-
-	c, err := dbus.NewWithContext(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to connect to D-Bus: %w", err)
-	}
-
-	if len(args) > 1 {
-		network := args[1]
-		if err := g.TeardownNetwork(ctx, c, network); err != nil {
-			return fmt.Errorf("failed to teardown network '%s': %w", network, err)
-		}
-	} else {
-		return g.TeardownAllNetworks(ctx, c)
-	}
-
-	return nil
-}
-
-func exec(network, node string, args []string) error {
-	if len(flag.Args()) <= 1 {
-		return fmt.Errorf("not enough arguments")
-	}
-
-	if network == "" {
-		return fmt.Errorf("there is no active Gont network")
-	}
-
-	if err := os.Setenv("GONT_NETWORK", network); err != nil {
-		return err
-	}
-	if err := os.Setenv("GONT_NODE", node); err != nil {
-		return err
-	}
-
-	cgroupName := fmt.Sprintf("gont-run-%d", os.Getpid())
-	cgroup, err := g.NewCGroup(nil, "scope", cgroupName)
-	if err != nil {
-		return fmt.Errorf("failed to create CGroup scope: %w", err)
-	}
-
-	if err := cgroup.Start(); err != nil {
-		return fmt.Errorf("failed to start CGroup scope: %w", err)
-	}
-
-	return g.Exec(network, node, args)
-}
-
-func shell(network, node string) error {
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "/bin/bash"
-	}
-
-	ps1 := fmt.Sprintf("%s/%s: ", network, node)
-	os.Setenv("PS1", ps1)
-
-	cmd := []string{shell, "--norc"}
-
-	return exec(network, node, cmd)
 }
