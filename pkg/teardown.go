@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"cunicu.li/gont/v2/internal/utils"
@@ -62,12 +63,9 @@ func NodeNames(network string) []string {
 func GenerateNetworkName() string {
 	existing := NetworkNames()
 
-	for i := 0; i < 32; i++ {
-		random := GetRandomName()
-
-		index := sort.SearchStrings(existing, random)
-		if index >= len(existing) || existing[index] != random {
-			return random
+	for name := range RandomNames {
+		if !slices.Contains(existing, name) {
+			return name
 		}
 	}
 
