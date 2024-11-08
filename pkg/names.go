@@ -135,7 +135,15 @@ var Names = []string{
 	"zorn",
 }
 
-func GetRandomName() string {
-	index := rand.Intn(len(Names)) //nolint:gosec
+func RandomName() string {
+	index := rand.Int() % len(Names) //nolint:gosec
 	return Names[index]
+}
+
+func RandomNames(yield func(string) bool) {
+	for _, index := range rand.Perm(len(Names)) {
+		if !yield(Names[index]) {
+			return
+		}
+	}
 }
