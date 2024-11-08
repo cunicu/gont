@@ -50,7 +50,7 @@ type Network struct {
 	logger      *zap.Logger
 }
 
-func HostNode(n *Network) *Host {
+func HostNode(n *Network) (h *Host) {
 	baseNs, err := netns.Get()
 	if err != nil {
 		return nil
@@ -61,7 +61,7 @@ func HostNode(n *Network) *Host {
 		return nil
 	}
 
-	return &Host{
+	h = &Host{
 		BaseNode: &BaseNode{
 			name:       "host",
 			isHostNode: true,
@@ -76,6 +76,18 @@ func HostNode(n *Network) *Host {
 			logger:  zap.L().Named("host"),
 		},
 	}
+
+	cgroupName := fmt.Sprintf("gont-%s-%s", n.Name, h.name)
+	h.CGroup, err = NewCGroup(n.sdConn, "slice", cgroupName)
+	if err != nil {
+		return nil
+	}
+
+	if err := h.CGroup.Start(); err != nil {
+		return nil
+	}
+
+	return h
 }
 
 func NewNetwork(name string, opts ...Option) (n *Network, err error) {
@@ -125,8 +137,7 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 		}
 	}
 
-	n.HostNode = HostNode(n)
-	if n.HostNode == nil {
+	if n.HostNode = HostNode(n); n.HostNode == nil {
 		return nil, errors.New("failed to create host node")
 	}
 
@@ -221,6 +232,10 @@ func (n *Network) ForEachHost(cb func(h *Host)) {
 func (n *Network) Teardown() error {
 	n.nodesLock.Lock()
 	defer n.nodesLock.Unlock()
+
+	if err := n.HostNode.Teardown(); err != nil {
+		return err
+	}
 
 	for name, node := range n.nodes {
 		if err := node.Teardown(); err != nil {

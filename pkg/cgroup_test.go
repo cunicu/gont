@@ -90,7 +90,7 @@ func TestCGroupTeardown(t *testing.T) {
 
 	exited := make(chan bool)
 	go func() {
-		cmd.Wait()
+		cmd.Wait() //nolint:errcheck
 		close(exited)
 	}()
 
