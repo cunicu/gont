@@ -20,7 +20,7 @@ func TestDocker(t *testing.T) {
 
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw, err := n.AddSwitch("sw")
 	require.NoError(t, err, "Failed to create switch")
