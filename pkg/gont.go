@@ -14,9 +14,10 @@ import (
 
 const (
 	hostsFile  = "/etc/hosts"
-	netnsDir   = "/var/run/netns/"
 	baseVarDir = "/var/run/gont"
 	baseTmpDir = "/tmp/gont"
+	netnsDir   = "/var/run/netns"
+	cgroupDir  = "/sys/fs/cgroup"
 
 	loopbackInterfaceName = "lo"
 	bridgeInterfaceName   = "br"

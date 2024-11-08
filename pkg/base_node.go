@@ -33,7 +33,7 @@ type BaseNode struct {
 	network    *Network
 	name       string
 
-	BasePath string
+	VarPath string
 
 	Interfaces []*Interface
 
@@ -64,10 +64,10 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 	}
 
 	node = &BaseNode{
-		name:     name,
-		network:  n,
-		BasePath: basePath,
-		logger:   zap.L().Named("node").With(zap.String("node", name)),
+		name:    name,
+		network: n,
+		VarPath: basePath,
+		logger:  zap.L().Named("node").With(zap.String("node", name)),
 	}
 
 	cgroupName := fmt.Sprintf("gont-%s-%s", n.Name, name)
@@ -77,6 +77,13 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 
 	if err := node.CGroup.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start CGroup slice: %w", err)
+	}
+
+	if err := os.Symlink(
+		filepath.Join(n.VarPath, "cgroup", cgroupName+".slice"),
+		filepath.Join(node.VarPath, "cgroup"),
+	); err != nil {
+		return nil, fmt.Errorf("failed to link cgroup: %w", err)
 	}
 
 	node.logger.Info("Adding new node")
@@ -320,12 +327,12 @@ func (n *BaseNode) Teardown() error {
 		return err
 	}
 
-	nsMount := filepath.Join(n.BasePath, "ns", "net")
+	nsMount := filepath.Join(n.VarPath, "ns", "net")
 	if err := unix.Unmount(nsMount, 0); err != nil {
 		return err
 	}
 
-	if err := os.RemoveAll(n.BasePath); err != nil {
+	if err := os.RemoveAll(n.VarPath); err != nil {
 		return err
 	}
 
