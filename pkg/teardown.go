@@ -107,17 +107,20 @@ func TeardownNetwork(ctx context.Context, c *dbus.Conn, network string) error {
 		}
 	}
 
+	// Delete files
 	if err := os.RemoveAll(networkVarPath); err != nil {
 		return fmt.Errorf("failed to delete network dir: %w", err)
 	}
 
+	// Delete temporary files
 	if err := os.RemoveAll(networkTmpPath); err != nil {
 		return fmt.Errorf("failed to delete network dir: %w", err)
 	}
 
+	// Stop CGroup slice
 	sliceName := fmt.Sprintf("gont-%s.slice", network)
 	if _, err := c.StopUnitContext(ctx, sliceName, "fail", nil); err != nil {
-		return fmt.Errorf("failed to stop CGroup slice: %w", err)
+		return fmt.Errorf("failed to stop cgroup: %w", err)
 	}
 
 	return nil
@@ -127,8 +130,7 @@ func TeardownNode(ctx context.Context, c *dbus.Conn, network, node string) error
 	nodePath := filepath.Join(baseVarDir, network, "nodes", node)
 	nsMount := filepath.Join(nodePath, "ns", "net")
 
-	netNsName := fmt.Sprintf("gont-%s-%s", network, node)
-
+	// Delete network namespace mount
 	if mounted, err := utils.IsMountPoint(nsMount); err == nil && mounted {
 		if err := unix.Unmount(nsMount, 0); err != nil {
 			return fmt.Errorf("failed to unmount netns of node '%s': %w", node, err)
@@ -137,14 +139,18 @@ func TeardownNode(ctx context.Context, c *dbus.Conn, network, node string) error
 		return fmt.Errorf("failed to check if mounted: %w", err)
 	}
 
+	// Delete named network namespace
+	netNsName := fmt.Sprintf("gont-%s-%s", network, node)
 	if err := netns.DeleteNamed(netNsName); err != nil && !errors.Is(err, unix.ENOENT) {
 		return fmt.Errorf("failed to delete named network namespace: %w", err)
 	}
 
+	// Delete files
 	if err := os.RemoveAll(nodePath); err != nil {
 		return fmt.Errorf("failed to delete node dir: %w", err)
 	}
 
+	// Stop CGroup slice
 	sliceName := fmt.Sprintf("gont-%s-%s.slice", network, node)
 	if _, err := c.StopUnitContext(ctx, sliceName, "fail", nil); err != nil {
 		return fmt.Errorf("failed to stop CGroup slice: %w", err)
