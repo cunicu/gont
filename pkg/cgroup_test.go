@@ -16,7 +16,7 @@ import (
 func TestCGroup(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h, err := n.AddHost("h1")
 	require.NoError(t, err)
@@ -32,7 +32,7 @@ func TestCGroup(t *testing.T) {
 func TestCGroupPropertyNetwork(t *testing.T) {
 	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, sdo.MemoryMax(5<<20))...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h, err := n.AddHost("h1")
 	require.NoError(t, err)
@@ -48,7 +48,7 @@ func TestCGroupPropertyNetwork(t *testing.T) {
 func TestCGroupPropertyHost(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h, err := n.AddHost("h1", sdo.MemoryMax(5<<20))
 	require.NoError(t, err)
@@ -64,7 +64,7 @@ func TestCGroupPropertyHost(t *testing.T) {
 func TestCGroupPropertyCommand(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h, err := n.AddHost("h1")
 	require.NoError(t, err)

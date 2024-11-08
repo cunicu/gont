@@ -19,7 +19,7 @@ import (
 func TestPingDualStack(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw, err := n.AddSwitch("sw")
 	require.NoError(t, err, "Failed to create switch")
@@ -50,7 +50,7 @@ func TestPingDualStack(t *testing.T) {
 func TestPingIPv4(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw, err := n.AddSwitch("sw")
 	require.NoError(t, err, "Failed to create switch")
@@ -77,7 +77,7 @@ func TestPingIPv4(t *testing.T) {
 func TestPingIPv6(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw, err := n.AddSwitch("sw")
 	require.NoError(t, err, "Failed to create switch")
@@ -103,7 +103,7 @@ func TestPingIPv6(t *testing.T) {
 func TestPingDirect(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h1, err := n.AddHost("h1")
 	require.NoError(t, err, "Failed to create host")
@@ -132,7 +132,7 @@ func TestPingDirect(t *testing.T) {
 func TestPingMultiHop(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw1, err := n.AddSwitch("sw1")
 	require.NoError(t, err, "Failed to create switch")
@@ -170,7 +170,7 @@ func TestPingMultiHop(t *testing.T) {
 func TestPingLoopback(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h, err := n.AddHost("h")
 	require.NoError(t, err, "Failed to add host")
@@ -185,7 +185,7 @@ func TestPingLoopback(t *testing.T) {
 func TestPingSelf(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h1, err := n.AddHost("h1")
 	require.NoError(t, err, "Failed to add host")

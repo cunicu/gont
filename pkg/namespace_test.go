@@ -19,7 +19,7 @@ func TestNamespace(t *testing.T) {
 
 	n, err := g.NewNamespace(nsName)
 	require.NoError(t, err, "Failed to create new namespace")
-	defer n.Close()
+	defer n.MustClose()
 
 	err = n.RunFunc(func() error {
 		nsh, err := netns.Get()

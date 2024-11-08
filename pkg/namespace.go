@@ -83,6 +83,13 @@ func (ns *Namespace) Close() error {
 	return nil
 }
 
+// MustClose closes the namespace like Close() but panics if an error occurs.
+func (n *Namespace) MustClose() {
+	if err := n.Close(); err != nil {
+		panic(err)
+	}
+}
+
 func (ns *Namespace) RunFunc(cb Callback) error {
 	exit, err := ns.Enter()
 	if err != nil {

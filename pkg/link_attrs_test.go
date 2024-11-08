@@ -15,7 +15,7 @@ import (
 func TestLinkAttrs(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h1, err := n.AddHost("h1")
 	require.NoError(t, err, "Failed to add host")

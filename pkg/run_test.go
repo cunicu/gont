@@ -25,7 +25,7 @@ func prepare(t *testing.T) (*g.Network, *g.BaseNode) {
 
 func TestRun(t *testing.T) {
 	n, n1 := prepare(t)
-	defer n.Close()
+	defer n.MustClose()
 
 	// Run
 	outp := &bytes.Buffer{}
@@ -37,7 +37,7 @@ func TestRun(t *testing.T) {
 
 func TestRunFunc(t *testing.T) {
 	n, n1 := prepare(t)
-	defer n.Close()
+	defer n.MustClose()
 
 	// Run
 	err := n1.RunFunc(func() error {
@@ -55,7 +55,7 @@ func TestRunFunc(t *testing.T) {
 
 func TestRunGo(t *testing.T) {
 	n, n1 := prepare(t)
-	defer n.Close()
+	defer n.MustClose()
 
 	outp := &bytes.Buffer{}
 	cmd, err := n1.RunGo("../cmd/gontc", "identify",
@@ -69,7 +69,7 @@ func TestRunGo(t *testing.T) {
 
 func TestEnter(t *testing.T) {
 	n, n1 := prepare(t)
-	defer n.Close()
+	defer n.MustClose()
 
 	exit, err := n1.Enter()
 	require.NoError(t, err, "Failed to enter namespace")
@@ -82,7 +82,7 @@ func TestEnter(t *testing.T) {
 
 func TestRunSimple(t *testing.T) {
 	n, n1 := prepare(t)
-	defer n.Close()
+	defer n.MustClose()
 
 	_, err := n1.Run("true")
 	require.NoError(t, err)
@@ -93,7 +93,7 @@ func TestRunSimple(t *testing.T) {
 
 func TestStart(t *testing.T) {
 	n, n1 := prepare(t)
-	defer n.Close()
+	defer n.MustClose()
 
 	outp := &bytes.Buffer{}
 	cmd, err := n1.Start("ip", "netns", "identify",

@@ -19,7 +19,7 @@ import (
 func TestPingNATIPv4(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw1, err := n.AddSwitch("sw1")
 	require.NoError(t, err, "Failed to create switch")
@@ -60,7 +60,7 @@ func TestPingNATIPv4(t *testing.T) {
 func TestPingNATIPv6(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw1, err := n.AddSwitch("sw1")
 	require.NoError(t, err, "Failed to create switch")
@@ -101,7 +101,7 @@ func TestPingNATIPv6(t *testing.T) {
 func TestPingDoubleNAT(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw1, err := n.AddSwitch("sw1")
 	require.NoError(t, err, "Failed to create switch")
@@ -157,7 +157,7 @@ func TestPingHostNAT(t *testing.T) {
 
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	sw1, err := n.AddSwitch("sw1")
 	require.NoError(t, err, "Failed to create switch")

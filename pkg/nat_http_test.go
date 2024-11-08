@@ -33,7 +33,7 @@ import (
 func TestGetMyIP(t *testing.T) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	server, err := AddWebServer(n, "server")
 	require.NoError(t, err, "Failed to create host")

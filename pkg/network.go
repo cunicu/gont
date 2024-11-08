@@ -306,6 +306,13 @@ func (n *Network) Close() error {
 	return nil
 }
 
+// MustClose closes the network like Close() but panics if an error occurs.
+func (n *Network) MustClose() {
+	if err := n.Close(); err != nil {
+		panic(err)
+	}
+}
+
 func (n *Network) Register(m Node) {
 	n.nodesLock.Lock()
 	defer n.nodesLock.Unlock()

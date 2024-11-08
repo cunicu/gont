@@ -40,7 +40,7 @@ func TestDebugBreakpointHostnode(t *testing.T) {
 
 	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	_, err = n.HostNode.RunGo("../test/debugee1", o.BuildFlagsDebug)
 	require.NoError(t, err, "Failed to run")
@@ -76,7 +76,7 @@ func TestDebugBreakpoint(t *testing.T) {
 
 	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h1, err := n.AddHost("h1")
 	require.NoError(t, err, "Failed to add host")
@@ -125,7 +125,7 @@ func TestDebugBreakpointLocation(t *testing.T) {
 
 	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h1, err := n.AddHost("h1")
 	require.NoError(t, err, "Failed to add host")
@@ -179,7 +179,7 @@ func TestDebugWatchpoint(t *testing.T) {
 
 	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h1, err := n.AddHost("h1")
 	require.NoError(t, err, "Failed to add host")
@@ -229,7 +229,7 @@ func TestDebugListener(t *testing.T) {
 
 	n, err := g.NewNetwork("", g.Customize(globalNetworkOptions, d)...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	c, err := n.HostNode.StartGo("../test/debugee1", o.BuildFlagsDebug)
 	require.NoError(t, err, "Failed to run")

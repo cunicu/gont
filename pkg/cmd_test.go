@@ -21,7 +21,7 @@ import (
 func TestCmdStdinStdout(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	stdin := bytes.NewBuffer([]byte("Hello World"))
 	stdout := bytes.NewBuffer(nil)
@@ -34,7 +34,7 @@ func TestCmdStdinStdout(t *testing.T) {
 func TestCmdStdinStderr(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	stdin := bytes.NewBuffer([]byte("Hello World"))
 	stderr := bytes.NewBuffer(nil)
@@ -47,7 +47,7 @@ func TestCmdStdinStderr(t *testing.T) {
 func TestCmdStdinCombined(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	stdin := bytes.NewBuffer([]byte("Hello World"))
 	combined := bytes.NewBuffer(nil)
@@ -60,7 +60,7 @@ func TestCmdStdinCombined(t *testing.T) {
 func TestCmdArguments(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	combined := bytes.NewBuffer(nil)
 
@@ -78,7 +78,7 @@ func TestCmdArguments(t *testing.T) {
 func TestCmdDir(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	combined := bytes.NewBuffer(nil)
 
@@ -90,7 +90,7 @@ func TestCmdDir(t *testing.T) {
 func TestCmdEnv(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	combined := bytes.NewBuffer(nil)
 
@@ -116,7 +116,7 @@ func TestCmdExtraFile(t *testing.T) {
 
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	combined := bytes.NewBuffer(nil)
 
@@ -141,7 +141,7 @@ func TestCmdExtraFile(t *testing.T) {
 func TestCmdContext(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
@@ -158,7 +158,7 @@ func TestCmdContext(t *testing.T) {
 func TestIProute2Files(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	beep, err := n.AddHost("beep")
 	require.NoError(t, err)
@@ -173,7 +173,7 @@ func TestIProute2Files(t *testing.T) {
 func TestExecCmd(t *testing.T) {
 	n, err := g.NewNetwork("", globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	stdin := bytes.NewBuffer([]byte("Hello World"))
 	stdout := bytes.NewBuffer(nil)

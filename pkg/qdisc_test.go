@@ -20,7 +20,7 @@ import (
 func testNetem(t *testing.T, ne o.Netem) (*probing.Statistics, error) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	h1, err := n.AddHost("h1")
 	require.NoError(t, err, "Failed to create host")

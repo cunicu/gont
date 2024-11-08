@@ -27,7 +27,7 @@ func TestNamedNetwork(t *testing.T) {
 
 	n, err := g.NewNetwork(name, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
+	defer n.MustClose()
 
 	require.Equal(t, n.Name, name, "Mismatching names")
 	require.True(t, hasNetwork(name))
