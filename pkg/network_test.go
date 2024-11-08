@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	g "cunicu.li/gont/v2/pkg"
-	o "cunicu.li/gont/v2/pkg/options"
 	"github.com/stretchr/testify/require"
 	"github.com/vishvananda/netns"
 )
@@ -28,25 +27,6 @@ func TestNamedNetwork(t *testing.T) {
 
 	n, err := g.NewNetwork(name, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
-	defer n.Close()
-
-	require.Equal(t, n.Name, name, "Mismatching names")
-	require.True(t, hasNetwork(name))
-
-	_, err = n.AddHost("h1")
-	require.NoError(t, err, "Failed to add host")
-
-	_, err = netns.GetFromName(ns)
-	require.NoError(t, err, "Failed to get ns from name")
-}
-
-func TestNetworkNSPrefix(t *testing.T) {
-	prefix := "pfx-"
-	name := g.GenerateNetworkName()
-	ns := fmt.Sprintf("%s%s-h1", prefix, name)
-
-	n, err := g.NewNetwork(name, g.Customize(globalNetworkOptions, o.NSPrefix(prefix))...)
-	require.NoError(t, err, "Failed to create network: %s", err)
 	defer n.Close()
 
 	require.Equal(t, n.Name, name, "Mismatching names")

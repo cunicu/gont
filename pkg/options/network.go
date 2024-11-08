@@ -7,12 +7,6 @@ import (
 	g "cunicu.li/gont/v2/pkg"
 )
 
-type NSPrefix string
-
-func (pfx NSPrefix) ApplyNetwork(n *g.Network) {
-	n.NSPrefix = string(pfx)
-}
-
 // Persistent keeps a network from being torn down.
 type Persistent bool
 

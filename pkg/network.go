@@ -40,7 +40,6 @@ type Network struct {
 
 	// Options
 	Persistent    bool
-	NSPrefix      string
 	Captures      []*Capture
 	Debugger      *Debugger
 	Tracer        *Tracer
@@ -103,14 +102,12 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 	tmpPath := filepath.Join(baseTmpDir, name)
 
 	n = &Network{
-		Name:      name,
-		VarPath:   varPath,
-		TmpPath:   tmpPath,
-		nodes:     map[string]Node{},
-		nodesLock: sync.RWMutex{},
-		NSPrefix:  "gont-",
-		Captures:  []*Capture{},
-		logger:    zap.L().Named("network").With(zap.String("network", name)),
+		Name:     name,
+		VarPath:  varPath,
+		TmpPath:  tmpPath,
+		nodes:    map[string]Node{},
+		Captures: []*Capture{},
+		logger:   zap.L().Named("network").With(zap.String("network", name)),
 	}
 
 	// Apply network specific options
