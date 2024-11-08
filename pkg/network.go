@@ -153,6 +153,13 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 		return nil, fmt.Errorf("failed to start CGroup slice: %w", err)
 	}
 
+	if err := os.Symlink(
+		filepath.Join(cgroupDir, "gont.slice", cgroupName+".slice"),
+		filepath.Join(n.VarPath, "cgroup"),
+	); err != nil {
+		return nil, fmt.Errorf("failed to link cgroup: %w", err)
+	}
+
 	n.logger.Info("Created new network")
 
 	return n, nil
