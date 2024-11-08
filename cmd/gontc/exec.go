@@ -30,11 +30,11 @@ func exec(network, node string, args []string) error {
 	cgroupName := fmt.Sprintf("gont-run-%d", os.Getpid())
 	cgroup, err := g.NewCGroup(nil, "scope", cgroupName)
 	if err != nil {
-		return fmt.Errorf("failed to create CGroup scope: %w", err)
+		return fmt.Errorf("failed to create cgroup: %w", err)
 	}
 
 	if err := cgroup.Start(); err != nil {
-		return fmt.Errorf("failed to start CGroup scope: %w", err)
+		return fmt.Errorf("failed to start cgroup: %w", err)
 	}
 
 	return g.Exec(network, node, args)

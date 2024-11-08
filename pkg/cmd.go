@@ -208,7 +208,7 @@ func (c *Cmd) Start() (err error) {
 	)
 
 	if err := c.CGroup.Start(); err != nil {
-		return fmt.Errorf("failed to start CGroup scope: %w", err)
+		return fmt.Errorf("failed to start cgroup: %w", err)
 	}
 
 	// Signal child that that it is ready to proceed

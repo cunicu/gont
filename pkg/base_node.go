@@ -72,11 +72,11 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 
 	cgroupName := fmt.Sprintf("gont-%s-%s", n.Name, name)
 	if node.CGroup, err = NewCGroup(n.sdConn, "slice", cgroupName, opts...); err != nil {
-		return nil, fmt.Errorf("failed to create CGroup slice: %w", err)
+		return nil, fmt.Errorf("failed to create cgroup: %w", err)
 	}
 
 	if err := node.CGroup.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start CGroup slice: %w", err)
+		return nil, fmt.Errorf("failed to start cgroup: %w", err)
 	}
 
 	if err := os.Symlink(
@@ -337,7 +337,7 @@ func (n *BaseNode) Teardown() error {
 	}
 
 	if err := n.CGroup.Stop(); err != nil {
-		return fmt.Errorf("failed to stop Cgroup slice: %w", err)
+		return fmt.Errorf("failed to stop cgroup: %w", err)
 	}
 
 	return nil

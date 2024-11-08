@@ -118,11 +118,13 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 		}
 	}
 
+	// Setup CGroup slice
 	cgroupName := fmt.Sprintf("gont-%s", name)
 	if n.CGroup, err = NewCGroup(nil, "slice", cgroupName, opts...); err != nil {
 		return nil, fmt.Errorf("failed to create CGroup slice: %w", err)
 	}
 
+	// Setup files
 	if stat, err := os.Stat(varPath); err == nil && stat.IsDir() {
 		return nil, syscall.EEXIST
 	}
@@ -251,18 +253,18 @@ func (n *Network) Teardown() error {
 
 	if n.VarPath != "" {
 		if err := os.RemoveAll(n.VarPath); err != nil {
-			return fmt.Errorf("failed to delete network var dir: %w", err)
+			return fmt.Errorf("failed to delete network directory: %w", err)
 		}
 	}
 
 	if n.TmpPath != "" {
 		if err := os.RemoveAll(n.TmpPath); err != nil {
-			return fmt.Errorf("failed to delete network tmp dir: %w", err)
+			return fmt.Errorf("failed to delete temporary network directory: %w", err)
 		}
 	}
 
 	if err := n.CGroup.Stop(); err != nil {
-		return fmt.Errorf("failed to stop CGroup slice: %w", err)
+		return fmt.Errorf("failed to stop cgroup: %w", err)
 	}
 
 	return nil
