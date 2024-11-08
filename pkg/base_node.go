@@ -4,6 +4,7 @@
 package gont
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -17,6 +18,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 )
+
+var ErrNameReserved = errors.New("name 'host' is reserved")
 
 type BaseNodeOption interface {
 	ApplyBaseNode(n *BaseNode)
@@ -48,6 +51,10 @@ type BaseNode struct {
 }
 
 func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err error) {
+	if name == "host" {
+		return nil, ErrNameReserved
+	}
+
 	basePath := filepath.Join(n.VarPath, "nodes", name)
 	for _, path := range []string{"ns", "files"} {
 		path = filepath.Join(basePath, path)
