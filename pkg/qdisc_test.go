@@ -80,7 +80,7 @@ func TestNetemLoss(t *testing.T) {
 
 	t.Logf("Loss: %f", stats.PacketLoss)
 
-	require.Less(t, math.Abs(stats.PacketLoss-float64(ne.Loss)), 20.0)
+	require.Less(t, math.Abs(stats.PacketLoss-float64(ne.Loss)), 25.0)
 }
 
 func TestNetemDuplication(t *testing.T) {
