@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strings"
 
 	"cunicu.li/gont/v2/internal/utils"
 	"github.com/coreos/go-systemd/v22/dbus"
@@ -20,18 +21,55 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func NetworkNames() []string {
+func NetworkCGroups() []string {
 	names := []string{}
 
-	nets, err := os.ReadDir(baseVarDir)
+	dirs, err := os.ReadDir(cgroupDir)
 	if err != nil {
 		return names
 	}
 
-	for _, net := range nets {
-		if net.IsDir() {
-			names = append(names, net.Name())
+	for _, dir := range dirs {
+		if !dir.IsDir() {
+			continue
 		}
+
+		name := dir.Name()
+
+		if strings.HasPrefix(name, "gont-") {
+			name = strings.TrimPrefix(name, "gont-")
+		} else {
+			continue
+		}
+
+		if strings.HasSuffix(name, ".slice") {
+			name = strings.TrimSuffix(name, ".slice")
+		} else {
+			continue
+		}
+
+		names = append(names, name)
+	}
+
+	sort.Strings(names)
+
+	return names
+}
+
+func NetworkNames() []string {
+	names := []string{}
+
+	dirs, err := os.ReadDir(baseVarDir)
+	if err != nil {
+		return names
+	}
+
+	for _, dir := range dirs {
+		if !dir.IsDir() {
+			continue
+		}
+
+		names = append(names, dir.Name())
 	}
 
 	sort.Strings(names)
@@ -76,32 +114,22 @@ func GenerateNetworkName() string {
 	return fmt.Sprintf("%s%d", random, rand.Intn(128)+1) //nolint:gosec
 }
 
-func TeardownAllNetworks(ctx context.Context, c *dbus.Conn) error {
-	for _, name := range NetworkNames() {
-		if err := TeardownNetwork(ctx, c, name); err != nil {
-			return fmt.Errorf("failed to teardown network '%s': %w", name, err)
-		}
-	}
-
-	return nil
-}
-
 func TeardownNetwork(ctx context.Context, c *dbus.Conn, network string) error {
 	networkVarPath := filepath.Join(baseVarDir, network)
 	networkTmpPath := filepath.Join(baseTmpDir, network)
 	nodesVarPath := filepath.Join(networkVarPath, "nodes")
 
-	fis, err := os.ReadDir(nodesVarPath)
+	dirs, err := os.ReadDir(nodesVarPath)
 	if err != nil {
 		return fmt.Errorf("failed to read nodes dir: %w", err)
 	}
 
-	for _, fi := range fis {
-		if !fi.IsDir() {
+	for _, dir := range dirs {
+		if !dir.IsDir() {
 			continue
 		}
 
-		node := fi.Name()
+		node := dir.Name()
 		if err := TeardownNode(ctx, c, network, node); err != nil {
 			return fmt.Errorf("failed to teardown node '%s': %w", node, err)
 		}
@@ -153,8 +181,33 @@ func TeardownNode(ctx context.Context, c *dbus.Conn, network, node string) error
 	// Stop CGroup slice
 	sliceName := fmt.Sprintf("gont-%s-%s.slice", network, node)
 	if _, err := c.StopUnitContext(ctx, sliceName, "fail", nil); err != nil {
-		return fmt.Errorf("failed to stop CGroup slice: %w", err)
+		return fmt.Errorf("failed to stop cgroup: %w", err)
 	}
 
 	return nil
+}
+
+// TeardownStaleCgroups deletes all stale CGroup slices for which no corresponding Gont network exists.
+func TeardownStaleCgroups(ctx context.Context, c *dbus.Conn) ([]string, error) {
+	networks := map[string]any{}
+	for _, name := range NetworkNames() {
+		networks[name] = nil
+	}
+
+	deleted := []string{}
+
+	for _, name := range NetworkCGroups() {
+		if _, ok := networks[name]; ok {
+			continue
+		}
+
+		sliceName := fmt.Sprintf("gont-%s.slice", name)
+		if _, err := c.StopUnitContext(ctx, sliceName, "fail", nil); err != nil {
+			return nil, fmt.Errorf("failed to stop cgroup: %w", err)
+		}
+
+		deleted = append(deleted, name)
+	}
+
+	return deleted, nil
 }
