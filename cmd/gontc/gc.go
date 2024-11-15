@@ -12,25 +12,21 @@ import (
 	"github.com/coreos/go-systemd/v22/dbus"
 )
 
-func clean(args []string) error {
+func collectGarbage(args []string) error {
 	ctx := context.Background()
-	ctx, _ = context.WithTimeout(ctx, 30*time.Second) //nolint:govet
+	ctx, _ = context.WithTimeout(ctx, 10*time.Second) //nolint:govet
 
 	c, err := dbus.NewWithContext(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to connect to D-Bus: %w", err)
 	}
 
-	networks := args[1:]
-	if len(networks) == 0 {
-		networks = g.NetworkNames()
+	deleted, err := g.TeardownStaleCgroups(ctx, c)
+	if err != nil {
+		return err
 	}
 
-	for _, name := range networks {
-		if err := g.TeardownNetwork(ctx, c, name); err != nil {
-			return fmt.Errorf("failed to teardown network '%s': %w", name, err)
-		}
-
+	for _, name := range deleted {
 		fmt.Println(name)
 	}
 

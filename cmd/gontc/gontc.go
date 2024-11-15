@@ -96,6 +96,9 @@ func main() {
 	case "version":
 		version()
 
+	case "gc":
+		err = collectGarbage(args)
+
 	case "help":
 		flag.Usage()
 		err = nil
