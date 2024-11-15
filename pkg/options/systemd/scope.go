@@ -57,12 +57,17 @@ func PIDs(pids ...uint32) Property {
 	})
 }
 
-// func PIDFDs(fds []int) Property {
-// 	return Property(sdbus.Property{
-// 		Name:  "PIDs",
-// 		Value: dbus.MakeVariant(), //nolint:gosec
-// 	})
-// }
+func PIDFDs(fds []int) Property {
+	ufds := []dbus.UnixFD{}
+	for _, fd := range fds {
+		ufds = append(ufds, dbus.UnixFD(fd)) //nolint:gosec
+	}
+
+	return Property(sdbus.Property{
+		Name:  "PIDFDs",
+		Value: dbus.MakeVariant(ufds),
+	})
+}
 
 func User(user string) Property {
 	return Property(sdbus.Property{
