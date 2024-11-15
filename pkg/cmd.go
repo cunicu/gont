@@ -13,11 +13,13 @@ import (
 	"strconv"
 	"syscall"
 
+	unixx "cunicu.li/gont/v2/internal/unix"
 	sdbus "github.com/coreos/go-systemd/v22/dbus"
 	"github.com/godbus/dbus/v5"
 	"github.com/gopacket/gopacket/pcapgo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapio"
+	"golang.org/x/sys/unix"
 )
 
 //nolint:gochecknoglobals
@@ -44,6 +46,7 @@ type Cmd struct {
 	DisableASLR     bool
 	Context         context.Context
 	PreserveEnvVars []string
+	CGroupOptions   []Option
 
 	StdoutWriters []io.Writer
 	StderrWriters []io.Writer
@@ -58,8 +61,6 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 		node: n,
 	}
 
-	c.CGroup, _ = NewCGroup(c.node.sdConn, "scope", "")
-
 	strArgs := []string{}
 	for _, arg := range args {
 		switch arg := arg.(type) {
@@ -67,7 +68,7 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 		case CmdOption:
 			arg.ApplyCmd(c)
 		case CGroupOption:
-			arg.ApplyCGroup(c.CGroup)
+			c.CGroupOptions = append(c.CGroupOptions, arg)
 		default:
 			if strArg, ok := stringifyArg(arg); ok {
 				strArgs = append(strArgs, strArg)
@@ -175,12 +176,12 @@ func (c *Cmd) Start() (err error) {
 		c.Stderr = io.MultiWriter(c.StderrWriters...)
 	}
 
-	// We need to start the process in a stopped state for two reasons
+	// We need to start the process in a stopped state for two reasons:
 	// 1. Attaching the Delve debugger before execution
-	//    commences in order to allow for breakpoints early
-	//    in the execution.
-	// 2. Attaching the process into the new Systemd Scope Unit
-	if err := c.stoppedStart(); err != nil {
+	//    commences in order to allow for breakpoints early in the execution.
+	// 2. Moving the process into the new Systemd Scope Unit / CGroup.
+	var pidfd int
+	if pidfd, err = c.stoppedStart(); err != nil {
 		return err
 	}
 
@@ -198,13 +199,20 @@ func (c *Cmd) Start() (err error) {
 	}
 
 	// Start CGroup scope and attach process to it
-	c.CGroup.Name = fmt.Sprintf("gont-run-%d", c.Process.Pid)
+	cgroupName := fmt.Sprintf("gont-run-%d", c.Process.Pid)
+	if c.CGroup, err = NewCGroup(c.node.sdConn, "scope", cgroupName, c.CGroupOptions...); err != nil {
+		return fmt.Errorf("failed to create cgroup: %w", err)
+	}
+
 	c.CGroup.Properties = append(c.CGroup.Properties,
 		sdbus.Property{
 			Name:  "Slice",
 			Value: dbus.MakeVariant(c.node.Unit()),
 		},
-		sdbus.PropPids(uint32(c.Process.Pid)), //nolint:gosec
+		sdbus.Property{
+			Name:  "PIDFDs",
+			Value: dbus.MakeVariant([]dbus.UnixFD{dbus.UnixFD(pidfd)}), //nolint:gosec
+		},
 	)
 
 	if err := c.CGroup.Start(); err != nil {
@@ -345,67 +353,49 @@ func (c *Cmd) redirectToLog() func(*zap.Logger) {
 //     ptrace(PTRACE_DETACH, pid, 0, SIGSTOP)
 //
 // 10) The parent process has detached from the tracee and the tracee is stopped due to the injected SIGSTOP in 9)
-func (c *Cmd) stoppedStart() error {
+func (c *Cmd) stoppedStart() (fd int, err error) {
 	if c.Cmd.SysProcAttr == nil {
 		c.Cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 
 	c.SysProcAttr.Setpgid = true
 	c.SysProcAttr.Ptrace = true
+	c.SysProcAttr.PidFD = &fd
 
 	if err := c.Cmd.Start(); err != nil {
-		return err
-	}
-
-	pgid, err := syscall.Getpgid(c.Process.Pid)
-	if err != nil {
-		return fmt.Errorf("failed to get pgid: %w", err)
+		return -1, err
 	}
 
 	for {
-		var ws syscall.WaitStatus
-		wpid, err := syscall.Wait4(-pgid, &ws, syscall.WALL, nil)
-		if err != nil {
-			return err
+		var si unixx.SiginfoChld
+		if err := unixx.Waitid(unix.P_PIDFD, fd, &si, unix.WSTOPPED|unix.WEXITED, nil); err != nil {
+			return -1, fmt.Errorf("failed to wait for process: %w", err)
 		}
 
-		// c.logger.Debug("Stopped",
-		// 	zap.String("signal", ws.Signal().String()),
-		// 	zap.String("stop_signal", ws.StopSignal().String()),
-		// 	zap.Int("trap_cause", ws.TrapCause()))
+		switch si.Code {
+		case unixx.CLD_EXITED:
+			return -1, fmt.Errorf("process exited prematurely")
 
-		if ws.Exited() {
-			return fmt.Errorf("process exited prematurely")
-		}
-
-		if !ws.Stopped() {
-			continue
-		}
-
-		switch ws.StopSignal() {
-		case syscall.SIGTRAP:
-			if c.node.isHostNode || ws.TrapCause() == syscall.PTRACE_EVENT_EXEC {
-				if err := syscall.Tgkill(c.Process.Pid, wpid, syscall.SIGSTOP); err != nil {
-					return err
+		case unixx.CLD_TRAPPED:
+			switch syscall.Signal(si.Status) {
+			case syscall.SIGTRAP:
+				if err := unix.Kill(si.Pid, syscall.SIGSTOP); err != nil {
+					return -1, fmt.Errorf("failed to send stop signal to tracee: %w", err)
 				}
-			} else if ws.TrapCause() == 0 {
-				if err := syscall.PtraceSetOptions(wpid, syscall.PTRACE_O_TRACEEXEC); err != nil {
-					return err
+
+			case syscall.SIGSTOP:
+				if err := ptrace(syscall.PTRACE_DETACH, si.Pid, 0, uintptr(syscall.SIGSTOP)); err != nil {
+					return -1, fmt.Errorf("failed to detach from tracee: %w", err)
 				}
+
+				c.logger.Debug("Detached from tracee")
+
+				return fd, nil
 			}
-
-		case syscall.SIGSTOP:
-			if err := ptrace(syscall.PTRACE_DETACH, wpid, 0, uintptr(syscall.SIGSTOP)); err != nil {
-				return err
-			}
-
-			c.logger.Debug("Detached from tracee")
-
-			return nil
 		}
 
-		if err = syscall.PtraceCont(wpid, 0); err != nil {
-			return err
+		if err = syscall.PtraceCont(si.Pid, 0); err != nil {
+			return -1, fmt.Errorf("failed to continue tracee: %w", err)
 		}
 	}
 }
