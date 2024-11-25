@@ -13,7 +13,7 @@ require (
 	github.com/google/nftables v0.2.0
 	github.com/gopacket/gopacket v1.3.1
 	github.com/vishvananda/netlink v1.3.0
-	github.com/vishvananda/netns v0.0.4
+	github.com/vishvananda/netns v0.0.5
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	golang.org/x/net v0.30.0
