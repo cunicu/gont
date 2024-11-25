@@ -26,7 +26,7 @@ func (vf VLANFiltering) ApplyBridge(b *nl.Bridge) {
 	b.VlanFiltering = &v
 }
 
-// AgingTime configures the bridge's FDB entries ageing time, ie the number of seconds a MAC address will be kept in the FDB after a packet has been received from that address.
+// AgingTime configures the bridge's FDB entries aging time, ie the number of seconds a MAC address will be kept in the FDB after a packet has been received from that address.
 // After this time has passed, entries are cleaned up.
 type AgingTime time.Duration
 

@@ -31,7 +31,7 @@ var loopbackInterface = Interface{
 }
 
 type InterfaceOption interface {
-	ApplyInterface(n *Interface)
+	ApplyInterface(i *Interface)
 }
 
 func (i *Interface) ApplyBaseNode(n *BaseNode) {
@@ -40,7 +40,7 @@ func (i *Interface) ApplyBaseNode(n *BaseNode) {
 
 type Interface struct {
 	Name string
-	Node Node
+	Node NamespacedNode
 
 	Link  nl.Link
 	Flags int

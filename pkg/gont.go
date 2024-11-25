@@ -22,6 +22,8 @@ const (
 	bridgeInterfaceName   = "br"
 )
 
+var ErrMissingPrivileges = errors.New("missing NET_ADMIN capabilities")
+
 // Option is the base type for all functional options.
 type Option any
 
@@ -29,7 +31,7 @@ type Option any
 func CheckCaps() error {
 	c := cap.GetProc()
 	if v, err := c.GetFlag(cap.Effective, cap.SYS_ADMIN); err != nil || !v {
-		return errors.New("missing NET_ADMIN capabilities")
+		return ErrMissingPrivileges
 	}
 	return nil
 }

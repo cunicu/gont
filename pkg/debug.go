@@ -40,7 +40,7 @@ func (d *Debugger) ApplyNetwork(n *Network) {
 	n.Debugger = d
 }
 
-func (d *Debugger) ApplyBaseNode(n *BaseNode) {
+func (d *Debugger) ApplyNamespaceNode(n *NamespaceNode) {
 	n.Debugger = d
 }
 

@@ -6,6 +6,7 @@ package gont
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -18,6 +19,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapio"
 )
+
+var ErrExitPrematurely = errors.New("process exited prematurely")
 
 //nolint:gochecknoglobals
 var DefaultPreserveEnvVars = []string{
@@ -47,11 +50,11 @@ type Cmd struct {
 	StderrWriters []io.Writer
 
 	debuggerInstance *debuggerInstance
-	node             *BaseNode
+	node             *NamespaceNode
 	logger           *zap.Logger
 }
 
-func (n *BaseNode) Command(name string, args ...any) *Cmd {
+func (n *NamespaceNode) Command(name string, args ...any) *Cmd {
 	c := &Cmd{
 		node: n,
 	}
@@ -80,8 +83,7 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 	}
 
 	for _, arg := range args {
-		switch arg := arg.(type) {
-		case ExecCmdOption:
+		if arg, ok := arg.(ExecCmdOption); ok {
 			arg.ApplyExecCmd(c.Cmd)
 		}
 	}
@@ -249,9 +251,9 @@ func (c *Cmd) tracer() *Tracer {
 		return t
 	} else if t := c.node.network.Tracer; t != nil {
 		return t
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (c *Cmd) debugger() *Debugger {
@@ -261,9 +263,9 @@ func (c *Cmd) debugger() *Debugger {
 		return d
 	} else if d := c.node.network.Debugger; d != nil {
 		return d
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (c *Cmd) extraEnvFile(envName string, f *os.File) {
@@ -354,7 +356,7 @@ func (c *Cmd) stoppedStart() error {
 			zap.Int("trap_cause", ws.TrapCause()))
 
 		if ws.Exited() {
-			return fmt.Errorf("process exited prematurely")
+			return ErrExitPrematurely
 		}
 
 		if !ws.Stopped() {
@@ -381,6 +383,8 @@ func (c *Cmd) stoppedStart() error {
 			c.logger.Debug("Detached from tracee")
 
 			return nil
+
+		default:
 		}
 
 		if err = syscall.PtraceCont(wpid, 0); err != nil {

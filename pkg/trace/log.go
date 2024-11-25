@@ -22,7 +22,7 @@ type traceCore struct {
 	fields []zapcore.Field
 }
 
-func (c *traceCore) Enabled(lvl zapcore.Level) bool {
+func (c *traceCore) Enabled(_ zapcore.Level) bool {
 	return eventWriter != nil || eventCallback != nil
 }
 

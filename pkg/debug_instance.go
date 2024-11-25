@@ -159,6 +159,8 @@ func (d *debuggerInstance) run() {
 		case proc.StopManual:
 			d.logger.Debug("Process stopped manually")
 			return
+
+		default:
 		}
 	}
 }
@@ -352,8 +354,8 @@ func (d *debuggerInstance) createBreakpointsForLocation(tp *Tracepoint) error {
 }
 
 func ptrace(request int, pid int, addr uintptr, data uintptr) error {
-	if _, _, e1 := syscall.Syscall6(syscall.SYS_PTRACE, uintptr(request), uintptr(pid), uintptr(addr), uintptr(data), 0, 0); e1 != 0 {
-		return syscall.Errno(e1)
+	if _, _, e1 := syscall.Syscall6(syscall.SYS_PTRACE, uintptr(request), uintptr(pid), addr, data, 0, 0); e1 != 0 {
+		return e1
 	}
 
 	return nil

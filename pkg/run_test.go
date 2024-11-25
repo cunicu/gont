@@ -13,11 +13,11 @@ import (
 	"github.com/vishvananda/netns"
 )
 
-func prepare(t *testing.T) (*g.Network, *g.BaseNode) {
+func prepare(t *testing.T) (*g.Network, *g.NamespaceNode) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create new network")
 
-	n1, err := n.AddNode("n1")
+	n1, err := n.AddNamespaceNode("n1")
 	require.NoError(t, err, "Failed to create node")
 
 	return n, n1

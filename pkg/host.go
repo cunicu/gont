@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	nl "github.com/vishvananda/netlink"
-	"go.uber.org/zap"
 )
 
 type HostOption interface {
@@ -17,7 +16,7 @@ type HostOption interface {
 }
 
 type Host struct {
-	*BaseNode
+	*NamespaceNode
 
 	Filter *Filter
 
@@ -32,15 +31,15 @@ func (h *Host) ApplyInterface(i *Interface) {
 }
 
 func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
-	node, err := n.AddNode(name, opts...)
+	node, err := n.AddNamespaceNode(name, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create node: %s", err)
+		return nil, fmt.Errorf("failed to create node: %w", err)
 	}
 
 	host := &Host{
-		BaseNode:    node,
-		Routes:      []*nl.Route{},
-		FilterRules: []*FilterRule{},
+		NamespaceNode: node,
+		Routes:        []*nl.Route{},
+		FilterRules:   []*FilterRule{},
 	}
 
 	n.Register(host)
@@ -62,7 +61,7 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		return nil, fmt.Errorf("failed to configure loopback interface: %w", err)
 	}
 
-	if err := host.ConfigureLinks(); err != nil {
+	if err := host.configureLinks(); err != nil {
 		return nil, fmt.Errorf("failed to configure links: %w", err)
 	}
 
@@ -89,9 +88,9 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 	return host, nil
 }
 
-// ConfigureLinks adds links to other nodes which
+// configureLinks adds links to other nodes which
 // have been configured by functional options
-func (h *Host) ConfigureLinks() error {
+func (h *Host) configureLinks() error {
 	for _, intf := range h.ConfiguredInterfaces {
 		peerDev := fmt.Sprintf("veth-%s", h.Name())
 
@@ -112,29 +111,27 @@ func (h *Host) ConfigureLinks() error {
 }
 
 func (h *Host) ConfigureInterface(i *Interface) error {
-	h.logger.Info("Configuring interface", zap.Any("intf", i))
-
 	// Disable duplicate address detection (DAD) before adding addresses
 	// so we do not end up with tentative addresses and slow test executions
 	if !i.EnableDAD {
 		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
 		if err := h.WriteProcFS(fn, "0"); err != nil {
-			return fmt.Errorf("failed to enabled IPv6 forwarding: %s", err)
+			return fmt.Errorf("failed to disable IPv6 DAD: %w", err)
 		}
 	}
 
 	for _, addr := range i.Addresses {
 		if err := i.AddAddress(&addr); err != nil {
-			return fmt.Errorf("failed to add link address: %s", err)
+			return fmt.Errorf("failed to add link address: %w", err)
 		}
 	}
 
-	return h.BaseNode.ConfigureInterface(i)
+	return h.NamespaceNode.ConfigureInterface(i)
 }
 
 func (h *Host) Traceroute(o *Host, opts ...any) error {
 	if h.network != o.network {
-		return fmt.Errorf("hosts must be on same network")
+		return ErrDifferentNetworks
 	}
 
 	opts = append(opts, o)

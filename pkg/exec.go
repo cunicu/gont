@@ -21,6 +21,7 @@ const (
 	persNoRandomize    = 0x0040000  // ADDR_NO_RANDOMIZE
 )
 
+//nolint:gochecknoinits
 func init() {
 	unshare := os.Getenv("GONT_UNSHARE")
 	node := os.Getenv("GONT_NODE")
