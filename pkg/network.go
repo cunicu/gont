@@ -25,6 +25,8 @@ type NetworkOption interface {
 }
 
 type Network struct {
+	*CGroup
+
 	Name string
 
 	nodes     map[string]Node
@@ -34,7 +36,7 @@ type Network struct {
 
 	HostNode *Host
 	VarPath  string
-	TmpPath  string
+	TmpPath  string // For Go builds (see RunGo())
 
 	// Options
 	Persistent    bool
@@ -76,7 +78,7 @@ func HostNode(n *Network) *Host {
 	}
 }
 
-func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
+func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 	if err := CheckCaps(); err != nil {
 		return nil, err
 	}
@@ -88,7 +90,7 @@ func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
 	varPath := filepath.Join(baseVarDir, name)
 	tmpPath := filepath.Join(baseTmpDir, name)
 
-	n := &Network{
+	n = &Network{
 		Name:      name,
 		VarPath:   varPath,
 		TmpPath:   tmpPath,
@@ -101,7 +103,15 @@ func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
 
 	// Apply network specific options
 	for _, opt := range opts {
-		opt.ApplyNetwork(n)
+		switch opt := opt.(type) {
+		case NetworkOption:
+			opt.ApplyNetwork(n)
+		}
+	}
+
+	cgroupName := fmt.Sprintf("gont-%s", name)
+	if n.CGroup, err = NewCGroup(nil, "slice", cgroupName, opts...); err != nil {
+		return nil, fmt.Errorf("failed to create CGroup slice: %w", err)
 	}
 
 	if stat, err := os.Stat(varPath); err == nil && stat.IsDir() {
@@ -126,6 +136,10 @@ func NewNetwork(name string, opts ...NetworkOption) (*Network, error) {
 
 	if err := n.generateConfigFiles(); err != nil {
 		return nil, fmt.Errorf("failed to generate configuration files: %w", err)
+	}
+
+	if err := n.CGroup.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start CGroup slice: %w", err)
 	}
 
 	n.logger.Info("Created new network")
@@ -223,9 +237,13 @@ func (n *Network) Teardown() error {
 	}
 
 	if n.TmpPath != "" {
-		if err := os.RemoveAll(n.VarPath); err != nil {
+		if err := os.RemoveAll(n.TmpPath); err != nil {
 			return fmt.Errorf("failed to delete network tmp dir: %w", err)
 		}
+	}
+
+	if err := n.CGroup.Stop(); err != nil {
+		return fmt.Errorf("failed to stop CGroup slice: %w", err)
 	}
 
 	return nil
