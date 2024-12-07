@@ -8,22 +8,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-ping/ping"
+	probing "github.com/prometheus-community/pro-bing"
 	"go.uber.org/zap/zapio"
 )
 
-func (h *Host) Ping(o *Host) (*ping.Statistics, error) {
+func (h *Host) Ping(o *Host) (*probing.Statistics, error) {
 	return h.PingWithOptions(o, "ip", 1, 5*time.Second, time.Second, true)
 }
 
-func (h *Host) PingWithNetwork(o *Host, net string) (*ping.Statistics, error) {
+func (h *Host) PingWithNetwork(o *Host, net string) (*probing.Statistics, error) {
 	return h.PingWithOptions(o, net, 1, 5*time.Second, time.Second, true)
 }
 
-func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Duration, intv time.Duration, output bool) (*ping.Statistics, error) {
+func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Duration, intv time.Duration, output bool) (*probing.Statistics, error) {
 	var err error
 
-	p := ping.New(o.Name())
+	p := probing.New(o.Name())
 
 	p.Count = count
 	p.RecordRtts = true
@@ -49,18 +49,18 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 	p.SetNetwork(net)
 
 	if output {
-		p.OnRecv = func(p *ping.Packet) {
+		p.OnRecv = func(p *probing.Packet) {
 			fmt.Fprintf(wlog, "%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%v\n",
 				p.Nbytes,
 				p.Addr,
 				p.IPAddr.String(),
 				p.Seq,
-				p.Ttl,
+				p.TTL,
 				p.Rtt,
 			)
 		}
 
-		p.OnFinish = func(s *ping.Statistics) {
+		p.OnFinish = func(s *probing.Statistics) {
 			fmt.Fprintf(wlog, "-- %s (%s) ping statistics ---", o.Name(), s.IPAddr)
 			fmt.Fprintf(wlog, "%d packets transmitted, %d received, %d duplicates, %.2f%% packet loss\n", s.PacketsSent, s.PacketsRecv, s.PacketsRecvDuplicates, s.PacketLoss)
 			fmt.Fprintf(wlog, "rtt min/avg/max/mdev = %s/%s/%s/%s\n", s.MinRtt, s.AvgRtt, s.MaxRtt, s.StdDevRtt)

@@ -13,11 +13,11 @@ import (
 	g "cunicu.li/gont/v2/pkg"
 	o "cunicu.li/gont/v2/pkg/options"
 	tco "cunicu.li/gont/v2/pkg/options/tc"
-	"github.com/go-ping/ping"
+	probing "github.com/prometheus-community/pro-bing"
 	"github.com/stretchr/testify/require"
 )
 
-func testNetem(t *testing.T, ne o.Netem) (*ping.Statistics, error) {
+func testNetem(t *testing.T, ne o.Netem) (*probing.Statistics, error) {
 	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
 	require.NoError(t, err, "Failed to create network")
 	defer n.Close()
