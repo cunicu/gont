@@ -63,44 +63,6 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 	return nat, nil
 }
 
-func (n *Network) AddHostNAT(name string, opts ...Option) (*NAT, error) {
-	host := n.HostNode
-
-	if err := host.EnableForwarding(); err != nil {
-		return nil, err
-	}
-
-	rtr := &Router{
-		Host: host,
-	}
-
-	nat := &NAT{
-		Router: rtr,
-	}
-
-	// Apply NAT and BaseNode options
-	for _, o := range opts {
-		switch opt := o.(type) {
-		case NATOption:
-			opt.ApplyNAT(nat)
-		case BaseNodeOption:
-			opt.ApplyBaseNode(host.BaseNode)
-		}
-	}
-
-	if err := host.ConfigureLinks(); err != nil {
-		return nil, err
-	}
-
-	if err := nat.setupTable(n.HostNode.nftConn); err != nil {
-		return nil, fmt.Errorf("failed to setup nftables table: %w", err)
-	}
-
-	n.Register(host)
-
-	return nat, nil
-}
-
 /* Setup the table
  *
  * $ nft list table inet gont-nat
@@ -137,7 +99,7 @@ func (n *NAT) setupTable(c *nft.Conn) error {
 	n.Table = c.AddTable(t)
 
 	// We do not install input & forward chains for a HostNAT
-	if n.Host != n.network.HostNode {
+	if !n.Host.Namespace.IsHost() {
 		// Input chain
 		n.Input = c.AddChain(&nft.Chain{
 			Name:     "input",

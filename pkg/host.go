@@ -31,16 +31,11 @@ func (h *Host) ApplyInterface(i *Interface) {
 	i.Node = h
 }
 
-func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
-	node, err := n.AddNode(name, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create node: %s", err)
-	}
+func (n *Network) AddHost(name string, opts ...Option) (h *Host, err error) {
+	h = &Host{}
 
-	h := &Host{
-		BaseNode:    node,
-		Routes:      []*nl.Route{},
-		FilterRules: []*FilterRule{},
+	if h.BaseNode, err = n.AddNode(name, opts...); err != nil {
+		return nil, fmt.Errorf("failed to create node: %s", err)
 	}
 
 	n.Register(h)
@@ -53,13 +48,29 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 	}
 
 	// Configure loopback device
-	lo := loopbackInterface
-	lo.Node = h
-	if lo.Link, err = host.nlHandle.LinkByName("lo"); err != nil {
-		return nil, fmt.Errorf("failed to get loopback interface: %w", err)
-	}
-	if err := host.ConfigureInterface(&lo); err != nil {
-		return nil, fmt.Errorf("failed to configure loopback interface: %w", err)
+	if !h.Namespace.IsHost() {
+		lo := Interface{
+			Name: loopbackInterfaceName,
+			Node: h,
+			Addresses: []net.IPNet{
+				{
+					IP:   net.IPv4(127, 0, 0, 1),
+					Mask: net.IPv4Mask(255, 0, 0, 0),
+				},
+				{
+					IP:   net.IPv6loopback,
+					Mask: net.CIDRMask(8*net.IPv6len, 8*net.IPv6len),
+				},
+			},
+		}
+
+		if lo.Link, err = h.nlHandle.LinkByName("lo"); err != nil {
+			return nil, fmt.Errorf("failed to get loopback interface: %w", err)
+		}
+
+		if err := h.ConfigureInterface(&lo); err != nil {
+			return nil, fmt.Errorf("failed to configure loopback interface: %w", err)
+		}
 	}
 
 	if err := h.ConfigureLinks(); err != nil {

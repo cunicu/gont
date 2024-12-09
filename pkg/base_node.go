@@ -19,10 +19,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var (
-	ErrNameReserved      = errors.New("name 'host' is reserved")
-	ErrNameAlreadyExists = errors.New("name already exists")
-)
+var ErrNameAlreadyExists = errors.New("name already exists")
 
 type BaseNodeOption interface {
 	ApplyBaseNode(n *BaseNode)
@@ -32,23 +29,22 @@ type BaseNode struct {
 	*Namespace
 	*CGroup
 
-	isHostNode bool
-	network    *Network
-	name       string
+	network *Network
+	name    string
 
 	VarPath string
 
 	Interfaces []*Interface
 
 	// Options
-	ConfiguredInterfaces    []*Interface
-	Tracer                  *Tracer
-	Debugger                *Debugger
-	ExistingNamespace       string
-	ExistingDockerContainer string
-	RedirectToLog           bool
-	EmptyDirs               []string
-	Captures                []*Capture
+	ConfiguredInterfaces     []*Interface
+	Tracer                   *Tracer
+	Debugger                 *Debugger
+	ExistingNetworkNamespace string
+	ExistingDockerContainer  string
+	RedirectToLog            bool
+	EmptyDirs                []string
+	Captures                 []*Capture
 
 	logger *zap.Logger
 }
@@ -57,10 +53,6 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 	// TODO: Handle race between check and n.Register()
 	if _, ok := n.nodes[name]; ok {
 		return nil, fmt.Errorf("node %w: %s", ErrNameAlreadyExists, name)
-	}
-
-	if name == "host" {
-		return nil, ErrNameReserved
 	}
 
 	basePath := filepath.Join(n.VarPath, "nodes", name)
@@ -119,15 +111,20 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 	}
 
 	switch {
-	case node.ExistingNamespace != "":
+	case node.ExistingNetworkNamespace == "host":
+		if node.Namespace, err = HostNamespace(); err != nil {
+			return nil, fmt.Errorf("failed to get host namespace: %w", err)
+		}
+
+	case node.ExistingNetworkNamespace != "":
 		// Use an existing namespace created by "ip netns add"
-		nsh, err := netns.GetFromName(node.ExistingNamespace)
+		nsh, err := netns.GetFromName(node.ExistingNetworkNamespace)
 		if err != nil {
-			return nil, fmt.Errorf("failed to find existing network namespace %s: %w", node.ExistingNamespace, err)
+			return nil, fmt.Errorf("failed to find existing network namespace %s: %w", node.ExistingNetworkNamespace, err)
 		}
 
 		node.Namespace = &Namespace{
-			Name:     node.ExistingNamespace,
+			Name:     node.ExistingNetworkNamespace,
 			NsHandle: nsh,
 		}
 
@@ -135,7 +132,7 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 		// Use an existing net namespace from a Docker container
 		nsh, err := netns.GetFromDocker(node.ExistingDockerContainer)
 		if err != nil {
-			return nil, fmt.Errorf("failed to find existing docker container %s: %w", node.ExistingNamespace, err)
+			return nil, fmt.Errorf("failed to find existing docker container %s: %w", node.ExistingNetworkNamespace, err)
 		}
 
 		node.Namespace = &Namespace{
@@ -164,6 +161,7 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 	if err := utils.Touch(dst); err != nil {
 		return nil, err
 	}
+
 	if err := unix.Mount(src, dst, "", syscall.MS_BIND, ""); err != nil {
 		return nil, fmt.Errorf("failed to bind mount netns fd: %s", err)
 	}
@@ -332,16 +330,18 @@ func (n *BaseNode) Close() error {
 
 func (n *BaseNode) Teardown() error {
 	if err := n.Namespace.Close(); err != nil {
-		return err
+		return fmt.Errorf("failed to teardown namespace: %w", err)
 	}
 
 	nsMount := filepath.Join(n.VarPath, "ns", "net")
-	if err := unix.Unmount(nsMount, 0); err != nil {
-		return err
+	if ok, err := utils.IsMountPoint(nsMount); err == nil && ok {
+		if err := unix.Unmount(nsMount, 0); err != nil {
+			return fmt.Errorf("failed to unmount namespace: %w", err)
+		}
 	}
 
 	if err := os.RemoveAll(n.VarPath); err != nil {
-		return err
+		return fmt.Errorf("failed to delete files: %w", err)
 	}
 
 	if err := n.CGroup.Stop(); err != nil {

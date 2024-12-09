@@ -16,6 +16,7 @@ import (
 	"time"
 
 	g "cunicu.li/gont/v2/pkg"
+	o "cunicu.li/gont/v2/pkg/options"
 	co "cunicu.li/gont/v2/pkg/options/capture"
 	to "cunicu.li/gont/v2/pkg/options/trace"
 	"cunicu.li/gont/v2/pkg/trace"
@@ -38,10 +39,13 @@ func TestTraceSubProcess(t *testing.T) {
 	n, err := g.NewNetwork(*nname, t1)
 	require.NoError(t, err, "Failed to create network")
 
+	hn, err := n.AddHost("host", o.HostNamespace)
+	require.NoError(t, err, "Failed to create host node")
+
 	err = t1.Start()
 	require.NoError(t, err, "Failed to start tracer")
 
-	cmd, err := n.HostNode.RunGo("../test/tracee1")
+	cmd, err := hn.RunGo("../test/tracee1")
 	require.NoError(t, err, "Failed to run sub-process")
 
 	time.Sleep(100 * time.Millisecond)

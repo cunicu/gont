@@ -34,7 +34,6 @@ type Network struct {
 
 	hostsFileLock sync.Mutex
 
-	HostNode *Host
 	VarPath  string
 	TmpPath  string // For Go builds (see RunGo())
 
@@ -47,46 +46,6 @@ type Network struct {
 
 	keyLogPipes []*os.File
 	logger      *zap.Logger
-}
-
-func HostNode(n *Network) (h *Host) {
-	baseNs, err := netns.Get()
-	if err != nil {
-		return nil
-	}
-
-	baseHandle, err := netlink.NewHandle()
-	if err != nil {
-		return nil
-	}
-
-	h = &Host{
-		BaseNode: &BaseNode{
-			name:       "host",
-			isHostNode: true,
-			Namespace: &Namespace{
-				Name:     "base",
-				NsHandle: baseNs,
-				nlHandle: baseHandle,
-				nftConn:  &nft.Conn{},
-				logger:   zap.L().Named("namespace"),
-			},
-			network: n,
-			logger:  zap.L().Named("host"),
-		},
-	}
-
-	cgroupName := fmt.Sprintf("gont-%s-%s", n.Name, h.name)
-	h.CGroup, err = NewCGroup(n.sdConn, "slice", cgroupName)
-	if err != nil {
-		return nil
-	}
-
-	if err := h.CGroup.Start(); err != nil {
-		return nil
-	}
-
-	return h
 }
 
 func NewNetwork(name string, opts ...Option) (n *Network, err error) {
