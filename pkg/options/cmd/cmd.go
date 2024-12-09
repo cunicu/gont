@@ -49,3 +49,10 @@ type PreserveEnv string
 func (e PreserveEnv) ApplyCmd(c *g.Cmd) {
 	c.PreserveEnvVars = append(c.PreserveEnvVars, string(e))
 }
+
+// Scope sets the name of the systemd scope / CGroup in which the command should be started.
+type Scope string
+
+func (s Scope) ApplyCmd(c *g.Cmd) {
+	c.Scope = string(s)
+}

@@ -51,9 +51,12 @@ func (g *CGroup) Unit() string {
 
 // Start creates the CGroup
 func (g *CGroup) Start() error {
-	if _, err := g.sdConn.StartTransientUnitContext(context.Background(), g.Unit(), "replace", g.Properties, nil); err != nil {
+	ch := make(chan string)
+	if _, err := g.sdConn.StartTransientUnitContext(context.Background(), g.Unit(), "replace", g.Properties, ch); err != nil {
 		return fmt.Errorf("failed to create slice: %w", err)
 	}
+
+	<-ch
 
 	return nil
 }

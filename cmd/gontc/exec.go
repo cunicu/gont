@@ -9,6 +9,8 @@ import (
 	"os"
 
 	g "cunicu.li/gont/v2/pkg"
+	sdbus "github.com/coreos/go-systemd/v22/dbus"
+	"github.com/godbus/dbus/v5"
 )
 
 func exec(network, node string, args []string) error {
@@ -27,11 +29,24 @@ func exec(network, node string, args []string) error {
 		return err
 	}
 
-	cgroupName := fmt.Sprintf("gont-run-%d", os.Getpid())
-	cgroup, err := g.NewCGroup(nil, "scope", cgroupName)
+	sliceName := fmt.Sprintf("gont-%s-%s", network, node)
+	scopeName := fmt.Sprintf("gont-run-%d", os.Getpid())
+
+	cgroup, err := g.NewCGroup(nil, "scope", scopeName)
 	if err != nil {
 		return fmt.Errorf("failed to create cgroup: %w", err)
 	}
+
+	cgroup.Properties = append(cgroup.Properties,
+		sdbus.Property{
+			Name:  "Slice",
+			Value: dbus.MakeVariant(sliceName + ".slice"),
+		},
+		sdbus.Property{
+			Name:  "PIDs",
+			Value: dbus.MakeVariant([]uint{uint(os.Getpid())}),
+		},
+	)
 
 	if err := cgroup.Start(); err != nil {
 		return fmt.Errorf("failed to start cgroup: %w", err)
