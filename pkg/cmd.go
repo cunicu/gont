@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"syscall"
 
@@ -100,15 +101,19 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 		zap.Strings("args", strArgs),
 	)
 
-	// Preserve some environment variables from the parent process
-	if c.PreserveEnvVars == nil {
-		c.PreserveEnvVars = DefaultPreserveEnvVars
+	setEnv := func(name, value string) {
+		c.Env = append(c.Env, fmt.Sprintf("%s=%s", name, value))
 	}
 
 	passEnv := func(name string) {
 		if value := os.Getenv(name); value != "" {
-			c.Env = append(c.Env, fmt.Sprintf("%s=%s", name, value))
+			setEnv(name, value)
 		}
+	}
+
+	// Preserve some environment variables from the parent process
+	if c.PreserveEnvVars == nil {
+		c.PreserveEnvVars = DefaultPreserveEnvVars
 	}
 
 	for _, name := range c.PreserveEnvVars {
@@ -118,25 +123,20 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 	// Actual namespace switching is done similar to Docker's reexec
 	// in a forked version of ourself by passing all required details
 	// in environment variables.
-	if !c.node.isHostNode {
-		if c.node.ExistingDockerContainer == "" {
-			c.Path = "/proc/self/exe"
-			c.Env = append(c.Env,
-				"GONT_UNSHARE=true",
-				"GONT_NODE="+c.node.name,
-				"GONT_NETWORK="+c.node.network.Name)
+	if c.node.ExistingDockerContainer == "" {
+		c.Path = "/proc/self/exe"
 
-			passEnv("GONT_SKIP_MISSING_MOUNTPOINT")
-		} else {
-			c.Path = "/usr/bin/docker"
-			c.Args = append([]string{"docker", "exec", c.node.ExistingDockerContainer, name}, strArgs...)
-		}
+		setEnv("GONT_UNSHARE", "true")
+		setEnv("GONT_NODE", c.node.name)
+		setEnv("GONT_NETWORK", c.node.network.Name)
+		passEnv("GONT_SKIP_MISSING_MOUNTPOINT")
+	} else {
+		c.Path = "/usr/bin/docker"
+		c.Args = append([]string{"docker", "exec", c.node.ExistingDockerContainer, name}, strArgs...)
+	}
 
-		if c.DisableASLR {
-			c.Env = append(c.Env,
-				"GONT_DISABLE_ASLR=true",
-			)
-		}
+	if c.DisableASLR {
+		setEnv("GONT_DISABLE_ASLR", "true")
 	}
 
 	return c
@@ -188,7 +188,7 @@ func (c *Cmd) Start() (err error) {
 	}
 
 	if d := c.debugger(); d != nil {
-		if c.debuggerInstance, err = d.start(c.Cmd); err != nil {
+		if c.debuggerInstance, err = d.newInstance(c.Cmd); err != nil {
 			return err
 		}
 	}
@@ -227,6 +227,10 @@ func (c *Cmd) Start() (err error) {
 	// Signal child that that it is ready to proceed
 	if err := c.Process.Signal(syscall.SIGCONT); err != nil {
 		return fmt.Errorf("failed to send continuation signal to child: %w", err)
+	}
+
+	if di := c.debuggerInstance; di != nil {
+		go di.run()
 	}
 
 	return nil
@@ -363,9 +367,12 @@ func (c *Cmd) stoppedStart() (fd int, err error) {
 		c.Cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 
-	c.SysProcAttr.Setpgid = true
-	c.SysProcAttr.Ptrace = true
-	c.SysProcAttr.PidFD = &fd
+	c.Cmd.SysProcAttr.Setpgid = true
+	c.Cmd.SysProcAttr.Ptrace = true
+	c.Cmd.SysProcAttr.PidFD = &fd
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
 	if err := c.Cmd.Start(); err != nil {
 		return -1, err
@@ -382,18 +389,25 @@ func (c *Cmd) stoppedStart() (fd int, err error) {
 			return -1, fmt.Errorf("process exited prematurely")
 
 		case unixx.CLD_TRAPPED:
-			switch syscall.Signal(si.Status) {
+			signal := syscall.Signal(si.Status & 0xff)
+			trapCause := si.Status >> 8
+
+			switch signal {
 			case syscall.SIGTRAP:
-				if err := unix.Kill(si.Pid, syscall.SIGSTOP); err != nil {
-					return -1, fmt.Errorf("failed to send stop signal to tracee: %w", err)
+				if trapCause == syscall.PTRACE_EVENT_EXEC {
+					if err := syscall.Tgkill(c.Process.Pid, si.Pid, syscall.SIGSTOP); err != nil {
+						return -1, err
+					}
+				} else {
+					if err := syscall.PtraceSetOptions(si.Pid, syscall.PTRACE_O_TRACEEXEC); err != nil {
+						return -1, err
+					}
 				}
 
 			case syscall.SIGSTOP:
-				if err := ptrace(syscall.PTRACE_DETACH, si.Pid, 0, uintptr(syscall.SIGSTOP)); err != nil {
+				if err := unixx.Ptrace(syscall.PTRACE_DETACH, si.Pid, 0, uintptr(syscall.SIGSTOP)); err != nil {
 					return -1, fmt.Errorf("failed to detach from tracee: %w", err)
 				}
-
-				c.logger.Debug("Detached from tracee")
 
 				return fd, nil
 			}

@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"sync"
-	"syscall"
 
 	"github.com/go-delve/delve/pkg/proc"
 	"github.com/go-delve/delve/service"
@@ -37,7 +36,7 @@ type debuggerInstance struct {
 	logger *zap.Logger
 }
 
-func (d *Debugger) start(c *exec.Cmd) (*debuggerInstance, error) {
+func (d *Debugger) newInstance(c *exec.Cmd) (*debuggerInstance, error) {
 	var err error
 
 	di := &debuggerInstance{
@@ -68,15 +67,7 @@ func (d *Debugger) start(c *exec.Cmd) (*debuggerInstance, error) {
 		di.config.Debugger.WorkingDir = wd
 	}
 
-	// if err := logflags.Setup(true, "", ""); err != nil {
-	// 	return nil, err
-	// }
-
-	// Open listeners
-	if di.listenAddr != nil {
-		go di.listen(di.listenAddr)
-	}
-
+	// Create debugger
 	if di.Debugger, err = debug.New(&di.config.Debugger, di.config.ProcessArgs); err != nil {
 		return nil, fmt.Errorf("failed to create debugger: %w", err)
 	}
@@ -104,7 +95,7 @@ func (d *Debugger) start(c *exec.Cmd) (*debuggerInstance, error) {
 	}
 
 	if d.BreakOnEntry {
-		di.logger.Info("Setting break on entry break point")
+		di.logger.Info("Creating breakpoint on entry")
 		if _, err := di.CreateBreakpoint(&api.Breakpoint{
 			FunctionName: "runtime.main",
 		}, "", nil, false); err != nil {
@@ -112,7 +103,13 @@ func (d *Debugger) start(c *exec.Cmd) (*debuggerInstance, error) {
 		}
 	}
 
-	go di.run()
+	// Open listeners
+	if di.listenAddr != nil {
+		go di.listen(di.listenAddr)
+	}
+
+	// Run main loop
+	// go di.run()
 
 	return di, err
 }
@@ -120,7 +117,7 @@ func (d *Debugger) start(c *exec.Cmd) (*debuggerInstance, error) {
 func (d *debuggerInstance) run() {
 	for {
 		d.control.Lock()
-		s, err := d.Command(&api.DebuggerCommand{Name: api.Continue}, nil)
+		s, err := d.Command(&api.DebuggerCommand{Name: api.Continue}, nil, nil)
 		d.control.Unlock()
 		if err != nil {
 			d.logger.Error("Failed to continue", zap.Error(err))
@@ -164,6 +161,8 @@ func (d *debuggerInstance) run() {
 }
 
 func (d *debuggerInstance) handleWatchpoints(s *api.DebuggerState) bool {
+	thr := s.CurrentThread
+
 	// Re-enable breakpoints for the delayed creation of watchpoints
 	for _, wp := range s.WatchOutOfScope {
 		if wpi, ok := wp.UserData.(*watchpointInstance); !ok {
@@ -174,7 +173,6 @@ func (d *debuggerInstance) handleWatchpoints(s *api.DebuggerState) bool {
 		}
 	}
 
-	thr := s.CurrentThread
 	if thr.Breakpoint == nil {
 		return false
 	}
@@ -212,9 +210,9 @@ func (d *debuggerInstance) handleBreakpoint(s *api.DebuggerState) bool {
 		}
 	}
 
+	switch thr.Breakpoint.FunctionName {
 	// We detach the debugger here so the final Cmd.Wait() call will
 	// populate Cmd.ProcessState properly
-	switch thr.Breakpoint.FunctionName {
 	case "runtime.exit":
 		if d.debugger.DetachOnExit {
 			if err := d.Detach(false); err != nil {
@@ -280,7 +278,7 @@ func (d *debuggerInstance) haltIfRunning() error {
 	if s, err := d.State(true); err != nil {
 		return fmt.Errorf("failed to get debugger state: %w", err)
 	} else if s.Running {
-		if _, err := d.Command(&api.DebuggerCommand{Name: api.Halt}, nil); err != nil {
+		if _, err := d.Command(&api.DebuggerCommand{Name: api.Halt}, nil, nil); err != nil {
 			return fmt.Errorf("failed to halt process: %w", err)
 		}
 	}
@@ -320,7 +318,7 @@ func (d *debuggerInstance) createBreakpoint(tp *Tracepoint) error {
 }
 
 func (d *debuggerInstance) createBreakpointsForLocation(tp *Tracepoint) error {
-	locs, err := d.FindLocation(-1, 0, 0, tp.Location, true, nil)
+	locs, _, err := d.FindLocation(-1, 0, 0, tp.Location, true, nil)
 	if err != nil {
 		return fmt.Errorf("failed to get locations: %w", err)
 	}
@@ -340,20 +338,12 @@ func (d *debuggerInstance) createBreakpointsForLocation(tp *Tracepoint) error {
 		bp.AddrPid = loc.PCPids
 
 		if bpi.Breakpoint, err = d.CreateBreakpoint(&bp, tp.Location, nil, false); err != nil {
-			return fmt.Errorf("failed to create breakpoint: %w", err)
+			return err
 		}
 
 		fields := breakpointFields(bpi.Breakpoint)
 		fields = append(fields, zap.Int("num", i))
 		d.logger.Debug("Created new breakpoint for location", fields...)
-	}
-
-	return nil
-}
-
-func ptrace(request int, pid int, addr uintptr, data uintptr) error {
-	if _, _, e1 := syscall.Syscall6(syscall.SYS_PTRACE, uintptr(request), uintptr(pid), uintptr(addr), uintptr(data), 0, 0); e1 != 0 {
-		return syscall.Errno(e1)
 	}
 
 	return nil
