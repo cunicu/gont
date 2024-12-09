@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDebugBreakpointHostnode(t *testing.T) {
+func TestDebugBreakpointHostNode(t *testing.T) {
 	tps := []trace.Event{}
 
 	v := g.NewTracer(
@@ -104,10 +104,10 @@ func TestDebugBreakpoint(t *testing.T) {
 }
 
 func TestDebugBreakpointLocation(t *testing.T) {
-	tps := []trace.Event{}
+	tes := []trace.Event{}
 
 	v := g.NewTracer(
-		to.Callback(func(tp trace.Event) { tps = append(tps, tp) }),
+		to.Callback(func(te trace.Event) { tes = append(tes, te) }),
 	)
 
 	d := g.NewDebugger(
@@ -151,9 +151,9 @@ func TestDebugBreakpointLocation(t *testing.T) {
 		require.Equal(t, "Hello World", bp.Argument("s"))
 	}
 
-	require.Len(t, tps, 2)
-	assert(1, tps[0])
-	assert(2, tps[1])
+	require.Len(t, tes, 2)
+	assert(1, tes[0])
+	assert(2, tes[1])
 }
 
 func TestDebugWatchpoint(t *testing.T) {

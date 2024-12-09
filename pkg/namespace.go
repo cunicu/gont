@@ -58,7 +58,7 @@ func NewNamespace(name string) (*Namespace, error) {
 		return nil, err
 	}
 
-	// nftables connection
+	// Setup nftables connection
 	ns.nftConn = &nft.Conn{
 		NetNS: int(ns.NsHandle),
 	}
@@ -71,6 +71,7 @@ func NewNamespace(name string) (*Namespace, error) {
 	return ns, nil
 }
 
+// Close releases the network namespace.
 func (ns *Namespace) Close() error {
 	if ns.NsHandle >= 0 {
 		if err := netns.DeleteNamed(ns.Name); err != nil {
@@ -90,6 +91,10 @@ func (n *Namespace) MustClose() {
 	}
 }
 
+// RunFunc runs a Go function within the namespace.
+// Note, that Goroutines started from within the passed function
+// are not guaranteed to run inside the same namespace!
+// This function calls runtime.{Lock|Unlock}OSThread().
 func (ns *Namespace) RunFunc(cb Callback) error {
 	exit, err := ns.Enter()
 	if err != nil {
@@ -100,6 +105,7 @@ func (ns *Namespace) RunFunc(cb Callback) error {
 	return cb()
 }
 
+// and unlock the Goroutine from the OS thread.
 func (ns *Namespace) Enter() (func(), error) {
 	runtime.LockOSThread()
 
