@@ -17,10 +17,9 @@ import (
 
 //nolint:gochecknoglobals
 var (
-	globalNetworkOptions = []g.Option{}
-	nname                = flag.String("name", "", "Network name")
-	persist              = flag.Bool("persist", false, "Do not teardown networks after test")
-	capture              = flag.String("capture", "", "Capture network traffic to PCAPng file")
+	nname   = flag.String("name", "", "Network name")
+	persist = flag.Bool("persist", false, "Do not teardown networks after test")
+	capture = flag.String("capture", "", "Capture network traffic to PCAPng file")
 )
 
 func setupLogging() *zap.Logger {
@@ -42,20 +41,20 @@ func setupLogging() *zap.Logger {
 }
 
 func TestMain(m *testing.M) {
+	flag.Parse()
+
 	logger := setupLogging()
 	defer logger.Sync() //nolint:errcheck
 
-	flag.Parse()
-
 	// Handle global flags
 	if *persist {
-		globalNetworkOptions = append(globalNetworkOptions,
+		g.GlobalOptions = append(g.GlobalOptions,
 			o.Persistent(*persist),
 		)
 	}
 
 	if *capture != "" {
-		globalNetworkOptions = append(globalNetworkOptions,
+		g.GlobalOptions = append(g.GlobalOptions,
 			g.NewCapture(
 				co.Filename(*capture)),
 		)

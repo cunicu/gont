@@ -30,11 +30,14 @@ func TestCaptureKeyLog(t *testing.T) {
 		co.Comment("This PCAPng file contains TLS decryption secrets"),
 	)
 
+	c2 := g.NewCapture(
+		co.ToFilename("all.pcapng")) // We can create a file
+
 	n, err := g.NewNetwork(*nname,
-		g.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
-			g.NewCapture(
-				co.ToFilename("all.pcapng")), // We can create a file
-		)...)
+		c1, // Also multiple capturers are supported
+		c2,
+	)
+
 	require.NoError(t, err, "Failed to create network")
 
 	server, err := AddWebServer(n, "server")

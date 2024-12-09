@@ -19,7 +19,7 @@ import (
 )
 
 func TestCmdStdinStdout(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -32,7 +32,7 @@ func TestCmdStdinStdout(t *testing.T) {
 }
 
 func TestCmdStdinStderr(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -45,7 +45,7 @@ func TestCmdStdinStderr(t *testing.T) {
 }
 
 func TestCmdStdinCombined(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -58,7 +58,7 @@ func TestCmdStdinCombined(t *testing.T) {
 }
 
 func TestCmdArguments(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -76,7 +76,7 @@ func TestCmdArguments(t *testing.T) {
 }
 
 func TestCmdDir(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -88,7 +88,7 @@ func TestCmdDir(t *testing.T) {
 }
 
 func TestCmdEnv(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -114,7 +114,7 @@ func TestCmdEnv(t *testing.T) {
 func TestCmdExtraFile(t *testing.T) {
 	t.Skip()
 
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -139,7 +139,7 @@ func TestCmdExtraFile(t *testing.T) {
 }
 
 func TestCmdContext(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -156,7 +156,7 @@ func TestCmdContext(t *testing.T) {
 }
 
 func TestIProute2Files(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -171,7 +171,7 @@ func TestIProute2Files(t *testing.T) {
 }
 
 func TestExecCmd(t *testing.T) {
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 

@@ -14,7 +14,7 @@ import (
 )
 
 func prepare(t *testing.T) (*g.Network, *g.BaseNode) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create new network")
 
 	n1, err := n.AddNode("n1")

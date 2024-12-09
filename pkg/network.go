@@ -101,6 +101,8 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 	varPath := filepath.Join(baseVarDir, name)
 	tmpPath := filepath.Join(baseTmpDir, name)
 
+	opts = slices.Concat(GlobalOptions, opts)
+
 	n = &Network{
 		Name:     name,
 		VarPath:  varPath,

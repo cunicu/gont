@@ -23,17 +23,10 @@ const (
 	bridgeInterfaceName   = "br"
 )
 
+var GlobalOptions []Option //nolint:gochecknoglobals
+
 // Option is the base type for all functional options.
 type Option any
-
-// Customize clones and extends a list of options without altering the list of base options.
-func Customize(opts []Option, extraOptions ...Option) []Option {
-	new := make([]Option, 0, len(opts)+len(extraOptions))
-	new = append(new, opts...)
-	new = append(new, extraOptions...)
-
-	return new
-}
 
 // CheckCaps checks if the current process has the required privileges to run Gont
 func CheckCaps() error {

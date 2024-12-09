@@ -17,7 +17,7 @@ import (
 //
 //	h1 <-> sw <-> h2
 func TestPingDualStack(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -48,7 +48,7 @@ func TestPingDualStack(t *testing.T) {
 //
 //	h1 <-> sw <-> h2
 func TestPingIPv4(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -75,7 +75,7 @@ func TestPingIPv4(t *testing.T) {
 //
 //	h1 <-> sw <-> h2
 func TestPingIPv6(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -101,7 +101,7 @@ func TestPingIPv6(t *testing.T) {
 //
 // h1 <-> h2
 func TestPingDirect(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -130,7 +130,7 @@ func TestPingDirect(t *testing.T) {
 //
 //	h1 <-> sw1 <-> r1 <-> sw2 <-> h2
 func TestPingMultiHop(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -168,7 +168,7 @@ func TestPingMultiHop(t *testing.T) {
 }
 
 func TestPingLoopback(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -183,7 +183,7 @@ func TestPingLoopback(t *testing.T) {
 }
 
 func TestPingSelf(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 

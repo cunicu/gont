@@ -90,11 +90,13 @@ func TestCaptureNetwork(t *testing.T) {
 		co.Comment("Some random comment which will be included in the capture file"),
 	)
 
+	c2 := g.NewCapture(
+		co.ToFilename("all.pcapng"), // We can create a file
+	)
+
 	n, err = g.NewNetwork(*nname,
-		g.Customize(globalNetworkOptions, c1, // Also multiple capturers are supported
-			g.NewCapture(
-				co.ToFilename("all.pcapng")), // We can create a file
-		)...)
+		c1, // Also multiple capturers are supported
+		c2)
 	require.NoError(t, err, "Failed to create network")
 
 	sw1, err = n.AddSwitch("sw1")

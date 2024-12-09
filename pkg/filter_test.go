@@ -15,7 +15,7 @@ import (
 )
 
 func TestFilterIPv4(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -53,7 +53,7 @@ func TestFilterIPv4(t *testing.T) {
 }
 
 func TestFilterIPv6(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 

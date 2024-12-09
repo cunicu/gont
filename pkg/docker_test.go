@@ -18,7 +18,7 @@ import (
 func TestDocker(t *testing.T) {
 	t.Skip("Test is currently broken")
 
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
