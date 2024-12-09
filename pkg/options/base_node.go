@@ -43,4 +43,4 @@ func BuildFlags(flags ...string) GoBuildFlags {
 
 // BuildFlagsDebug builds the Go binary without compiler optimizations like inlining
 // to improve debugging.
-var BuildFlagsDebug = GoBuildFlags{"-gcflags", "-N -l"} //nolint:gochecknoglobals
+var BuildFlagsDebug = GoBuildFlags{"-gcflags", "all=-N -l"} //nolint:gochecknoglobals

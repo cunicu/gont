@@ -131,8 +131,6 @@ func TestCmdEnv(t *testing.T) {
 }
 
 func TestCmdExtraFile(t *testing.T) {
-	t.Skip()
-
 	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()

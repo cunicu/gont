@@ -87,7 +87,7 @@ func (d *Debugger) Close() error {
 
 	for _, dbg := range d.instances {
 		if dbg.IsRunning() {
-			if _, err := dbg.Command(&api.DebuggerCommand{Name: api.Halt}, nil); err != nil {
+			if _, err := dbg.Command(&api.DebuggerCommand{Name: api.Halt}, nil, nil); err != nil {
 				return fmt.Errorf("failed to halt process: %w", err)
 			}
 		}
