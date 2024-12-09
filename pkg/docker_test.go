@@ -32,9 +32,12 @@ func TestDocker(t *testing.T) {
 			o.AddressIP("fc::1/64")))
 	require.NoError(t, err, "Failed to create host")
 
+	hn, err := n.AddHost("host", o.HostNamespace)
+	require.NoError(t, err, "Failed to create host node")
+
 	// h2 is a Docker container
 	outp := &bytes.Buffer{}
-	_, err = n.HostNode.Run("docker", "run", "--detach", "nginx",
+	_, err = hn.Run("docker", "run", "--detach", "nginx",
 		co.Stdout(outp),
 	)
 	require.NoError(t, err, "Failed to start Docker container")

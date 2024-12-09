@@ -4,16 +4,22 @@
 package gont
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"syscall"
 
 	nft "github.com/google/nftables"
+	"github.com/vishvananda/netlink"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 )
+
+var ErrNameReserved = errors.New("name 'host' is reserved")
+
+var hostNamespace *Namespace
 
 type Callback func() error
 
@@ -28,10 +34,38 @@ type Namespace struct {
 	logger *zap.Logger
 }
 
-func NewNamespace(name string) (*Namespace, error) {
-	var err error
+// HostNamespace creates
+func HostNamespace() (ns *Namespace, err error) {
+	if hostNamespace != nil {
+		return hostNamespace, nil
+	}
 
-	ns := &Namespace{
+	ns = &Namespace{
+		Name:    "host",
+		nftConn: &nft.Conn{},
+		logger:  zap.L().Named("namespace").With(zap.String("ns", "host")),
+	}
+
+	if ns.NsHandle, err = netns.Get(); err != nil {
+		return nil, fmt.Errorf("failed to get network namespace handle: %w", err)
+	}
+
+	if ns.nlHandle, err = netlink.NewHandle(); err != nil {
+		return nil, fmt.Errorf("failed to create netlink handle: %w", err)
+	}
+
+	hostNamespace = ns
+
+	return ns, nil
+}
+
+// NewNamespace creates a new named network namespace.
+func NewNamespace(name string) (ns *Namespace, err error) {
+	if name == "host" {
+		return nil, ErrNameReserved
+	}
+
+	ns = &Namespace{
 		Name:   name,
 		logger: zap.L().Named("namespace").With(zap.String("ns", name)),
 	}
@@ -45,17 +79,17 @@ func NewNamespace(name string) (*Namespace, error) {
 	// Save fd to current network namespace
 	curNetNs, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0o777)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open network namespace: %w", err)
 	}
 
 	// Create new named namespace
 	if ns.NsHandle, err = netns.NewNamed(ns.Name); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create new named network namespace: %w", err)
 	}
 
 	// Create a netlink socket handle while we are in the namespace
 	if ns.nlHandle, err = nl.NewHandle(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create netlink handle: %w", err)
 	}
 
 	// Setup nftables connection
@@ -65,7 +99,7 @@ func NewNamespace(name string) (*Namespace, error) {
 
 	// Restore original netns namespace
 	if err = unix.Setns(curNetNs, syscall.CLONE_NEWNET); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to restore original network namepsace: %w", err)
 	}
 
 	return ns, nil
@@ -73,9 +107,13 @@ func NewNamespace(name string) (*Namespace, error) {
 
 // Close releases the network namespace.
 func (ns *Namespace) Close() error {
+	if ns.IsHost() {
+		return nil
+	}
+
 	if ns.NsHandle >= 0 {
 		if err := netns.DeleteNamed(ns.Name); err != nil {
-			return err
+			return fmt.Errorf("failed to delete network namespace: %w", err)
 		}
 
 		ns.logger.Info("Deleted namespace")
@@ -105,6 +143,9 @@ func (ns *Namespace) RunFunc(cb Callback) error {
 	return cb()
 }
 
+// Enter locks the current Goroutine to an OS thread by calling runtime.LockOSThread().
+// and afterwards attaches the calling Goroutines thread to the namespace.
+// The returned function should be called to move the thread back to the original namespace
 // and unlock the Goroutine from the OS thread.
 func (ns *Namespace) Enter() (func(), error) {
 	runtime.LockOSThread()
@@ -136,4 +177,9 @@ func (ns *Namespace) Enter() (func(), error) {
 
 		runtime.UnlockOSThread()
 	}, nil
+}
+
+// IsHost returns true if the namespace is representing the hosts default network namespace.
+func (ns *Namespace) IsHost() bool {
+	return ns.Name == "host"
 }

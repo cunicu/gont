@@ -15,21 +15,6 @@ const (
 	WithQdiscTbf   = (1 << iota)
 )
 
-//nolint:gochecknoglobals
-var loopbackInterface = Interface{
-	Name: loopbackInterfaceName,
-	Addresses: []net.IPNet{
-		{
-			IP:   net.IPv4(127, 0, 0, 1),
-			Mask: net.IPv4Mask(255, 0, 0, 0),
-		},
-		{
-			IP:   net.IPv6loopback,
-			Mask: net.CIDRMask(8*net.IPv6len, 8*net.IPv6len),
-		},
-	},
-}
-
 type InterfaceOption interface {
 	ApplyInterface(n *Interface)
 }

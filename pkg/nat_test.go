@@ -168,10 +168,14 @@ func TestPingHostNAT(t *testing.T) {
 			o.AddressIP("10.0.0.2/24")))
 	require.NoError(t, err, "Failed to create host")
 
-	_, err = n.AddHostNAT("n1",
+	_, err = n.AddNAT("n1",
+		o.HostNamespace,
 		g.NewInterface("veth0", sw1, o.SouthBound,
 			o.AddressIP("10.0.0.1/24")))
 	require.NoError(t, err, "Failed to create host NAT")
+
+	hn, err := n.AddHost("host", o.HostNamespace)
+	require.NoError(t, err, "Failed to create host node")
 
 	_, err = h1.Run("ping", "-c", 1, "1.1.1.1")
 	require.NoError(t, err, "Failed to ping")
@@ -179,6 +183,6 @@ func TestPingHostNAT(t *testing.T) {
 	_, err = h1.Run("ping", "-c", 1, "cunicu.li")
 	require.NoError(t, err)
 
-	_, err = h1.Ping(n.HostNode)
+	_, err = h1.Ping(hn)
 	require.NoError(t, err)
 }

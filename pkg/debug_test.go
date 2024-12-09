@@ -42,7 +42,10 @@ func TestDebugBreakpointHostNode(t *testing.T) {
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
-	_, err = n.HostNode.RunGo("../test/debugee1", o.BuildFlagsDebug)
+	hn, err := n.AddHost("host", o.HostNamespace)
+	require.NoError(t, err, "Failed to create host node")
+
+	_, err = hn.RunGo("../test/debugee1", o.BuildFlagsDebug)
 	require.NoError(t, err, "Failed to run")
 
 	err = v.Close()
@@ -231,7 +234,10 @@ func TestDebugListener(t *testing.T) {
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
-	c, err := n.HostNode.StartGo("../test/debugee1", o.BuildFlagsDebug)
+	hn, err := n.AddHost("host", o.HostNamespace)
+	require.NoError(t, err, "Failed to create host node")
+
+	c, err := hn.StartGo("../test/debugee1", o.BuildFlagsDebug)
 	require.NoError(t, err, "Failed to run")
 
 	testDAP(t, listenAddr)

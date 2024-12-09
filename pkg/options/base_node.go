@@ -7,11 +7,14 @@ import (
 	g "cunicu.li/gont/v2/pkg"
 )
 
-// The name of an existing network namespace which is used instead of creating a new one.
-type ExistingNamespace string
+// HostNamespace creates the node using the network namespace of the calling process
+const HostNamespace = ExistingNetworkNamespace("host")
 
-func (e ExistingNamespace) ApplyBaseNode(n *g.BaseNode) {
-	n.ExistingNamespace = string(e)
+// The name of an existing network namespace which is used instead of creating a new one.
+type ExistingNetworkNamespace string
+
+func (e ExistingNetworkNamespace) ApplyBaseNode(n *g.BaseNode) {
+	n.ExistingNetworkNamespace = string(e)
 }
 
 // Name of an existing Docker container which is used for this node
