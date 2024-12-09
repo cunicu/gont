@@ -35,7 +35,7 @@ func TestDebugBreakpointHostnode(t *testing.T) {
 		do.ToTracer(v),
 		g.NewTracepoint(
 			do.File("../test/debugee1/main.go"),
-			do.Line(21),
+			do.Line(22),
 			do.Variable("s")))
 
 	n, err := g.NewNetwork("", d)
@@ -63,7 +63,7 @@ func TestDebugBreakpoint(t *testing.T) {
 		do.ToTracer(v),
 		g.NewTracepoint(
 			do.File("../test/debugee1/main.go"),
-			do.Line(21),
+			do.Line(22),
 			do.Data(1337),
 			do.Stacktrace(5),
 			do.Message("Variable t.A has the value {t.A}"),
@@ -92,7 +92,7 @@ func TestDebugBreakpoint(t *testing.T) {
 
 	tp := tps[0]
 	require.True(t, strings.HasSuffix(tp.File, "test/debugee1/main.go"))
-	require.Equal(t, 21, tp.Line)
+	require.Equal(t, 22, tp.Line)
 	require.Equal(t, "Variable t.A has the value 555", tp.Message)
 	require.Equal(t, "breakpoint", tp.Type)
 	require.Equal(t, 1337, tp.Data)
@@ -171,7 +171,7 @@ func TestDebugWatchpoint(t *testing.T) {
 		do.ToTracer(v),
 		g.NewTracepoint(
 			do.File("../test/debugee1/main.go"),
-			do.Line(28),
+			do.Line(30),
 			do.Data(1337),
 			do.Message("i has the value '{i}'"),
 			do.Watch("i", api.WatchWrite),
