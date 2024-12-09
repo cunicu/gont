@@ -13,7 +13,7 @@ import (
 )
 
 func prepareNetwork(t *testing.T, i int) *g.Network {
-	pfx := fmt.Sprintf("net%d-", i)
+	pfx := fmt.Sprintf("net%d_", i)
 
 	address := func(j int) o.Address {
 		return o.AddressIP("fc::%d:%d/112", i, j)
