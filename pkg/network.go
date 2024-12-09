@@ -10,13 +10,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"syscall"
 
 	"cunicu.li/gont/v2/internal/utils"
-	nft "github.com/google/nftables"
-	"github.com/vishvananda/netlink"
-	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
 )
 
@@ -27,15 +25,14 @@ type NetworkOption interface {
 type Network struct {
 	*CGroup
 
-	Name string
+	Name    string
+	VarPath string
+	TmpPath string // For storing temporart Go build artifacts (see RunGo())
 
 	nodes     map[string]Node
 	nodesLock sync.RWMutex
 
 	hostsFileLock sync.Mutex
-
-	VarPath  string
-	TmpPath  string // For Go builds (see RunGo())
 
 	// Options
 	Persistent    bool
@@ -43,6 +40,7 @@ type Network struct {
 	Debugger      *Debugger
 	Tracer        *Tracer
 	RedirectToLog bool
+	Slice         string
 
 	keyLogPipes []*os.File
 	logger      *zap.Logger
@@ -64,32 +62,24 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 	varPath := filepath.Join(baseVarDir, name)
 	tmpPath := filepath.Join(baseTmpDir, name)
 
-	opts = slices.Concat(GlobalOptions, opts)
-
 	n = &Network{
-		Name:     name,
-		VarPath:  varPath,
-		TmpPath:  tmpPath,
-		nodes:    map[string]Node{},
-		Captures: []*Capture{},
-		logger:   zap.L().Named("network").With(zap.String("network", name)),
+		Name:    name,
+		VarPath: varPath,
+		TmpPath: tmpPath,
+		Slice:   fmt.Sprintf("gont-%s", name),
+		nodes:   map[string]Node{},
+		logger:  zap.L().Named("network").With(zap.String("network", name)),
 	}
 
 	// Apply network specific options
-	for _, opt := range opts {
+	for _, opt := range slices.Concat(GlobalOptions, opts) {
 		switch opt := opt.(type) {
 		case NetworkOption:
 			opt.ApplyNetwork(n)
 		}
 	}
 
-	// Setup CGroup slice
-	cgroupName := fmt.Sprintf("gont-%s", name)
-	if n.CGroup, err = NewCGroup(nil, "slice", cgroupName, opts...); err != nil {
-		return nil, fmt.Errorf("failed to create CGroup slice: %w", err)
-	}
-
-	// Setup files
+	// Setup directories
 	if stat, err := os.Stat(varPath); err == nil && stat.IsDir() {
 		return nil, syscall.EEXIST
 	}
@@ -97,31 +87,33 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 	for _, path := range []string{"files", "nodes"} {
 		path = filepath.Join(varPath, path)
 		if err := os.MkdirAll(path, 0o644); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create directory: %w", err)
 		}
 	}
 
-	if n.HostNode = HostNode(n); n.HostNode == nil {
-		return nil, errors.New("failed to create host node")
+	// Setup CGroup slice
+	if n.CGroup, err = NewCGroup(nil, "slice", n.Slice, opts...); err != nil {
+		return nil, fmt.Errorf("failed to create cgroup: %w", err)
 	}
 
+	if err := n.CGroup.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start cgroup: %w", err)
+	}
+
+	if err := os.Symlink(
+		filepath.Join(cgroupDir, "gont.slice", n.Slice+".slice"),
+		filepath.Join(n.VarPath, "cgroup"),
+	); err != nil {
+		return nil, fmt.Errorf("failed to link cgroup: %w", err)
+	}
+
+	// Setup files
 	if err := n.generateHostsFile(); err != nil {
 		return nil, fmt.Errorf("failed to update hosts file: %w", err)
 	}
 
 	if err := n.generateConfigFiles(); err != nil {
 		return nil, fmt.Errorf("failed to generate configuration files: %w", err)
-	}
-
-	if err := n.CGroup.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start CGroup slice: %w", err)
-	}
-
-	if err := os.Symlink(
-		filepath.Join(cgroupDir, "gont.slice", cgroupName+".slice"),
-		filepath.Join(n.VarPath, "cgroup"),
-	); err != nil {
-		return nil, fmt.Errorf("failed to link cgroup: %w", err)
 	}
 
 	n.logger.Info("Created new network")
@@ -204,13 +196,9 @@ func (n *Network) Teardown() error {
 	n.nodesLock.Lock()
 	defer n.nodesLock.Unlock()
 
-	if err := n.HostNode.Teardown(); err != nil {
-		return err
-	}
-
 	for name, node := range n.nodes {
 		if err := node.Teardown(); err != nil {
-			return err
+			return fmt.Errorf("failed to teardown node %s: %w", name, err)
 		}
 
 		delete(n.nodes, name)

@@ -24,7 +24,7 @@ import (
 func NetworkCGroups() []string {
 	names := []string{}
 
-	dirs, err := os.ReadDir(cgroupDir)
+	dirs, err := os.ReadDir(filepath.Join(cgroupDir, "gont.slice"))
 	if err != nil {
 		return names
 	}

@@ -46,6 +46,8 @@ type Cmd struct {
 	DisableASLR     bool
 	Context         context.Context
 	PreserveEnvVars []string
+	Slice           string
+	Scope           string
 	CGroupOptions   []Option
 
 	StdoutWriters []io.Writer
@@ -198,9 +200,12 @@ func (c *Cmd) Start() (err error) {
 		))
 	}
 
+	if c.Scope == "" {
+		c.Scope = fmt.Sprintf("gont-run-%d", c.Process.Pid)
+	}
+
 	// Start CGroup scope and attach process to it
-	cgroupName := fmt.Sprintf("gont-run-%d", c.Process.Pid)
-	if c.CGroup, err = NewCGroup(c.node.sdConn, "scope", cgroupName, c.CGroupOptions...); err != nil {
+	if c.CGroup, err = NewCGroup(c.node.sdConn, "scope", c.Scope, c.CGroupOptions...); err != nil {
 		return fmt.Errorf("failed to create cgroup: %w", err)
 	}
 

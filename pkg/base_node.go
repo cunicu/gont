@@ -42,6 +42,7 @@ type BaseNode struct {
 	Debugger                 *Debugger
 	ExistingNetworkNamespace string
 	ExistingDockerContainer  string
+	Slice                    string
 	RedirectToLog            bool
 	EmptyDirs                []string
 	Captures                 []*Capture
@@ -67,23 +68,8 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 		name:    name,
 		network: n,
 		VarPath: basePath,
+		Slice:   fmt.Sprintf("%s-%s", n.Slice, name),
 		logger:  zap.L().Named("node").With(zap.String("node", name)),
-	}
-
-	cgroupName := fmt.Sprintf("gont-%s-%s", n.Name, name)
-	if node.CGroup, err = NewCGroup(n.sdConn, "slice", cgroupName, opts...); err != nil {
-		return nil, fmt.Errorf("failed to create cgroup: %w", err)
-	}
-
-	if err := node.CGroup.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start cgroup: %w", err)
-	}
-
-	if err := os.Symlink(
-		filepath.Join(n.VarPath, "cgroup", cgroupName+".slice"),
-		filepath.Join(node.VarPath, "cgroup"),
-	); err != nil {
-		return nil, fmt.Errorf("failed to link cgroup: %w", err)
 	}
 
 	node.logger.Info("Adding new node")
@@ -92,6 +78,22 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 		if nOpt, ok := opt.(BaseNodeOption); ok {
 			nOpt.ApplyBaseNode(node)
 		}
+	}
+
+	// Create CGroup slice
+	if node.CGroup, err = NewCGroup(n.sdConn, "slice", node.Slice, opts...); err != nil {
+		return nil, fmt.Errorf("failed to create cgroup: %w", err)
+	}
+
+	if err := node.CGroup.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start cgroup: %w", err)
+	}
+
+	if err := os.Symlink(
+		filepath.Join(n.VarPath, "cgroup", node.Slice+".slice"),
+		filepath.Join(node.VarPath, "cgroup"),
+	); err != nil {
+		return nil, fmt.Errorf("failed to link cgroup: %w", err)
 	}
 
 	// Create mount point directories
