@@ -98,6 +98,10 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 		name = GenerateNetworkName()
 	}
 
+	if slices.Contains(NetworkNames(), name) {
+		return nil, fmt.Errorf("network %w: %s", ErrNameAlreadyExists, name)
+	}
+
 	varPath := filepath.Join(baseVarDir, name)
 	tmpPath := filepath.Join(baseTmpDir, name)
 
@@ -319,7 +323,6 @@ func (n *Network) Register(m Node) {
 	n.nodesLock.Lock()
 	defer n.nodesLock.Unlock()
 
-	// TODO: Handle name collisions
 	n.nodes[m.Name()] = m
 }
 
