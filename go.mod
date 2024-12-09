@@ -18,7 +18,7 @@ require (
 	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
 	golang.org/x/net v0.32.0
 	golang.org/x/sys v0.28.0
-	kernel.org/pub/linux/libs/security/libcap/cap v1.2.72
+	kernel.org/pub/linux/libs/security/libcap/cap v1.2.73
 )
 
 require github.com/stretchr/testify v1.10.0 // test-only
@@ -41,5 +41,5 @@ require (
 	golang.org/x/sync v0.10.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	kernel.org/pub/linux/libs/security/libcap/psx v1.2.72 // indirect
+	kernel.org/pub/linux/libs/security/libcap/psx v1.2.73 // indirect
 )
