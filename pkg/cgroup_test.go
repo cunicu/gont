@@ -45,7 +45,7 @@ func TestCGroupManualNetwork(t *testing.T) {
 	out, err := cmd.CombinedOutput()
 	require.NoError(t, err)
 
-	expectedCgroup := fmt.Sprintf("0::/mynet.slice/mynet-myhost.slice/myrun.scope\n")
+	expectedCgroup := "0::/mynet.slice/mynet-myhost.slice/myrun.scope\n"
 	require.Equal(t, expectedCgroup, string(out))
 }
 
