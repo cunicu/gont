@@ -26,7 +26,7 @@ Integration tests can be automated and executed in CI environments like GitHub a
 
 ## Getting started
 
-Have a look at our **[slide set](https://cunicu.github.io/gont/)** to get you started.
+Have a look at our **[slide set](https://gont.cunicu.li/slides/)** to get you started.
 
 ## Features
 
