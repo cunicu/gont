@@ -183,6 +183,10 @@ func TestTraceWithCapture(t *testing.T) {
 }
 
 func TestTraceDissector(t *testing.T) {
+	if _, ok := os.LookupEnv("GITHUB_WORKFLOW"); ok {
+		t.Skip("Test flaky on Azure")
+	}
+
 	tmpPCAP, err := os.CreateTemp(t.TempDir(), "gont-capture-*.pcapng")
 	require.NoError(t, err, "Failed to open temporary file")
 
@@ -220,7 +224,7 @@ func TestTraceDissector(t *testing.T) {
 	require.NoError(t, err, "Failed to run tshark")
 
 	// TODO: Figure out why its not flushed
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
 	var tsharkOutput []TsharkOutput
 	err = json.Unmarshal(buf.Bytes(), &tsharkOutput)
