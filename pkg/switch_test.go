@@ -16,7 +16,7 @@ import (
 //
 //	h1 <-> sw1 <-> sw2 <-> h2
 func TestPingCascadedSwitches(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 

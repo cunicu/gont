@@ -11,7 +11,7 @@ import (
 )
 
 func TestLink(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 

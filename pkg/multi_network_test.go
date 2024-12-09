@@ -19,7 +19,7 @@ func prepareNetwork(t *testing.T, i int) *g.Network {
 		return o.AddressIP("fc::%d:%d/112", i, j)
 	}
 
-	n, err := g.NewNetwork("", globalNetworkOptions...)
+	n, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 
 	sw, err := n.AddSwitch(pfx + "sw")

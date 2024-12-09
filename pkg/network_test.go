@@ -25,7 +25,7 @@ func TestNamedNetwork(t *testing.T) {
 	name := g.GenerateNetworkName()
 	ns := fmt.Sprintf("gont-%s-h1", name)
 
-	n, err := g.NewNetwork(name, globalNetworkOptions...)
+	n, err := g.NewNetwork(name)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -40,11 +40,11 @@ func TestNamedNetwork(t *testing.T) {
 }
 
 func TestNetworkGeneratedName(t *testing.T) {
-	n1, err := g.NewNetwork("", globalNetworkOptions...)
+	n1, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create network")
 	defer n1.Close()
 
-	n2, err := g.NewNetwork("", globalNetworkOptions...)
+	n2, err := g.NewNetwork("")
 	require.NoError(t, err, "Failed to create another network")
 	defer n2.Close()
 }
@@ -52,11 +52,11 @@ func TestNetworkGeneratedName(t *testing.T) {
 func TestNetworkExists(t *testing.T) {
 	name := g.GenerateNetworkName()
 
-	n1, err := g.NewNetwork(name, globalNetworkOptions...)
+	n1, err := g.NewNetwork(name)
 	require.NoError(t, err, "Failed to create network")
 	defer n1.Close()
 
-	n2, err := g.NewNetwork(name, globalNetworkOptions...)
+	n2, err := g.NewNetwork(name)
 	if err == nil {
 		defer n2.Close()
 	}

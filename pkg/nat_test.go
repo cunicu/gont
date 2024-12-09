@@ -17,7 +17,7 @@ import (
 //
 //	h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
 func TestPingNATIPv4(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -58,7 +58,7 @@ func TestPingNATIPv4(t *testing.T) {
 //
 //	h1 <-> sw1 <-> nat1 <-> sw2 <-> h2
 func TestPingNATIPv6(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -99,7 +99,7 @@ func TestPingNATIPv6(t *testing.T) {
 //
 //	h1 <-> sw1 <-> nat1 <-> sw2 <-> nat2 <-> sw3 <-> h2
 func TestPingDoubleNAT(t *testing.T) {
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 
@@ -155,7 +155,7 @@ func TestPingHostNAT(t *testing.T) {
 		t.Skip("GitHubs Azure based CI environment does not allow to ping external targets")
 	}
 
-	n, err := g.NewNetwork(*nname, globalNetworkOptions...)
+	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
 	defer n.MustClose()
 

@@ -35,8 +35,7 @@ func TestTraceSubProcess(t *testing.T) {
 		}),
 	)
 
-	n, err := g.NewNetwork(*nname,
-		g.Customize(globalNetworkOptions, t1)...)
+	n, err := g.NewNetwork(*nname, t1)
 	require.NoError(t, err, "Failed to create network")
 
 	err = t1.Start()
@@ -167,8 +166,7 @@ func TestTraceWithCapture(t *testing.T) {
 	err := t1.Start()
 	require.NoError(t, err, "Failed to start")
 
-	n, err := g.NewNetwork(*nname,
-		g.Customize(globalNetworkOptions, t1, c1)...)
+	n, err := g.NewNetwork(*nname, t1, c1)
 	require.NoError(t, err, "Failed to create network")
 
 	h1, err := n.AddHost("h1")
