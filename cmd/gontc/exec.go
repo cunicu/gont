@@ -44,7 +44,7 @@ func exec(network, node string, args []string) error {
 		},
 		sdbus.Property{
 			Name:  "PIDs",
-			Value: dbus.MakeVariant([]uint{uint(os.Getpid())}),
+			Value: dbus.MakeVariant([]uint{uint(os.Getpid())}), //nolint:gosec
 		},
 	)
 

@@ -19,7 +19,7 @@ import (
 
 var ErrNameReserved = errors.New("name 'host' is reserved")
 
-var hostNamespace *Namespace
+var hostNamespace *Namespace //nolint:gochecknoglobals
 
 type Callback func() error
 
