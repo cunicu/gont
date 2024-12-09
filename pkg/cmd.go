@@ -182,8 +182,8 @@ func (c *Cmd) Start() (err error) {
 	// 1. Attaching the Delve debugger before execution
 	//    commences in order to allow for breakpoints early in the execution.
 	// 2. Moving the process into the new Systemd Scope Unit / CGroup.
-	var pidfd int
-	if pidfd, err = c.stoppedStart(); err != nil {
+	var pid, pidfd int
+	if pid, pidfd, err = c.stoppedStart(); err != nil {
 		return err
 	}
 
@@ -196,12 +196,12 @@ func (c *Cmd) Start() (err error) {
 	// Add PID as field to logger after the process has been started
 	if updateLogger != nil {
 		updateLogger(c.logger.With(
-			zap.Int("pid", c.Process.Pid),
+			zap.Int("pid", pid),
 		))
 	}
 
 	if c.Scope == "" {
-		c.Scope = fmt.Sprintf("gont-run-%d", c.Process.Pid)
+		c.Scope = fmt.Sprintf("gont-run-%d", pid)
 	}
 
 	// Start CGroup scope and attach process to it
@@ -214,11 +214,19 @@ func (c *Cmd) Start() (err error) {
 			Name:  "Slice",
 			Value: dbus.MakeVariant(c.node.Unit()),
 		},
-		sdbus.Property{
+	)
+
+	if unixx.PidFDWorks() {
+		c.CGroup.Properties = append(c.CGroup.Properties, sdbus.Property{
 			Name:  "PIDFDs",
 			Value: dbus.MakeVariant([]dbus.UnixFD{dbus.UnixFD(pidfd)}), //nolint:gosec
-		},
-	)
+		})
+	} else {
+		c.CGroup.Properties = append(c.CGroup.Properties, sdbus.Property{
+			Name:  "PIDs",
+			Value: dbus.MakeVariant([]uint{uint(pidfd)}), //nolint:gosec
+		})
+	}
 
 	if err := c.CGroup.Start(); err != nil {
 		return fmt.Errorf("failed to start cgroup: %w", err)
@@ -362,31 +370,31 @@ func (c *Cmd) redirectToLog() func(*zap.Logger) {
 //     ptrace(PTRACE_DETACH, pid, 0, SIGSTOP)
 //
 // 10) The parent process has detached from the tracee and the tracee is stopped due to the injected SIGSTOP in 9)
-func (c *Cmd) stoppedStart() (fd int, err error) {
+func (c *Cmd) stoppedStart() (pid int, pidFD int, err error) {
 	if c.Cmd.SysProcAttr == nil {
 		c.Cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 
 	c.Cmd.SysProcAttr.Setpgid = true
 	c.Cmd.SysProcAttr.Ptrace = true
-	c.Cmd.SysProcAttr.PidFD = &fd
+	c.Cmd.SysProcAttr.PidFD = &pidFD
 
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
 	if err := c.Cmd.Start(); err != nil {
-		return -1, err
+		return -1, -1, err
 	}
 
 	for {
 		var si unixx.SiginfoChld
-		if err := unixx.Waitid(unix.P_PIDFD, fd, &si, unix.WSTOPPED|unix.WEXITED, nil); err != nil {
-			return -1, fmt.Errorf("failed to wait for process: %w", err)
+		if err := unixx.Waitid(unix.P_PIDFD, pidFD, &si, unix.WSTOPPED|unix.WEXITED, nil); err != nil {
+			return -1, -1, fmt.Errorf("failed to wait for process: %w", err)
 		}
 
 		switch si.Code {
 		case unixx.CLD_EXITED:
-			return -1, fmt.Errorf("process exited prematurely")
+			return -1, -1, fmt.Errorf("process exited prematurely")
 
 		case unixx.CLD_TRAPPED:
 			signal := syscall.Signal(si.Status & 0xff)
@@ -396,25 +404,25 @@ func (c *Cmd) stoppedStart() (fd int, err error) {
 			case syscall.SIGTRAP:
 				if trapCause == syscall.PTRACE_EVENT_EXEC {
 					if err := syscall.Tgkill(c.Process.Pid, si.Pid, syscall.SIGSTOP); err != nil {
-						return -1, err
+						return -1, -1, fmt.Errorf("failed to send SIGSTOP to child: %w", err)
 					}
 				} else {
 					if err := syscall.PtraceSetOptions(si.Pid, syscall.PTRACE_O_TRACEEXEC); err != nil {
-						return -1, err
+						return -1, -1, fmt.Errorf("failed to set pstrace options: %w", err)
 					}
 				}
 
 			case syscall.SIGSTOP:
 				if err := unixx.Ptrace(syscall.PTRACE_DETACH, si.Pid, 0, uintptr(syscall.SIGSTOP)); err != nil {
-					return -1, fmt.Errorf("failed to detach from tracee: %w", err)
+					return -1, -1, fmt.Errorf("failed to detach from tracee: %w", err)
 				}
 
-				return fd, nil
+				return si.Pid, pidFD, nil
 			}
 		}
 
 		if err = syscall.PtraceCont(si.Pid, 0); err != nil {
-			return -1, fmt.Errorf("failed to continue tracee: %w", err)
+			return -1, -1, fmt.Errorf("failed to continue tracee: %w", err)
 		}
 	}
 }
