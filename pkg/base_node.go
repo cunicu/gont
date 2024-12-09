@@ -19,7 +19,10 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var ErrNameReserved = errors.New("name 'host' is reserved")
+var (
+	ErrNameReserved      = errors.New("name 'host' is reserved")
+	ErrNameAlreadyExists = errors.New("name already exists")
+)
 
 type BaseNodeOption interface {
 	ApplyBaseNode(n *BaseNode)
@@ -51,6 +54,11 @@ type BaseNode struct {
 }
 
 func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err error) {
+	// TODO: Handle race between check and n.Register()
+	if _, ok := n.nodes[name]; ok {
+		return nil, fmt.Errorf("node %w: %s", ErrNameAlreadyExists, name)
+	}
+
 	if name == "host" {
 		return nil, ErrNameReserved
 	}
