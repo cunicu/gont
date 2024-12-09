@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -53,10 +54,14 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 
 	if name == "" {
 		name = GenerateNetworkName()
-	}
+	} else {
+		if strings.Contains(name, "-") {
+			return nil, fmt.Errorf("%w: malformed name: %s", ErrInvalidName, name)
+		}
 
-	if slices.Contains(NetworkNames(), name) {
-		return nil, fmt.Errorf("network %w: %s", ErrNameAlreadyExists, name)
+		if slices.Contains(NetworkNames(), name) {
+			return nil, fmt.Errorf("%w: network already exists: %s", ErrInvalidName, name)
+		}
 	}
 
 	varPath := filepath.Join(baseVarDir, name)

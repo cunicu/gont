@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"cunicu.li/gont/v2/internal/utils"
@@ -19,7 +20,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var ErrNameAlreadyExists = errors.New("name already exists")
+var ErrInvalidName = errors.New("invalid name")
 
 type BaseNodeOption interface {
 	ApplyBaseNode(n *BaseNode)
@@ -52,8 +53,12 @@ type BaseNode struct {
 
 func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err error) {
 	// TODO: Handle race between check and n.Register()
+	if strings.Contains(name, "-") {
+		return nil, fmt.Errorf("%w: malformed name: %s", ErrInvalidName, name)
+	}
+
 	if _, ok := n.nodes[name]; ok {
-		return nil, fmt.Errorf("node %w: %s", ErrNameAlreadyExists, name)
+		return nil, fmt.Errorf("%w node already exists: %s", ErrInvalidName, name)
 	}
 
 	basePath := filepath.Join(n.VarPath, "nodes", name)
