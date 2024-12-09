@@ -37,24 +37,24 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		return nil, fmt.Errorf("failed to create node: %s", err)
 	}
 
-	host := &Host{
+	h := &Host{
 		BaseNode:    node,
 		Routes:      []*nl.Route{},
 		FilterRules: []*FilterRule{},
 	}
 
-	n.Register(host)
+	n.Register(h)
 
 	// Apply host options
 	for _, opt := range opts {
 		if hOpt, ok := opt.(HostOption); ok {
-			hOpt.ApplyHost(host)
+			hOpt.ApplyHost(h)
 		}
 	}
 
 	// Configure loopback device
 	lo := loopbackInterface
-	lo.Node = host
+	lo.Node = h
 	if lo.Link, err = host.nlHandle.LinkByName("lo"); err != nil {
 		return nil, fmt.Errorf("failed to get loopback interface: %w", err)
 	}
@@ -62,31 +62,31 @@ func (n *Network) AddHost(name string, opts ...Option) (*Host, error) {
 		return nil, fmt.Errorf("failed to configure loopback interface: %w", err)
 	}
 
-	if err := host.ConfigureLinks(); err != nil {
+	if err := h.ConfigureLinks(); err != nil {
 		return nil, fmt.Errorf("failed to configure links: %w", err)
 	}
 
 	// Configure host
-	for _, r := range host.Routes {
-		if err := host.AddRoute(r); err != nil {
+	for _, r := range h.Routes {
+		if err := h.AddRoute(r); err != nil {
 			return nil, fmt.Errorf("failed to add route: %w", err)
 		}
 	}
 
 	// Setup nftables filters
-	if host.Filter, err = NewFilter(host.nftConn); err != nil {
+	if h.Filter, err = NewFilter(h.nftConn); err != nil {
 		return nil, fmt.Errorf("failed to setup nftables: %w", err)
 	}
 
-	for _, r := range host.FilterRules {
-		host.Filter.AddRule(r.Hook, r.Exprs...)
+	for _, r := range h.FilterRules {
+		h.Filter.AddRule(r.Hook, r.Exprs...)
 	}
 
-	if err := host.Filter.Flush(); err != nil {
+	if err := h.Filter.Flush(); err != nil {
 		return nil, fmt.Errorf("failed to configure nftables: %w", err)
 	}
 
-	return host, nil
+	return h, nil
 }
 
 // ConfigureLinks adds links to other nodes which
