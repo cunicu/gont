@@ -4,8 +4,6 @@
 package gont
 
 import (
-	"time"
-
 	"github.com/gopacket/gopacket"
 )
 
@@ -14,10 +12,6 @@ type CapturePacket struct {
 	Data []byte
 
 	Interface *captureInterface
-}
-
-func (p CapturePacket) Time() time.Time {
-	return p.Timestamp
 }
 
 func (p CapturePacket) Decode(dOpts gopacket.DecodeOptions) gopacket.Packet {

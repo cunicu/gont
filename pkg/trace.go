@@ -46,13 +46,13 @@ type Tracer struct {
 	packetSources []*traceEventPacketSource
 
 	stop   chan any
-	queue  *prque.PriorityQueue
+	queue  *prque.PriorityQueue[trace.Event, int64]
 	logger *zap.Logger
 }
 
 func NewTracer(opts ...TraceOption) *Tracer {
 	t := &Tracer{
-		queue:  prque.New(),
+		queue:  prque.New[trace.Event, int64](),
 		logger: zap.L().Named("tracer"),
 	}
 
@@ -113,7 +113,7 @@ func (t *Tracer) Start() error {
 
 func (t *Tracer) Flush() error {
 	for t.queue.Len() > 0 {
-		p := t.queue.Pop().(trace.Event)
+		p, _ := t.queue.Get()
 
 		if err := t.writeEvent(p); err != nil {
 			return err
@@ -176,7 +176,7 @@ func (t *Tracer) Pipe() (*os.File, error) {
 
 func (t *Tracer) newEvent(e trace.Event) {
 	if len(t.Channels)+len(t.Callbacks)+len(t.files) > 0 {
-		t.queue.Push(e)
+		t.queue.Put(e, e.Timestamp.UnixMicro())
 	}
 
 	for _, ps := range t.packetSources {
@@ -216,13 +216,14 @@ out:
 					break
 				}
 
-				oldest := t.queue.Oldest()
+				_, oldestMicros := t.queue.Peek()
+				oldest := time.UnixMicro(oldestMicros)
 				oldestAge := now.Sub(oldest)
 				if oldestAge < 1*time.Second {
 					break
 				}
 
-				e := t.queue.Pop().(trace.Event)
+				e, _ := t.queue.Get()
 
 				if err := t.writeEvent(e); err != nil {
 					t.logger.Error("Failed to handle event. Stop tracing...", zap.Error(err))

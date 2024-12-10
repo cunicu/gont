@@ -69,10 +69,6 @@ type Event struct {
 	Data       any         `cbor:"data,omitempty" json:"data,omitempty"`
 }
 
-func (e Event) Time() time.Time {
-	return e.Timestamp
-}
-
 func (e *Event) WriteTo(wr io.Writer) (int64, error) {
 	return 0, em.NewEncoder(wr).Encode(e)
 }

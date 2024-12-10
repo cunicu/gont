@@ -85,7 +85,7 @@ type Capture struct {
 
 	writer     *pcapgo.NgWriter
 	stop       chan any
-	queue      *prque.PriorityQueue
+	queue      *prque.PriorityQueue[CapturePacket, int64]
 	count      atomic.Uint64
 	interfaces []*captureInterface
 	closables  []io.Closer
@@ -115,7 +115,7 @@ func NewCapture(opts ...CaptureOption) *Capture {
 		SnapshotLength: 1600,
 
 		stop:   make(chan any),
-		queue:  prque.New(),
+		queue:  prque.New[CapturePacket, int64](),
 		logger: zap.L().Named("capture"),
 	}
 
@@ -133,8 +133,7 @@ func (c *Capture) Count() uint64 {
 
 func (c *Capture) Flush() error {
 	for c.queue.Len() > 0 {
-		p := c.queue.Pop().(CapturePacket)
-
+		p, _ := c.queue.Get()
 		if err := c.writePacket(p); err != nil {
 			return err
 		}
@@ -167,7 +166,7 @@ func (c *Capture) Close() error {
 
 func (c *Capture) newPacket(cp CapturePacket) {
 	if c.FilterPackets == nil || c.FilterPackets(&cp) {
-		c.queue.Push(cp)
+		c.queue.Put(cp, cp.Timestamp.UnixMicro())
 	}
 }
 
@@ -248,13 +247,14 @@ out:
 					break
 				}
 
-				oldest := c.queue.Oldest()
+				_, oldestMicros := c.queue.Peek()
+				oldest := time.UnixMicro(oldestMicros)
 				oldestAge := now.Sub(oldest)
 				if oldestAge < 1*time.Second {
 					break
 				}
 
-				p := c.queue.Pop().(CapturePacket)
+				p, _ := c.queue.Get()
 
 				if err := c.writePacket(p); err != nil {
 					c.logger.Error("Failed to handle packet. Stop capturing...", zap.Error(err))
