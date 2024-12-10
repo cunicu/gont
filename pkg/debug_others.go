@@ -21,10 +21,8 @@ type (
 	}
 )
 
-func (d *Debugger) start(*exec.Cmd) (*debuggerInstance, error) {
+func (d *Debugger) newInstance(_ *exec.Cmd) (*debuggerInstance, error) {
 	return nil, errDebuggingNotSupported
 }
 
-func ptrace(request int, pid int, addr uintptr, data uintptr) error {
-	return nil
-}
+func (d *debuggerInstance) run() {}
