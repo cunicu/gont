@@ -4,6 +4,7 @@
 package unix
 
 import (
+	"errors"
 	"os"
 	"sync"
 	"syscall"
@@ -14,7 +15,7 @@ import (
 var checkPidfdOnce = sync.OnceValue(checkPidfd) //nolint:gochecknoglobals
 
 const (
-	_P_PIDFD = 3
+	_P_PIDFD = 3 //nolint:stylecheck,revive
 
 	pidfdSendSignalTrap uintptr = 424
 	pidfdOpenTrap       uintptr = 434
@@ -37,7 +38,7 @@ func PidFDOpen(pid, flags int) (uintptr, error) {
 	if errno != 0 {
 		return ^uintptr(0), errno
 	}
-	return uintptr(pidfd), nil
+	return pidfd, nil
 }
 
 // checkPidfd checks whether all required pidfd-related syscalls work.
@@ -59,12 +60,12 @@ func checkPidfd() error {
 	// Check waitid(P_PIDFD) works.
 	for {
 		_, _, err = syscall.Syscall6(syscall.SYS_WAITID, _P_PIDFD, fd, 0, syscall.WEXITED, 0, 0)
-		if err != syscall.EINTR {
+		if !errors.Is(err, syscall.EINTR) {
 			break
 		}
 	}
 	// Expect ECHILD from waitid since we're not our own parent.
-	if err != syscall.ECHILD {
+	if !errors.Is(err, syscall.ECHILD) {
 		return os.NewSyscallError("pidfd_wait", err)
 	}
 

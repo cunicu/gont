@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -13,13 +14,15 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
+var errNotEnoughArguments = errors.New("not enough arguments")
+
 func exec(network, node string, args []string) error {
 	if len(flag.Args()) <= 1 {
-		return fmt.Errorf("not enough arguments")
+		return errNotEnoughArguments
 	}
 
 	if network == "" {
-		return fmt.Errorf("there is no active Gont network")
+		return errNoSuchNetwork
 	}
 
 	if err := os.Setenv("GONT_NETWORK", network); err != nil {

@@ -8,11 +8,14 @@
 package gont
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/go-delve/delve/service/api"
 )
+
+var errInvalidDebugMessage = errors.New("invalid debug message format")
 
 type debugMessage struct {
 	format string
@@ -39,7 +42,7 @@ func parseDebugMessage(msg string) (*debugMessage, error) {
 				if braceCount--; braceCount == 0 {
 					argStr := strings.TrimSpace(string(argSlice))
 					if len(argStr) == 0 {
-						return nil, fmt.Errorf("empty evaluation string")
+						return nil, fmt.Errorf("%w: empty evaluation string", errInvalidDebugMessage)
 					}
 					args = append(args, argStr)
 					formatSlice = append(formatSlice, '%', 's')
@@ -53,7 +56,7 @@ func parseDebugMessage(msg string) (*debugMessage, error) {
 		} else {
 			switch r {
 			case '}':
-				return nil, fmt.Errorf("invalid log point format, unexpected '}'")
+				return nil, fmt.Errorf("%w: unexpected '}'", errInvalidDebugMessage)
 			case '{':
 				if braceCount++; braceCount == 1 {
 					isArg, argSlice = true, []rune{}
@@ -64,7 +67,7 @@ func parseDebugMessage(msg string) (*debugMessage, error) {
 		}
 	}
 	if isArg || len(formatSlice) == 0 {
-		return nil, fmt.Errorf("invalid debug message format")
+		return nil, errInvalidDebugMessage
 	}
 
 	return &debugMessage{

@@ -44,7 +44,6 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 
 	logger := setupLogging()
-	defer logger.Sync() //nolint:errcheck
 
 	// Handle global flags
 	if *persist {
@@ -60,5 +59,9 @@ func TestMain(m *testing.M) {
 		)
 	}
 
-	os.Exit(m.Run())
+	rc := m.Run()
+
+	logger.Sync() //nolint:errcheck
+
+	os.Exit(rc)
 }

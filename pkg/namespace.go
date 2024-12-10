@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	nft "github.com/google/nftables"
-	"github.com/vishvananda/netlink"
 	nl "github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"go.uber.org/zap"
@@ -20,6 +19,7 @@ import (
 var ErrNameReserved = errors.New("name 'host' is reserved")
 
 var hostNamespace *Namespace //nolint:gochecknoglobals
+const hostNamespaceName = "host"
 
 type Callback func() error
 
@@ -41,16 +41,16 @@ func HostNamespace() (ns *Namespace, err error) {
 	}
 
 	ns = &Namespace{
-		Name:    "host",
+		Name:    hostNamespaceName,
 		nftConn: &nft.Conn{},
-		logger:  zap.L().Named("namespace").With(zap.String("ns", "host")),
+		logger:  zap.L().Named("namespace").With(zap.String("ns", hostNamespaceName)),
 	}
 
 	if ns.NsHandle, err = netns.Get(); err != nil {
 		return nil, fmt.Errorf("failed to get network namespace handle: %w", err)
 	}
 
-	if ns.nlHandle, err = netlink.NewHandle(); err != nil {
+	if ns.nlHandle, err = nl.NewHandle(); err != nil {
 		return nil, fmt.Errorf("failed to create netlink handle: %w", err)
 	}
 
@@ -61,7 +61,7 @@ func HostNamespace() (ns *Namespace, err error) {
 
 // NewNamespace creates a new named network namespace.
 func NewNamespace(name string) (ns *Namespace, err error) {
-	if name == "host" {
+	if name == hostNamespaceName {
 		return nil, ErrNameReserved
 	}
 
@@ -123,8 +123,8 @@ func (ns *Namespace) Close() error {
 }
 
 // MustClose closes the namespace like Close() but panics if an error occurs.
-func (n *Namespace) MustClose() {
-	if err := n.Close(); err != nil {
+func (ns *Namespace) MustClose() {
+	if err := ns.Close(); err != nil {
 		panic(err)
 	}
 }

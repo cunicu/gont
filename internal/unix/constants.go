@@ -3,6 +3,7 @@
 
 package unix
 
+//nolint:stylecheck,revive
 const (
 	CLD_EXITED    = 1 // Child has exited
 	CLD_KILLED    = 2 // Child was killed

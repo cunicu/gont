@@ -156,6 +156,8 @@ func (d *debuggerInstance) run() {
 		case proc.StopManual:
 			d.logger.Debug("Process stopped manually")
 			return
+
+		default:
 		}
 	}
 }

@@ -49,7 +49,7 @@ func TestCaptureNetwork(t *testing.T) {
 		}
 	}()
 
-	cb := func(p g.CapturePacket) {
+	cb := func(_ g.CapturePacket) {
 		// fmt.Println("Callback", p.String())
 	}
 
@@ -80,9 +80,14 @@ func TestCaptureNetwork(t *testing.T) {
 		co.FilterPackets(func(p *g.CapturePacket) bool {
 			pp := p.Decode(gopacket.DecodeOptions{})
 			if layer := pp.Layer(layers.LayerTypeICMPv6); layer != nil {
-				typec := layer.(*layers.ICMPv6).TypeCode.Type()
+				icmpLayer, ok := layer.(*layers.ICMPv6)
+				if !ok {
+					return false
+				}
 
-				return typec == layers.ICMPv6TypeEchoRequest || typec == layers.ICMPv6TypeEchoReply
+				typ := icmpLayer.TypeCode.Type()
+
+				return typ == layers.ICMPv6TypeEchoRequest || typ == layers.ICMPv6TypeEchoReply
 			}
 
 			return false
@@ -133,7 +138,7 @@ func TestCaptureNetwork(t *testing.T) {
 	h1veth0 := h1.Interface("veth0")
 	h2veth0 := h2.Interface("veth0")
 
-	pkt, _, intf, eof := nextPacket(t, rd)
+	pkt, intf, eof := nextPacket(t, rd)
 	require.Equal(t, eof, false, "Expected more packets")
 
 	require.Equal(t, intf.Name, "h1/veth0", "Invalid 1st packet")
@@ -153,35 +158,35 @@ func TestCaptureNetwork(t *testing.T) {
 		h1veth0.Addresses[0].IP.String(),
 	)
 
-	_, _, intf, eof = nextPacket(t, rd)
+	_, intf, eof = nextPacket(t, rd)
 	require.False(t, eof, "Expected more packets")
 	require.Equal(t, intf.Name, "sw1/veth-h1", "Invalid 2nd packet")
 
-	_, _, intf, eof = nextPacket(t, rd)
+	_, intf, eof = nextPacket(t, rd)
 	require.False(t, eof, "Expected more packets")
 	require.Equal(t, intf.Name, "sw1/veth-h2", "Invalid 3rd packet")
 
-	_, _, intf, eof = nextPacket(t, rd)
+	_, intf, eof = nextPacket(t, rd)
 	require.False(t, eof, "Expected more packets")
 	require.Equal(t, intf.Name, "h2/veth0", "Invalid 4th packet")
 
-	_, _, intf, eof = nextPacket(t, rd)
+	_, intf, eof = nextPacket(t, rd)
 	require.False(t, eof, "Expected more packets")
 	require.Equal(t, intf.Name, "h2/veth0", "Invalid 5th packet")
 
-	_, _, intf, eof = nextPacket(t, rd)
+	_, intf, eof = nextPacket(t, rd)
 	require.False(t, eof, "Expected more packets")
 	require.Equal(t, intf.Name, "sw1/veth-h2", "Invalid 6th packet: %s", intf.Name)
 
-	_, _, intf, eof = nextPacket(t, rd)
+	_, intf, eof = nextPacket(t, rd)
 	require.False(t, eof, "Expected more packets")
 	require.Equal(t, intf.Name, "sw1/veth-h1", "Invalid 7th packet")
 
-	_, _, intf, eof = nextPacket(t, rd)
+	_, intf, eof = nextPacket(t, rd)
 	require.False(t, eof, "Expected more packets")
 	require.Equal(t, intf.Name, "h1/veth0", "Invalid 7th packet")
 
-	_, _, _, eof = nextPacket(t, rd)
+	_, _, eof = nextPacket(t, rd) //nolint:dogsled
 	require.True(t, eof, "Expected EOF")
 
 	require.Equal(t, rd.NInterfaces(), 4, "Invalid number of interfaces")
@@ -194,11 +199,11 @@ func TestCaptureNetwork(t *testing.T) {
 	require.NoError(t, err, "Failed to close file")
 }
 
-func nextPacket(t *testing.T, rd *pcapgo.NgReader) (gopacket.Packet, *gopacket.CaptureInfo, *pcapgo.NgInterface, bool) {
+func nextPacket(t *testing.T, rd *pcapgo.NgReader) (gopacket.Packet, *pcapgo.NgInterface, bool) {
 	data, ci, err := rd.ZeroCopyReadPacketData()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			return nil, nil, nil, true
+			return nil, nil, true
 		}
 
 		require.NoError(t, err, "Failed to read packet data")
@@ -207,5 +212,5 @@ func nextPacket(t *testing.T, rd *pcapgo.NgReader) (gopacket.Packet, *gopacket.C
 	intf, err := rd.Interface(ci.InterfaceIndex)
 	require.NoError(t, err, "Received packet from unknown interface")
 
-	return gopacket.NewPacket(data, layers.LinkTypeEthernet, gopacket.Default), &ci, &intf, false
+	return gopacket.NewPacket(data, layers.LinkTypeEthernet, gopacket.Default), &intf, false
 }

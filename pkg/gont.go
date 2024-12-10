@@ -23,6 +23,8 @@ const (
 	bridgeInterfaceName   = "br"
 )
 
+var errMissingCapabilities = errors.New("missing NET_ADMIN capabilities")
+
 var GlobalOptions []Option //nolint:gochecknoglobals
 
 // Option is the base type for all functional options.
@@ -32,7 +34,7 @@ type Option any
 func CheckCaps() error {
 	c := cap.GetProc()
 	if v, err := c.GetFlag(cap.Effective, cap.SYS_ADMIN); err != nil || !v {
-		return errors.New("missing NET_ADMIN capabilities")
+		return errMissingCapabilities
 	}
 	return nil
 }

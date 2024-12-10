@@ -4,7 +4,6 @@
 package unix
 
 import (
-	"syscall"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -12,7 +11,7 @@ import (
 
 func Waitid(idType int, id int, info *SiginfoChld, options int, rusage *unix.Rusage) (err error) {
 	if _, _, e1 := unix.Syscall6(unix.SYS_WAITID, uintptr(idType), uintptr(id), uintptr(unsafe.Pointer(info)), uintptr(options), uintptr(unsafe.Pointer(rusage)), 0); e1 != 0 {
-		return syscall.Errno(e1)
+		return e1
 	}
 
 	return nil

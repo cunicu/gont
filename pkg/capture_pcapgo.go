@@ -6,12 +6,15 @@
 package gont
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gopacket/gopacket/layers"
 	"github.com/gopacket/gopacket/pcapgo"
 	"golang.org/x/net/bpf"
 )
+
+var errLibPCAPRequiresCGO = errors.New("libpcap filter expressions require CGo")
 
 const CGoPCAP = false
 
@@ -25,7 +28,7 @@ func (c *Capture) createPCAPHandle(name string) (packetSource, error) {
 		return nil, fmt.Errorf("failed to open PCAP handle: %w", err)
 	}
 
-	if err := hdl.SetCaptureLength(int(c.SnapshotLength)); err != nil {
+	if err := hdl.SetCaptureLength(c.SnapshotLength); err != nil {
 		return nil, fmt.Errorf("failed to set capture length: %w", err)
 	}
 
@@ -34,7 +37,7 @@ func (c *Capture) createPCAPHandle(name string) (packetSource, error) {
 	}
 
 	if c.FilterExpression != "" {
-		return nil, fmt.Errorf("libpcap filter expressions require CGo")
+		return nil, errLibPCAPRequiresCGO
 	}
 
 	if c.FilterInstructions != nil {

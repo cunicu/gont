@@ -4,20 +4,24 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"net"
 )
 
+var errUnsupportedAddressLength = errors.New("unsupported address length")
+
 func ipToInt(ip net.IP) (*big.Int, int) {
 	val := &big.Int{}
 	val.SetBytes([]byte(ip))
-	if len(ip) == net.IPv4len {
+	switch len(ip) {
+	case net.IPv4len:
 		return val, 32
-	} else if len(ip) == net.IPv6len {
+	case net.IPv6len:
 		return val, 128
-	} else {
-		panic(fmt.Errorf("Unsupported address length %d", len(ip)))
+	default:
+		panic(fmt.Errorf("%w: %d", errUnsupportedAddressLength, len(ip)))
 	}
 }
 

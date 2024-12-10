@@ -12,9 +12,10 @@ import (
 	"github.com/coreos/go-systemd/v22/dbus"
 )
 
-func collectGarbage(args []string) error {
+func collectGarbage(_ []string) error {
 	ctx := context.Background()
-	ctx, _ = context.WithTimeout(ctx, 10*time.Second) //nolint:govet
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second) //nolint:govet
+	defer cancel()
 
 	c, err := dbus.NewWithContext(ctx)
 	if err != nil {

@@ -17,6 +17,12 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+var (
+	errNoSuchNetwork     = errors.New("non-existing network")
+	errNoSuchNode        = errors.New("non-existing node")
+	errInvalidSubCommand = errors.New("unknown sub-command")
+)
+
 // Set via ldflags (see Makefile)
 var tag string //nolint:gochecknoglobals
 
@@ -48,7 +54,7 @@ func usage() {
 	fmt.Fprintln(w, "   Author Steffen Vogel <post@steffenvogel>")
 }
 
-func main() {
+func run() int {
 	var err error
 	var network, node string
 
@@ -57,7 +63,7 @@ func main() {
 
 	if err := g.CheckCaps(); err != nil {
 		fmt.Printf("error: %s\n", err)
-		os.Exit(-1)
+		return -1
 	}
 
 	flag.Usage = usage
@@ -65,7 +71,7 @@ func main() {
 
 	if len(flag.Args()) < 1 {
 		flag.CommandLine.Usage()
-		os.Exit(-1)
+		return -1
 	}
 
 	args := flag.Args()
@@ -104,13 +110,19 @@ func main() {
 		err = nil
 
 	default:
-		err = fmt.Errorf("unknown sub-command: %s", subcmd)
+		err = fmt.Errorf("%w: %s", errInvalidSubCommand, subcmd)
 	}
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(-1)
+		return -1
 	}
+
+	return 0
+}
+
+func main() {
+	os.Exit(run())
 }
 
 func networkNode(args []string) (string, string, error) {
@@ -121,7 +133,7 @@ func networkNode(args []string) (string, string, error) {
 	c := strings.SplitN(args[1], "/", 2)
 	if len(c) == 1 { // no network in name
 		if len(networks) == 0 {
-			return "", "", errors.New("no-existing Gont network")
+			return "", "", errNoSuchNetwork
 		}
 
 		network = networks[0]
@@ -131,14 +143,14 @@ func networkNode(args []string) (string, string, error) {
 		node = c[1]
 
 		if !slices.Contains(networks, network) {
-			return "", "", fmt.Errorf("non-existing network '%s'", network)
+			return "", "", fmt.Errorf("%w '%s'", errNoSuchNetwork, network)
 		}
 	}
 
 	nodes := g.NodeNames(network)
 
 	if !slices.Contains(nodes, node) {
-		return "", "", fmt.Errorf("non-existing node '%s' in network '%s'", node, network)
+		return "", "", fmt.Errorf("%w '%s' in network '%s'", errNoSuchNode, node, network)
 	}
 
 	return network, node, nil

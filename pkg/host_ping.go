@@ -12,6 +12,11 @@ import (
 	"go.uber.org/zap/zapio"
 )
 
+var (
+	errPacketsLost    = errors.New("packets lost")
+	errNoAddressFound = errors.New("failed to find address")
+)
+
 func (h *Host) Ping(o *Host) (*probing.Statistics, error) {
 	return h.PingWithOptions(o, "ip", 1, 5*time.Second, time.Second, true)
 }
@@ -31,13 +36,13 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 	p.Interval = intv
 
 	if h.network != o.network {
-		return nil, fmt.Errorf("hosts must be on same network")
+		return nil, errInvalidNetwork
 	}
 
 	// Find first IP address of first interface
 	ip := o.LookupAddress(net)
 	if ip == nil {
-		return nil, errors.New("failed to find address")
+		return nil, errNoAddressFound
 	}
 
 	logger := h.logger.Named("pinger")
@@ -82,7 +87,7 @@ func (h *Host) PingWithOptions(o *Host, net string, count int, timeout time.Dura
 	}
 
 	if lost := p.PacketsSent - p.PacketsRecv; lost > 0 {
-		err = fmt.Errorf("lost %d packets", lost)
+		err = fmt.Errorf("%w: %d", errPacketsLost, lost)
 	}
 
 	return p.Statistics(), err

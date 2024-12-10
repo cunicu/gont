@@ -14,6 +14,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+//nolint:dupl
 func TestFilterIPv4(t *testing.T) {
 	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")
@@ -52,6 +53,7 @@ func TestFilterIPv4(t *testing.T) {
 	require.Error(t, err, "Succeeded to ping h1")
 }
 
+//nolint:dupl
 func TestFilterIPv6(t *testing.T) {
 	n, err := g.NewNetwork(*nname)
 	require.NoError(t, err, "Failed to create network")

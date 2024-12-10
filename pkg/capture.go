@@ -128,7 +128,7 @@ func NewCapture(opts ...CaptureOption) *Capture {
 
 // Count returns the total number of captured packets
 func (c *Capture) Count() uint64 {
-	return uint64(c.count.Load())
+	return c.count.Load()
 }
 
 func (c *Capture) Flush() error {
