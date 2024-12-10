@@ -1,54 +1,37 @@
-// SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2023 Marin Atanasov Nikolov <dnaeon@gmail.com>
+// SPDX-License-Identifier: BSD-2-Clause
 
 package prque_test
 
 import (
 	"testing"
-	"time"
 
 	"cunicu.li/gont/v2/internal/prque"
-	"github.com/stretchr/testify/require"
 )
 
-type item struct {
-	ts time.Time
-}
-
-func (i item) Time() time.Time {
-	return i.ts
-}
-
 func TestPriorityQueue(t *testing.T) {
-	q := prque.New()
+	queue := prque.New[string, int64]()
+	queue.Put("apple", 10)
+	queue.Put("banana", 3)
+	queue.Put("pear", 20)
+	queue.Put("orange", 15)
 
-	itf := func(t int) prque.Item {
-		return item{
-			ts: time.Unix(int64(t), 0),
-		}
+	want := []struct {
+		value    string
+		priority int64
+	}{
+		{"banana", 3},
+		{"apple", 10},
+		{"orange", 15},
+		{"pear", 20},
 	}
 
-	q.Push(itf(4))
-	q.Push(itf(1))
-	q.Push(itf(2))
-	q.Push(itf(3))
-
-	require.Equal(t, q.Len(), 4)
-
-	it := q.Pop()
-	require.Equal(t, it.Time().Second(), 1)
-
-	it = q.Pop()
-	require.Equal(t, it.Time().Second(), 2)
-
-	o := q.Oldest()
-	require.EqualValues(t, o.Unix(), 3)
-
-	it = q.Pop()
-	require.Equal(t, it.Time().Second(), 3)
-
-	it = q.Pop()
-	require.Equal(t, it.Time().Second(), 4)
-
-	require.Zero(t, q.Len())
+	i := 0
+	for !queue.IsEmpty() {
+		val, prio := queue.Get()
+		if val != want[i].value || prio != want[i].priority {
+			t.Fatalf("want %q with priority %d, got %q with priority %d", want[i].value, want[i].priority, val, prio)
+		}
+		i++
+	}
 }
