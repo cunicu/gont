@@ -108,9 +108,6 @@ func (d *Debugger) newInstance(c *exec.Cmd) (*debuggerInstance, error) {
 		go di.listen(di.listenAddr)
 	}
 
-	// Run main loop
-	// go di.run()
-
 	return di, err
 }
 
