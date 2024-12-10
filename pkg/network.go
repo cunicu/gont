@@ -19,6 +19,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var errNoKeyLogs = errors.New("no captures with keylogs")
+
 type NetworkOption interface {
 	ApplyNetwork(n *Network)
 }
@@ -78,8 +80,7 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 
 	// Apply network specific options
 	for _, opt := range slices.Concat(GlobalOptions, opts) {
-		switch opt := opt.(type) {
-		case NetworkOption:
+		if opt, ok := opt.(NetworkOption); ok {
 			opt.ApplyNetwork(n)
 		}
 	}
@@ -287,7 +288,7 @@ func (n *Network) KeyLogPipe(secretsType uint32) (*os.File, error) {
 	}
 
 	if len(capturesWithKeys) == 0 {
-		return nil, nil
+		return nil, errNoKeyLogs
 	}
 
 	rd, wr, err := os.Pipe()

@@ -15,12 +15,15 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+var errNoBindMountTarget = errors.New("bind mount target does not exist")
+
 const (
 	gontNetworkSuffix  = ".gont"
 	persGetPersonality = 0xffffffff // Argument to pass to personality syscall to get the current personality
 	persNoRandomize    = 0x0040000  // ADDR_NO_RANDOMIZE
 )
 
+//nolint:gochecknoinits
 func init() {
 	unshare := os.Getenv("GONT_UNSHARE")
 	node := os.Getenv("GONT_NODE")
@@ -121,9 +124,9 @@ func setupBindMounts(basePath string) error {
 				continue
 			}
 
-			return fmt.Errorf("bind mount target does not exist: %s.\n"+
+			return fmt.Errorf("%w: %s.\n"+ //nolint:stylecheck
 				"Please consider creating an empty file or directory in its location "+
-				"or set the GONT_SKIP_MISSING_MOUNTPOINT environment variable.", tgt)
+				"or set the GONT_SKIP_MISSING_MOUNTPOINT environment variable.", errNoBindMountTarget, tgt)
 		}
 
 		if err := syscall.Mount(src, tgt, "", syscall.MS_BIND, ""); err != nil {

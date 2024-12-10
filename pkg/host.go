@@ -35,7 +35,7 @@ func (n *Network) AddHost(name string, opts ...Option) (h *Host, err error) {
 	h = &Host{}
 
 	if h.BaseNode, err = n.AddNode(name, opts...); err != nil {
-		return nil, fmt.Errorf("failed to create node: %s", err)
+		return nil, fmt.Errorf("failed to create node: %w", err)
 	}
 
 	n.Register(h)
@@ -130,13 +130,13 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 	if !i.EnableDAD {
 		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
 		if err := h.WriteProcFS(fn, "0"); err != nil {
-			return fmt.Errorf("failed to enabled IPv6 forwarding: %s", err)
+			return fmt.Errorf("failed to enabled IPv6 forwarding: %w", err)
 		}
 	}
 
 	for _, addr := range i.Addresses {
 		if err := i.AddAddress(&addr); err != nil {
-			return fmt.Errorf("failed to add link address: %s", err)
+			return fmt.Errorf("failed to add link address: %w", err)
 		}
 	}
 
@@ -145,7 +145,7 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 
 func (h *Host) Traceroute(o *Host, opts ...any) error {
 	if h.network != o.network {
-		return fmt.Errorf("hosts must be on same network")
+		return errInvalidNetwork
 	}
 
 	opts = append(opts, o)

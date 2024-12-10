@@ -5,6 +5,7 @@ package trace
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +17,12 @@ import (
 // The following functions are intended to by used used for instrumentation of Go code
 // which is started by gont.Node.{Start,StartWith,Run}
 
+var (
+	errTracingAlreadyEnabled = errors.New("tracing already enabled")
+	errTracingNotSupported   = errors.New("tracing not supported")
+	errTracingNotRunning     = errors.New("tracing not running")
+)
+
 //nolint:gochecknoglobals
 var (
 	eventCallback EventCallback
@@ -25,12 +32,12 @@ var (
 
 func Start(bufsize int) error {
 	if eventWriter != nil {
-		return fmt.Errorf("tracing already enabled")
+		return errTracingAlreadyEnabled
 	}
 
 	traceFileName := os.Getenv("GONT_TRACEFILE")
 	if traceFileName == "" {
-		return fmt.Errorf("tracing not supported. Missing GONT_TRACEFILE environment variable")
+		return fmt.Errorf("%w: Missing GONT_TRACEFILE environment variable", errTracingNotSupported)
 	}
 
 	var err error
@@ -53,7 +60,7 @@ func StartWithCallback(cb EventCallback) {
 
 func Stop() error {
 	if eventWriter == nil {
-		return fmt.Errorf("tracing not running")
+		return errTracingNotRunning
 	}
 
 	if bufferedTraceWriter, ok := eventWriter.(*bufio.Writer); ok {

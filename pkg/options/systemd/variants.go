@@ -5,6 +5,7 @@ package cgroup
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"net"
 
@@ -12,7 +13,12 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func makeCpuSet(mask uint64) dbus.Variant {
+var (
+	errNetworkUnsupported = errors.New("unsupported network")
+	errInvalidPorts       = errors.New("invalid ports")
+)
+
+func makeCPUSet(mask uint64) dbus.Variant {
 	buf := binary.LittleEndian.AppendUint64(nil, mask)
 	return dbus.MakeVariant(buf)
 }
@@ -64,7 +70,7 @@ func makeBindPolicies(policies []BindPolicy) (dbus.Variant, error) {
 	ps := []policy{}
 	for _, pol := range policies {
 		if pol.PortMin > pol.PortMax {
-			return dbus.MakeVariant(nil), fmt.Errorf("invalid ports: %d > %d", pol.PortMin, pol.PortMax)
+			return dbus.MakeVariant(nil), fmt.Errorf("%w: %d > %d", errInvalidPorts, pol.PortMin, pol.PortMax)
 		}
 
 		p := policy{
@@ -86,7 +92,7 @@ func makeBindPolicies(policies []BindPolicy) (dbus.Variant, error) {
 			p.Family = unix.AF_INET6
 			p.IPProto = unix.IPPROTO_UDP
 		default:
-			return dbus.MakeVariant(nil), fmt.Errorf("unsupported network: %s", pol.Network)
+			return dbus.MakeVariant(nil), fmt.Errorf("%w: %s", errNetworkUnsupported, pol.Network)
 		}
 
 		ps = append(ps, p)

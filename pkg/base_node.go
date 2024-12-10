@@ -118,7 +118,7 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 	}
 
 	switch {
-	case node.ExistingNetworkNamespace == "host":
+	case node.ExistingNetworkNamespace == hostNamespaceName:
 		if node.Namespace, err = HostNamespace(); err != nil {
 			return nil, fmt.Errorf("failed to get host namespace: %w", err)
 		}
@@ -170,7 +170,7 @@ func (n *Network) AddNode(name string, opts ...Option) (node *BaseNode, err erro
 	}
 
 	if err := unix.Mount(src, dst, "", syscall.MS_BIND, ""); err != nil {
-		return nil, fmt.Errorf("failed to bind mount netns fd: %s", err)
+		return nil, fmt.Errorf("failed to bind mount netns fd: %w", err)
 	}
 
 	n.Register(node)
@@ -319,7 +319,7 @@ func (n *BaseNode) ConfigureInterface(i *Interface) error {
 	n.Interfaces = append(n.Interfaces, i)
 
 	if err := n.network.generateHostsFile(); err != nil {
-		return fmt.Errorf("failed to update hosts file")
+		return fmt.Errorf("failed to update hosts file: %w", err)
 	}
 
 	return nil

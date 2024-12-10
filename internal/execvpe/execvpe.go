@@ -7,6 +7,7 @@ package execvpe
 // See: https://sourceware.org/git/?p=glibc.git;a=blob;f=posix/execvpe.c
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,7 +41,7 @@ func Execvpe(argv0 string, argv []string, envp []string) error {
 	if strings.Contains(argv0, "/") {
 		err := syscall.Exec(argv0, argv, envp)
 
-		if err == syscall.ENOEXEC {
+		if errors.Is(err, syscall.ENOEXEC) {
 			if err := maybeScriptExecute(argv0, argv, envp); err != nil {
 				return err
 			}
@@ -57,30 +58,30 @@ func Execvpe(argv0 string, argv []string, envp []string) error {
 	gotEacces := false
 	for _, p := range strings.Split(path, ":") {
 		argv0 := filepath.Join(p, argv0)
-		if err = syscall.Exec(argv0, argv, envp); err == syscall.ENOEXEC {
+		if err = syscall.Exec(argv0, argv, envp); errors.Is(err, syscall.ENOEXEC) {
 			err = maybeScriptExecute(argv0, argv, envp)
 		}
 
-		switch err {
-		case syscall.EACCES:
+		switch {
+		case errors.Is(err, syscall.EACCES):
 			// Record that we got a 'Permission denied' error.  If we end
 			// up finding no executable we can use, we want to diagnose
 			// that we did find one but were denied access.
 			gotEacces = true
 
-		case syscall.ENOENT:
+		case errors.Is(err, syscall.ENOENT):
 			fallthrough
-		case syscall.ESTALE:
+		case errors.Is(err, syscall.ESTALE):
 			fallthrough
-		case syscall.ENOTDIR:
+		case errors.Is(err, syscall.ENOTDIR):
 			fallthrough
 		// Those errors indicate the file is missing or not executable
 		// by us, in which case we want to just try the next path
 		// directory.
 
-		case syscall.ENODEV:
+		case errors.Is(err, syscall.ENODEV):
 			fallthrough
-		case syscall.ETIMEDOUT:
+		case errors.Is(err, syscall.ETIMEDOUT):
 			// Some strange file systems like AFS return even
 			// stranger error numbers.  They cannot reasonably mean
 			// anything else so ignore those, too.

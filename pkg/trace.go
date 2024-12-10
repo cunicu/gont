@@ -161,10 +161,10 @@ func (t *Tracer) Pipe() (*os.File, error) {
 			if _, err := e.ReadFrom(rd); err != nil {
 				if errors.Is(err, io.EOF) {
 					break
-				} else {
-					t.logger.Warn("Failed to read tracepoint from log", zap.Error(err))
-					continue
 				}
+
+				t.logger.Warn("Failed to read tracepoint from log", zap.Error(err))
+				continue
 			}
 
 			t.newEvent(e)

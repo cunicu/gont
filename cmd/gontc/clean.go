@@ -14,7 +14,8 @@ import (
 
 func clean(args []string) error {
 	ctx := context.Background()
-	ctx, _ = context.WithTimeout(ctx, 30*time.Second) //nolint:govet
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second) //nolint:govet
+	defer cancel()
 
 	c, err := dbus.NewWithContext(ctx)
 	if err != nil {

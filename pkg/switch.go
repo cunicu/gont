@@ -99,12 +99,12 @@ func (sw *Switch) ConfigureInterface(i *Interface) error {
 	sw.logger.Info("Connecting interface to bridge master", zap.Any("intf", i))
 	br, err := sw.nlHandle.LinkByName(bridgeInterfaceName)
 	if err != nil {
-		return fmt.Errorf("failed to find bridge intf: %s", err)
+		return fmt.Errorf("failed to find bridge interface: %w", err)
 	}
 
 	l, err := sw.nlHandle.LinkByName(i.Name)
 	if err != nil {
-		return fmt.Errorf("failed to find new bridge interface: %s", err)
+		return fmt.Errorf("failed to find new bridge interface: %w", err)
 	}
 
 	// Attach interface to bridge

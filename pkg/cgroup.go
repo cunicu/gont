@@ -5,10 +5,13 @@ package gont
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/coreos/go-systemd/v22/dbus"
 )
+
+var errWaitCGroupShutdown = errors.New("failed to wait for CGroup shutdown")
 
 type CGroupOption interface {
 	ApplyCGroup(s *CGroup)
@@ -69,7 +72,7 @@ func (g *CGroup) Stop() error {
 	}
 
 	if state := <-ch; state != "done" {
-		return fmt.Errorf("failed to wait for CGroup shutdown: state is %s", state)
+		return fmt.Errorf("%w: state is %s", errWaitCGroupShutdown, state)
 	}
 
 	return nil

@@ -48,8 +48,7 @@ func (n *Network) AddNAT(name string, opts ...Option) (*NAT, error) {
 
 	// Apply NAT options
 	for _, o := range opts {
-		switch opt := o.(type) {
-		case NATOption:
+		if opt, ok := o.(NATOption); ok {
 			opt.ApplyNAT(nat)
 		}
 	}

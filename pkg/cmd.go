@@ -6,6 +6,7 @@ package gont
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -22,6 +23,8 @@ import (
 	"go.uber.org/zap/zapio"
 	"golang.org/x/sys/unix"
 )
+
+var errProcessExitedPrematurely = errors.New("process exited prematurely")
 
 //nolint:gochecknoglobals
 var DefaultPreserveEnvVars = []string{
@@ -90,8 +93,7 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 	}
 
 	for _, arg := range args {
-		switch arg := arg.(type) {
-		case ExecCmdOption:
+		if arg, ok := arg.(ExecCmdOption); ok {
 			arg.ApplyExecCmd(c.Cmd)
 		}
 	}
@@ -149,8 +151,10 @@ func (c *Cmd) Start() (err error) {
 		"WG_KEYLOGFILE": pcapgo.DSB_SECRETS_TYPE_WIREGUARD,
 	} {
 		if pipe, err := c.node.network.KeyLogPipe(secretsType); err != nil {
-			return fmt.Errorf("failed to open key log pipe: %w", err)
-		} else if pipe != nil {
+			if !errors.Is(err, errNoKeyLogs) {
+				return fmt.Errorf("failed to open key log pipe: %w", err)
+			}
+		} else {
 			c.extraEnvFile(envName, pipe)
 		}
 	}
@@ -295,9 +299,9 @@ func (c *Cmd) tracer() *Tracer {
 		return t
 	} else if t := c.node.network.Tracer; t != nil {
 		return t
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (c *Cmd) debugger() *Debugger {
@@ -307,9 +311,9 @@ func (c *Cmd) debugger() *Debugger {
 		return d
 	} else if d := c.node.network.Debugger; d != nil {
 		return d
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (c *Cmd) extraEnvFile(envName string, f *os.File) {
@@ -394,7 +398,7 @@ func (c *Cmd) stoppedStart() (pid int, pidFD int, err error) {
 
 		switch si.Code {
 		case unixx.CLD_EXITED:
-			return -1, -1, fmt.Errorf("process exited prematurely")
+			return -1, -1, errProcessExitedPrematurely
 
 		case unixx.CLD_TRAPPED:
 			signal := syscall.Signal(si.Status & 0xff)
@@ -418,6 +422,8 @@ func (c *Cmd) stoppedStart() (pid int, pidFD int, err error) {
 				}
 
 				return si.Pid, pidFD, nil
+
+			default:
 			}
 		}
 

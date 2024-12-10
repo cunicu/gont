@@ -57,7 +57,7 @@ func CPUQuotaPeriod(period time.Duration) Property {
 func AllowedCPUs(mask uint64) Property {
 	return Property(sdbus.Property{
 		Name:  "AllowedCPUs",
-		Value: makeCpuSet(mask),
+		Value: makeCPUSet(mask),
 	})
 }
 
@@ -65,7 +65,7 @@ func AllowedCPUs(mask uint64) Property {
 func StartupAllowedCPUs(mask uint64) Property {
 	return Property(sdbus.Property{
 		Name:  "StartupAllowedCPUs",
-		Value: makeCpuSet(mask),
+		Value: makeCPUSet(mask),
 	})
 }
 
@@ -187,7 +187,7 @@ func MemoryZSwapWriteback(enable bool) Property {
 func AllowedMemoryNodes(mask uint64) Property {
 	return Property(sdbus.Property{
 		Name:  "AllowedMemoryNodes",
-		Value: makeCpuSet(mask),
+		Value: makeCPUSet(mask),
 	})
 }
 
@@ -195,7 +195,7 @@ func AllowedMemoryNodes(mask uint64) Property {
 func StartupAllowedMemoryNodes(mask uint64) Property {
 	return Property(sdbus.Property{
 		Name:  "StartupAllowedMemoryNodes",
-		Value: makeCpuSet(mask),
+		Value: makeCPUSet(mask),
 	})
 }
 
@@ -210,10 +210,10 @@ func TasksAccounting(enable bool) Property {
 }
 
 // See: https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html#TasksMax=N
-func TasksMax(max uint64) Property {
+func TasksMax(maximum uint64) Property {
 	return Property(sdbus.Property{
 		Name:  "TasksMax",
-		Value: dbus.MakeVariant(max),
+		Value: dbus.MakeVariant(maximum),
 	})
 }
 

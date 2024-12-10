@@ -20,11 +20,14 @@ import (
 	"go.uber.org/zap"
 )
 
+var errNoWorkspaceDir = errors.New("failed to find workspace directory")
+
 type vscTasksConfig struct {
 	Version string    `json:"version"`
 	Tasks   []vscTask `json:"tasks"`
 }
 
+//nolint:tagliatelle
 type vscTask struct {
 	Label          string             `json:"label"`
 	Type           string             `json:"type"`
@@ -41,6 +44,7 @@ type vscProblemMatcher struct {
 	Background *vscBackground `json:"background,omitempty"`
 }
 
+//nolint:tagliatelle
 type vscBackground struct {
 	ActiveOnStart bool   `json:"activeOnStart,omitempty"`
 	BeginsPattern string `json:"beginsPattern,omitempty"`
@@ -63,6 +67,7 @@ type vscPresentation struct {
 	Panel  string `json:"panel,omitempty"`
 }
 
+//nolint:tagliatelle
 type vscConfiguration struct {
 	Name         string `json:"name,omitempty"`
 	Type         string `json:"type,omitempty"`
@@ -75,6 +80,7 @@ type vscConfiguration struct {
 	Mode         string `json:"mode,omitempty"`
 }
 
+//nolint:tagliatelle
 type vscCompound struct {
 	Name           string   `json:"name,omitempty"`
 	StopAll        bool     `json:"stopAll,omitempty"`
@@ -88,7 +94,7 @@ type vscCompound struct {
 // instances
 // If an empty dir is passed, we attempt to find the workspace directory by searching for a
 // parent directory which contains either a .vscode, go.mod or .git
-func (d *Debugger) WriteVSCodeConfigs(dir string, stopOnEntry bool) error {
+func (d *Debugger) WriteVSCodeConfigs(dir string, _ bool /* stopOnEntry */) error {
 	if dir == "" {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -97,7 +103,7 @@ func (d *Debugger) WriteVSCodeConfigs(dir string, stopOnEntry bool) error {
 
 		var ok bool
 		if dir, ok = findWorkspaceDir(wd); !ok {
-			return errors.New("failed to find workspace directory")
+			return errNoWorkspaceDir
 		}
 	}
 

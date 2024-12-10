@@ -3,6 +3,7 @@
 
 package unix
 
+//nolint:stylecheck,revive
 type SiginfoChld struct {
 	Signo  int32     // Signal number.
 	Errno  int32     // If non-zero, an errno value associated with this signal.
