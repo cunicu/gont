@@ -11,7 +11,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/go-delve/delve v1.24.0
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/google/nftables v0.2.0
+	github.com/google/nftables v0.3.0
 	github.com/gopacket/gopacket v1.3.1
 	github.com/prometheus-community/pro-bing v0.6.1
 	github.com/vishvananda/netlink v1.3.0
@@ -33,7 +33,7 @@ require (
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mdlayher/netlink v1.7.2 // indirect
+	github.com/mdlayher/netlink v1.7.3-0.20250113171957-fbb4dce95f42 // indirect
 	github.com/mdlayher/socket v0.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
