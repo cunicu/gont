@@ -17,7 +17,7 @@ require (
 	github.com/vishvananda/netlink v1.3.0
 	github.com/vishvananda/netns v0.0.5
 	go.uber.org/zap v1.27.0
-	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
+	golang.org/x/exp v0.0.0-20250228200357-dead58393ab7
 	golang.org/x/net v0.34.0
 	golang.org/x/sys v0.29.0
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.73
