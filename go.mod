@@ -17,7 +17,7 @@ require (
 	github.com/vishvananda/netlink v1.3.0
 	github.com/vishvananda/netns v0.0.5
 	go.uber.org/zap v1.27.0
-	golang.org/x/exp v0.0.0-20250228200357-dead58393ab7
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/net v0.34.0
 	golang.org/x/sys v0.29.0
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.75
@@ -40,7 +40,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.11.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.75 // indirect
 )
