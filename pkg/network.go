@@ -45,6 +45,8 @@ type Network struct {
 	RedirectToLog bool
 	Slice         string
 
+	IPv6Disabled bool
+	
 	keyLogPipes []*os.File
 	logger      *zap.Logger
 }
