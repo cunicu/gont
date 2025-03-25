@@ -384,6 +384,10 @@ func (n *BaseNode) EnableForwarding() error {
 		return err
 	}
 
+    if n.network.IPv6Disabled {
+        return nil
+    }
+
 	return n.WriteProcFS("/proc/sys/net/ipv6/conf/all/forwarding", "1")
 }
 
