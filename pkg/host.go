@@ -57,11 +57,13 @@ func (n *Network) AddHost(name string, opts ...Option) (h *Host, err error) {
 					IP:   net.IPv4(127, 0, 0, 1),
 					Mask: net.IPv4Mask(255, 0, 0, 0),
 				},
-				{
-					IP:   net.IPv6loopback,
-					Mask: net.CIDRMask(8*net.IPv6len, 8*net.IPv6len),
-				},
 			},
+		}
+		if !n.IPv6Disabled {
+			lo.Addresses = append(lo.Addresses, net.IPNet{
+				IP:   net.IPv6loopback,
+				Mask: net.CIDRMask(8*net.IPv6len, 8*net.IPv6len),
+			})
 		}
 
 		if lo.Link, err = h.nlHandle.LinkByName("lo"); err != nil {
@@ -127,7 +129,7 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 
 	// Disable duplicate address detection (DAD) before adding addresses
 	// so we do not end up with tentative addresses and slow test executions
-	if !i.EnableDAD {
+	if !h.network.IPv6Disabled && !i.EnableDAD {
 		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
 		if err := h.WriteProcFS(fn, "0"); err != nil {
 			return fmt.Errorf("failed to enabled IPv6 forwarding: %w", err)
