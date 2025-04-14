@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 ---
 
-# SPDX-FileCopyrightText: 2023 Steffen Vogel <post@steffenvogel.de>
+# SPDX-FileCopyrightText: 2025 Steffen Vogel <post@steffenvogel.de>
 # SPDX-License-Identifier: CC0-1.0
 
-name: Run golangci-lint
+name: Lint code
 
 on:
   push:
@@ -16,26 +16,25 @@ on:
 
 permissions:
   contents: read
-  # Optional: allow read access to pull request. Use with `only-new-issues` option.
-  # pull-requests: read
 
 jobs:
   golangci:
-    name: lint
+    name: golangci-lint
     runs-on: ubuntu-24.04
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Install dependencies
       run: sudo apt-get install libpcap-dev
 
-    - name: Set up Go
+    - name: Setup Go
       uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
         check-latest: true
-        cache: true
 
     - name: Run linter
       uses: golangci/golangci-lint-action@v7
+      with:
+        version: v2.0.2
