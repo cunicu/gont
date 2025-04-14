@@ -52,13 +52,15 @@ func (n *Network) AddHost(name string, opts ...Option) (h *Host, err error) {
 		lo := Interface{
 			Name: loopbackInterfaceName,
 			Node: h,
-			Addresses: []net.IPNet{
-				{
-					IP:   net.IPv4(127, 0, 0, 1),
-					Mask: net.IPv4Mask(255, 0, 0, 0),
-				},
-			},
 		}
+
+		if !n.IPv4Disabled {
+			lo.Addresses = append(lo.Addresses, net.IPNet{
+				IP:   net.IPv4(127, 0, 0, 1),
+				Mask: net.IPv4Mask(255, 0, 0, 0),
+			})
+		}
+
 		if !n.IPv6Disabled {
 			lo.Addresses = append(lo.Addresses, net.IPNet{
 				IP:   net.IPv6loopback,

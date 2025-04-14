@@ -69,7 +69,9 @@ func (n *Network) WriteHostsFile(f io.Writer) error {
 	hosts := map[string][]string{}
 
 	// Loopback addresses
-	hosts[IPv4loopback.String()] = []string{"localhost", "localhost.localdomain", "localhost4", "localhost4.localdomain4"}
+	if !n.IPv4Disabled {
+		hosts[IPv4loopback.String()] = []string{"localhost", "localhost.localdomain", "localhost4", "localhost4.localdomain4"}
+	}
 	if !n.IPv6Disabled {
 		hosts[net.IPv6loopback.String()] = []string{"localhost", "localhost.localdomain", "localhost6", "localhost6.localdomain6"}
 	}

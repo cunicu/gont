@@ -14,6 +14,13 @@ func (p Persistent) ApplyNetwork(n *g.Network) {
 	n.Persistent = bool(p)
 }
 
+// Disable IPv4.
+type IPv4Disabled bool
+
+func (d IPv4Disabled) ApplyNetwork(n *g.Network) {
+	n.IPv4Disabled = bool(d)
+}
+
 // Disable IPv6.
 type IPv6Disabled bool
 
