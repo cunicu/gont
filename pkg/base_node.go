@@ -384,11 +384,13 @@ func (n *BaseNode) EnableForwarding() error {
 		return err
 	}
 
-	if n.network.IPv6Disabled {
-		return nil
+	if !n.network.IPv6Disabled {
+		if err := n.WriteProcFS("/proc/sys/net/ipv6/conf/all/forwarding", "1"); err != nil {
+			return err
+		}
 	}
 
-	return n.WriteProcFS("/proc/sys/net/ipv6/conf/all/forwarding", "1")
+	return nil
 }
 
 // AddRoute adds a route to the node.
