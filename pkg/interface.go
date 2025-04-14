@@ -31,18 +31,19 @@ type Interface struct {
 	Flags int
 
 	// Options
-	Netem     nl.NetemQdiscAttrs
-	Tbf       nl.Tbf
-	EnableDAD bool
-	LinkAttrs nl.LinkAttrs
-	Addresses []net.IPNet
-	Captures  []*Capture
+	Netem       nl.NetemQdiscAttrs
+	Tbf         nl.Tbf
+	DADDisabled bool
+	LinkAttrs   nl.LinkAttrs
+	Addresses   []net.IPNet
+	Captures    []*Capture
 }
 
 func NewInterface(name string, opts ...Option) *Interface {
 	i := &Interface{
-		Name:     name,
-		Captures: []*Capture{},
+		Name:        name,
+		DADDisabled: true,
+		Captures:    []*Capture{},
 	}
 
 	for _, o := range opts {

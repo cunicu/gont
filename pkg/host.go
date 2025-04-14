@@ -129,7 +129,7 @@ func (h *Host) ConfigureInterface(i *Interface) error {
 
 	// Disable duplicate address detection (DAD) before adding addresses
 	// so we do not end up with tentative addresses and slow test executions
-	if !h.network.IPv6Disabled && !i.EnableDAD {
+	if i.DADDisabled && !h.network.IPv6Disabled {
 		fn := filepath.Join("/proc/sys/net/ipv6/conf", i.Name, "accept_dad")
 		if err := h.WriteProcFS(fn, "0"); err != nil {
 			return fmt.Errorf("failed to enabled IPv6 forwarding: %w", err)
