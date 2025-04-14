@@ -38,14 +38,13 @@ type Network struct {
 	hostsFileLock sync.Mutex
 
 	// Options
-	Persistent    bool
 	Captures      []*Capture
 	Debugger      *Debugger
-	Tracer        *Tracer
+	IPv6Disabled  bool
+	Persistent    bool
 	RedirectToLog bool
 	Slice         string
-
-	IPv6Disabled bool
+	Tracer        *Tracer
 
 	keyLogPipes []*os.File
 	logger      *zap.Logger
