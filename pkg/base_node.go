@@ -351,7 +351,7 @@ func (n *BaseNode) Teardown() error {
 		return fmt.Errorf("failed to delete files: %w", err)
 	}
 
-	if err := n.CGroup.Stop(); err != nil {
+	if err := n.Stop(); err != nil {
 		return fmt.Errorf("failed to stop cgroup: %w", err)
 	}
 

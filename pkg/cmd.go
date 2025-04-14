@@ -89,7 +89,7 @@ func (n *BaseNode) Command(name string, args ...any) *Cmd {
 			c.Cmd = exec.Command(name, strArgs...)
 		}
 	} else {
-		c.Cmd.Args = append(c.Cmd.Args, strArgs...)
+		c.Args = append(c.Args, strArgs...)
 	}
 
 	for _, arg := range args {
@@ -213,7 +213,7 @@ func (c *Cmd) Start() (err error) {
 		return fmt.Errorf("failed to create cgroup: %w", err)
 	}
 
-	c.CGroup.Properties = append(c.CGroup.Properties,
+	c.Properties = append(c.Properties,
 		sdbus.Property{
 			Name:  "Slice",
 			Value: dbus.MakeVariant(c.node.Unit()),
@@ -221,12 +221,12 @@ func (c *Cmd) Start() (err error) {
 	)
 
 	if unixx.PidFDWorks() {
-		c.CGroup.Properties = append(c.CGroup.Properties, sdbus.Property{
+		c.Properties = append(c.Properties, sdbus.Property{
 			Name:  "PIDFDs",
 			Value: dbus.MakeVariant([]dbus.UnixFD{dbus.UnixFD(pidfd)}), //nolint:gosec
 		})
 	} else {
-		c.CGroup.Properties = append(c.CGroup.Properties, sdbus.Property{
+		c.Properties = append(c.Properties, sdbus.Property{
 			Name:  "PIDs",
 			Value: dbus.MakeVariant([]uint{uint(pidfd)}), //nolint:gosec
 		})
@@ -375,13 +375,13 @@ func (c *Cmd) redirectToLog() func(*zap.Logger) {
 //
 // 10) The parent process has detached from the tracee and the tracee is stopped due to the injected SIGSTOP in 9)
 func (c *Cmd) stoppedStart() (pid int, pidFD int, err error) {
-	if c.Cmd.SysProcAttr == nil {
-		c.Cmd.SysProcAttr = &syscall.SysProcAttr{}
+	if c.SysProcAttr == nil {
+		c.SysProcAttr = &syscall.SysProcAttr{}
 	}
 
-	c.Cmd.SysProcAttr.Setpgid = true
-	c.Cmd.SysProcAttr.Ptrace = true
-	c.Cmd.SysProcAttr.PidFD = &pidFD
+	c.SysProcAttr.Setpgid = true
+	c.SysProcAttr.Ptrace = true
+	c.SysProcAttr.PidFD = &pidFD
 
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()

@@ -67,7 +67,7 @@ func (n *Network) AddSwitch(name string, opts ...Option) (*Switch, error) {
 
 	n.logger.Info("Adding new Linux bridge",
 		zap.Any("node", sw),
-		zap.String("intf", br.LinkAttrs.Name),
+		zap.String("intf", br.Name),
 	)
 
 	if err := sw.nlHandle.LinkSetUp(br); err != nil {

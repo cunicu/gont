@@ -48,7 +48,7 @@ func (n *Network) AddHost(name string, opts ...Option) (h *Host, err error) {
 	}
 
 	// Configure loopback device
-	if !h.Namespace.IsHost() {
+	if !h.IsHost() {
 		lo := Interface{
 			Name: loopbackInterfaceName,
 			Node: h,
