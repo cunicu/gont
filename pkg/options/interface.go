@@ -37,3 +37,10 @@ func AddressIP(fmts string, args ...any) Address {
 		Mask: n.Mask,
 	}
 }
+
+// Disable duplicate address detection (DAD) for the interface.
+type DADDisabled bool
+
+func (d DADDisabled) ApplyInterface(i *g.Interface) {
+	i.DADDisabled = bool(d)
+}
