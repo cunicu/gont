@@ -211,11 +211,7 @@ out:
 	for {
 		select {
 		case now := <-tickerEvents.C:
-			for {
-				if t.queue.Len() < 1 {
-					break
-				}
-
+			for t.queue.Len() >= 1 {
 				_, oldestMicros := t.queue.Peek()
 				oldest := time.UnixMicro(oldestMicros)
 				oldestAge := now.Sub(oldest)

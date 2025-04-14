@@ -15,7 +15,7 @@ import (
 var checkPidfdOnce = sync.OnceValue(checkPidfd) //nolint:gochecknoglobals
 
 const (
-	_P_PIDFD = 3 //nolint:stylecheck,revive
+	_P_PIDFD = 3 //nolint:revive
 
 	pidfdSendSignalTrap uintptr = 424
 	pidfdOpenTrap       uintptr = 434

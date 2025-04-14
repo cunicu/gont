@@ -124,7 +124,8 @@ func setupBindMounts(basePath string) error {
 				continue
 			}
 
-			return fmt.Errorf("%w: %s.\n"+ //nolint:stylecheck
+			//nolint:staticcheck
+			return fmt.Errorf("%w: %s.\n"+
 				"Please consider creating an empty file or directory in its location "+
 				"or set the GONT_SKIP_MISSING_MOUNTPOINT environment variable.", errNoBindMountTarget, tgt)
 		}

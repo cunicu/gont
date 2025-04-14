@@ -102,7 +102,7 @@ func NewNetwork(name string, opts ...Option) (n *Network, err error) {
 		return nil, fmt.Errorf("failed to create cgroup: %w", err)
 	}
 
-	if err := n.CGroup.Start(); err != nil {
+	if err := n.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start cgroup: %w", err)
 	}
 
@@ -222,7 +222,7 @@ func (n *Network) Teardown() error {
 		}
 	}
 
-	if err := n.CGroup.Stop(); err != nil {
+	if err := n.Stop(); err != nil {
 		return fmt.Errorf("failed to stop cgroup: %w", err)
 	}
 

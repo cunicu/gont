@@ -242,11 +242,7 @@ out:
 			}
 
 		case now := <-tickerPackets.C:
-			for {
-				if c.queue.Len() < 1 {
-					break
-				}
-
+			for c.queue.Len() >= 1 {
 				_, oldestMicros := c.queue.Peek()
 				oldest := time.UnixMicro(oldestMicros)
 				oldestAge := now.Sub(oldest)
