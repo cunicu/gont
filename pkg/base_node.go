@@ -380,8 +380,10 @@ func (n *BaseNode) WriteProcFS(path, value string) error {
 
 // EnableForwarding enables forwarding for both IPv4 and IPv6 protocols in the kernel for all interfaces
 func (n *BaseNode) EnableForwarding() error {
-	if err := n.WriteProcFS("/proc/sys/net/ipv4/conf/all/forwarding", "1"); err != nil {
-		return err
+	if !n.network.IPv4Disabled {
+		if err := n.WriteProcFS("/proc/sys/net/ipv4/conf/all/forwarding", "1"); err != nil {
+			return err
+		}
 	}
 
 	if !n.network.IPv6Disabled {

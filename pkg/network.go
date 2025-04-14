@@ -40,6 +40,7 @@ type Network struct {
 	// Options
 	Captures      []*Capture
 	Debugger      *Debugger
+	IPv4Disabled  bool
 	IPv6Disabled  bool
 	Persistent    bool
 	RedirectToLog bool
