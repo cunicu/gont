@@ -13,7 +13,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/google/nftables v0.3.0
 	github.com/gopacket/gopacket v1.3.1
-	github.com/prometheus-community/pro-bing v0.6.1
+	github.com/prometheus-community/pro-bing v0.7.0
 	github.com/vishvananda/netlink v1.3.0
 	github.com/vishvananda/netns v0.0.5
 	go.uber.org/zap v1.27.0
