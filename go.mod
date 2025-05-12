@@ -14,7 +14,7 @@ require (
 	github.com/google/nftables v0.3.0
 	github.com/gopacket/gopacket v1.3.1
 	github.com/prometheus-community/pro-bing v0.7.0
-	github.com/vishvananda/netlink v1.3.0
+	github.com/vishvananda/netlink v1.3.1
 	github.com/vishvananda/netns v0.0.5
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
