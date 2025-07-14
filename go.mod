@@ -18,8 +18,8 @@ require (
 	github.com/vishvananda/netns v0.0.5
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc
-	golang.org/x/net v0.41.0
-	golang.org/x/sys v0.33.0
+	golang.org/x/net v0.42.0
+	golang.org/x/sys v0.34.0
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.76
 )
 
