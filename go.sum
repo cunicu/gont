@@ -13,6 +13,8 @@ github.com/fxamacker/cbor/v2 v2.7.0 h1:iM5WgngdRBanHcxugY4JySA0nk1wZorNOpTgCMedv
 github.com/fxamacker/cbor/v2 v2.7.0/go.mod h1:pxXPTn3joSm21Gbwsv0w9OSA2y1HFR9qXEeXQVeNoDQ=
 github.com/fxamacker/cbor/v2 v2.8.0 h1:fFtUGXUzXPHTIUdne5+zzMPTfffl3RD5qYnkY40vtxU=
 github.com/fxamacker/cbor/v2 v2.8.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
+github.com/fxamacker/cbor/v2 v2.9.0 h1:NpKPmjDBgUfBms6tr6JZkTHtfFGcMKsw3eGcmD/sapM=
+github.com/fxamacker/cbor/v2 v2.9.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
 github.com/go-delve/delve v1.23.1 h1:MtZ13ppptttkqSuvVnwJ5CPhIAzDiOwRrYuCk3ES7fU=
 github.com/go-delve/delve v1.23.1/go.mod h1:S3SLuEE2mn7wipKilTvk1p9HdTMnXXElcEpiZ+VcuqU=
 github.com/go-delve/delve v1.24.0 h1:M1auuI7kyfXZm5LMDQEqhqr4koKWOzGKhCgwMxsLQfo=
