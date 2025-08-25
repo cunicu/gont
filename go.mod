@@ -6,7 +6,7 @@ module cunicu.li/gont/v2
 go 1.24.1
 
 require (
-	github.com/coreos/go-systemd/v22 v22.5.0
+	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/go-delve/delve v1.25.1
