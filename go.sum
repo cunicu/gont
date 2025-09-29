@@ -29,6 +29,8 @@ github.com/go-delve/delve v1.25.0 h1:JN2S3iVptvayUS2w+d0UEPmijgkodW1AFM4I8UViHGE
 github.com/go-delve/delve v1.25.0/go.mod h1:kJk12wo6PqzWknTP6M+Pg3/CrNhFMZvNq1iHESKkhv8=
 github.com/go-delve/delve v1.25.1 h1:M/a9uUhITYdrHoTSZSC0D9EIuL4agpq77omDTneRre8=
 github.com/go-delve/delve v1.25.1/go.mod h1:sBjdpmDVpQd8nIMFldtqJZkk0RpGXrf8AAp5HeRi0CM=
+github.com/go-delve/delve v1.25.2 h1:EI6EIWGKUEC7OVE5nfG2eQSv5xEgCRxO1+REB7FKCtE=
+github.com/go-delve/delve v1.25.2/go.mod h1:sBjdpmDVpQd8nIMFldtqJZkk0RpGXrf8AAp5HeRi0CM=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/godbus/dbus/v5 v5.1.0 h1:4KLkAxT3aOY8Li4FRJe/KvhoNFFxo0m6fNuFUO8QJUk=
 github.com/godbus/dbus/v5 v5.1.0/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=

@@ -9,7 +9,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fxamacker/cbor/v2 v2.9.0
-	github.com/go-delve/delve v1.25.1
+	github.com/go-delve/delve v1.25.2
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/google/nftables v0.3.0
 	github.com/gopacket/gopacket v1.4.0
